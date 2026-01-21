@@ -1,7 +1,7 @@
 # 🎵 MyTunes Pro
 
 **Modern CLI YouTube Music Player**  
-A minimalist, keyboard-driven music player for the terminal. Built for speed and simplicity.
+A minimalist, keyboard-driven terminal player that **searches and streams YouTube music**. Built for speed.
 
 ![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
@@ -74,6 +74,7 @@ pip install -U yt-dlp
 
 ---
 **Troubleshooting**: If you encounter `403 Forbidden` errors, please update yt-dlp:
+
 ```bash
 pip install -U yt-dlp
 ```

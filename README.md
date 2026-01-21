@@ -1,7 +1,7 @@
 # 🎵 MyTunes Pro (Korean)
 
 **현대적인 CLI 유튜브 뮤직 플레이어**  
-터미널 환경에서 가볍고 빠르게 동작하는 키보드 중심의 뮤직 플레이어입니다.
+터미널 환경에서 **YouTube 음악을 검색하여 듣는** 가볍고 빠른 키보드 중심의 플레이어입니다.
 
 ![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
