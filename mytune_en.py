@@ -12,12 +12,12 @@ import time
 import sys
 import shutil
 import unicodedata
-import readline  # For proper Korean input handling
+import readline
 
 try:
     from simple_term_menu import TerminalMenu
 except ImportError:
-    print("\n❌ 필수 라이브러리가 없습니다: simple-term-menu")
+    print("\n❌ Missing required library: simple-term-menu")
     print("   pip install simple-term-menu")
     sys.exit(1)
 
@@ -27,7 +27,7 @@ except ImportError:
 try:
     import psutil
 except ImportError:
-    print("\n❌ 필수 라이브러리가 없습니다: psutil")
+    print("\n❌ Missing required library: psutil")
     print("   pip install psutil")
     sys.exit(1)
 
@@ -36,8 +36,6 @@ DATA_FILE = os.path.expanduser("~/.pymusic_data.json")
 MPV_SOCKET = "/tmp/mpv_socket"
 APP_NAME = "MyTunes Pro"
 APP_VERSION = "1.0.0"
-
-
 
 # === [Theme Colors] ===
 THEME = {
@@ -125,7 +123,6 @@ def send_mpv_cmd(command: list) -> bool:
         client.send(cmd_str.encode('utf-8'))
         client.close()
         return True
-        return True
     except (socket.error, OSError):
         return False
 
@@ -161,7 +158,7 @@ def add_to_history(item: dict, data: dict) -> None:
 
 class Spinner:
     """Thread-based spinner for search indication."""
-    def __init__(self, message="검색 중..."):
+    def __init__(self, message="Searching..."):
         self.message = message
         self.stop_running = False
         self.thread = None
@@ -181,10 +178,10 @@ class Spinner:
 
     def _animate(self):
         while not self.stop_running:
-            sys.stdout.write(f'\r\033[K{next(self.cycle)} {self.message}')
+            sys.stdout.write(f'\\r\033[K{next(self.cycle)} {self.message}')
             sys.stdout.flush()
             time.sleep(0.08)
-        sys.stdout.write('\r\033[K')
+        sys.stdout.write('\\r\033[K')
         sys.stdout.flush()
 
 # === [YouTube Search] ===
@@ -192,7 +189,7 @@ class Spinner:
 def search_youtube(query: str) -> list:
     """Search YouTube and return video list."""
     videos = []
-    spinner = Spinner(f"'{query}' 검색 중...")
+    spinner = Spinner(f"Searching for '{query}'...")
     spinner.start()
     
     try:
@@ -204,7 +201,7 @@ def search_youtube(query: str) -> list:
             cmd, stderr=subprocess.DEVNULL, timeout=20
         ).decode("utf-8")
         
-        for line in result.strip().split("\n"):
+        for line in result.strip().split("\\n"):
             if line:
                 try:
                     d = json.loads(line)
@@ -229,13 +226,13 @@ def search_youtube(query: str) -> list:
                     continue
                     
     except subprocess.TimeoutExpired:
-        print("\n⏱ 검색 시간 초과")
+        print("\\n⏱ Search timed out")
         time.sleep(1.5)
     except subprocess.CalledProcessError as e:
-        print(f"\n❌ 검색 오류: {e}")
+        print(f"\\n❌ Search error: {e}")
         time.sleep(1.5)
     except FileNotFoundError:
-        print("\n❌ yt-dlp가 설치되지 않았습니다")
+        print("\\n❌ yt-dlp is not installed")
         time.sleep(1.5)
     finally:
         spinner.stop()
@@ -264,7 +261,7 @@ def truncate_title(title: str, max_width: int) -> str:
 def show_list_menu(items: list, data: dict, title: str) -> None:
     """Display a list menu and enter player controller on selection."""
     if not items:
-        print(f"\n[{THEME['warning']}]📭 목록이 비어있습니다[/]")
+        print(f"\\n[{THEME['warning']}]📭 The list is empty[/]")
         time.sleep(1)
         return
     
@@ -294,7 +291,7 @@ def show_list_menu(items: list, data: dict, title: str) -> None:
         menu_items.append(f"{num} {truncated}{suffix}")
     
     menu_items.append("")  # Separator
-    menu_items.append("◀ 뒤로 가기 (Back)")
+    menu_items.append("◀ Go Back")
     
     # Truncate title for menu header
     try:
@@ -309,7 +306,7 @@ def show_list_menu(items: list, data: dict, title: str) -> None:
     
     menu = TerminalMenu(
         menu_items,
-        title=f"  🎵 {truncated_menu_title}\n  {'─' * min(40, cols - 6)}\n",
+        title=f"  🎵 {truncated_menu_title}\\n  {'─' * min(40, cols - 6)}\\n",
         menu_cursor="  ❯ ",
         menu_cursor_style=("fg_cyan", "bold"),
         menu_highlight_style=("bg_blue", "bold"),
@@ -335,11 +332,10 @@ def player_controller(playlist: list, start_index: int, data: dict) -> None:
     while True:
         current_item = playlist[current_index]
         title = current_item['title']
-        
-        # Check favorite status
         is_fav = any(f['url'] == current_item['url'] for f in data['favorites'])
+        
         fav_icon = "★" if is_fav else "☆"
-        fav_action = "즐겨찾기 해제 (Unfavorite)" if is_fav else "즐겨찾기 등록 (Favorite)"
+        fav_action = "Unfavorite" if is_fav else "Favorite"
         
         # Now Playing display - simplified
         try:
@@ -350,22 +346,20 @@ def player_controller(playlist: list, start_index: int, data: dict) -> None:
         truncated_title = truncate_title(title, min(cols - 10, 50))
         
         player_title = (
-            f"\n 🎵 NOW PLAYING [{current_index + 1}/{len(playlist)}]\n"
-            f" {'─' * 35}\n"
-            f"  {truncated_title}\n"
+            f"\\n 🎵 NOW PLAYING [{current_index + 1}/{len(playlist)}]\\n"
+            f" {'─' * 35}\\n"
+            f"  {truncated_title}\\n"
             f" {'─' * 35}"
         )
         
         # Player controls menu
         options = [
-            "▶▶ 다음 챕터 (Chapter Next)",
-            "◀◀ 이전 챕터 (Chapter Prev)",
-            "⏭  다음 곡 (Next Track)",
-            "⏮  이전 곡 (Prev Track)",
-            "⏯  재생/일시정지 (Pause/Resume)",
+            "⏭  Next Track",
+            "⏮  Prev Track",
+            "⏯  Pause/Resume",
             f"{fav_icon}  {fav_action}",
-            "⏹  정지 (Stop)",
-            "◀  메뉴로 돌아가기 (Back)",
+            "⏹  Stop",
+            "◀  Back to Menu",
         ]
         
         menu = TerminalMenu(
@@ -380,32 +374,28 @@ def player_controller(playlist: list, start_index: int, data: dict) -> None:
         
         idx = menu.show()
         
-        if idx == 0:  # Chapter Next
-            send_mpv_cmd(["add", "chapter", "1"])
-        elif idx == 1:  # Chapter Prev
-            send_mpv_cmd(["add", "chapter", "-1"])
-        elif idx == 2:  # Next Track
+        if idx == 0:  # Next Track
             current_index = (current_index + 1) % len(playlist)
             current_item = playlist[current_index]
             play_stream(current_item['url'])
             add_to_history(current_item, data)
-        elif idx == 3:  # Prev Track
+        elif idx == 1:  # Prev Track
             current_index = (current_index - 1) % len(playlist)
             current_item = playlist[current_index]
             play_stream(current_item['url'])
             add_to_history(current_item, data)
-        elif idx == 4:  # Pause/Resume
+        elif idx == 2:  # Pause/Resume
             send_mpv_cmd(["cycle", "pause"])
-        elif idx == 5:  # Toggle Favorite
+        elif idx == 3:  # Toggle Favorite
             if is_fav:
                 data['favorites'] = [f for f in data['favorites'] if f['url'] != current_item['url']]
             else:
                 data['favorites'].insert(0, current_item)
             save_data(data)
-        elif idx == 6:  # Stop
+        elif idx == 4:  # Stop
             stop_music()
             break
-        elif idx == 7 or idx is None:  # Back
+        elif idx == 5 or idx is None:  # Back
             break
 
 def get_status_text() -> str:
@@ -413,10 +403,10 @@ def get_status_text() -> str:
     for proc in psutil.process_iter(['name']):
         try:
             if proc.info['name'] and 'mpv' in proc.info['name'].lower():
-                return "🔊 재생 중"
+                return "🔊 Playing"
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             pass
-    return "🔇 정지됨"
+    return "🔇 Stopped"
 
 def main() -> None:
     """Main application loop."""
@@ -426,21 +416,21 @@ def main() -> None:
         
         # Build dashboard (original style)
         dash = (
-            f"\n 🎵 MyTunes Pro v{APP_VERSION}\n"
-            f"  :::::postgresql.co.kr:::::\n"
-            f" {'─' * 35}\n"
-            f"  상태: {status}\n"
-            f"  보관: ⭐ {len(data['favorites'])} / 🕒 {len(data['history'])}\n"
-            f" {'─' * 35}\n"
-            f"  [↑↓] 이동  [Enter] 선택  [q] 종료"
+            f"\\n 🎵 MyTunes Pro v{APP_VERSION}\\n"
+            f"  :::::postgresql.co.kr:::::\\n"
+            f" {'─' * 35}\\n"
+            f"  Status: {status}\\n"
+            f"  Stored: ⭐ {len(data['favorites'])} / 🕒 {len(data['history'])}\\n"
+            f" {'─' * 35}\\n"
+            f"  [↑↓] Move  [Enter] Select  [q] Quit"
         )
         
         options = [
-            "🔍 검색 및 재생",
-            "⭐ 즐겨찾기 보관함",
-            "🕒 최근 재생 기록",
-            "⏹  재생 정지",
-            "🚪 프로그램 종료"
+            "🔍 Search & Play",
+            "⭐ Favorites",
+            "🕒 Recent History",
+            "⏹  Stop Playback",
+            "🚪 Exit"
         ]
         
         main_menu = TerminalMenu(
@@ -469,7 +459,7 @@ def main() -> None:
                 pass
             try:
                 # Add "Back" hint to the prompt
-                query = input("\n🔎 검색어 입력 (Enter는 뒤로): ").strip()
+                query = input("\\n🔎 Enter search query (Enter to go back): ").strip()
             except EOFError:
                 query = ""
             except KeyboardInterrupt:
@@ -477,20 +467,20 @@ def main() -> None:
                 
             if query and query.lower() not in ("back", "b"):
                 results = search_youtube(query)
-                show_list_menu(results, data, f"검색 결과: {query}")
+                show_list_menu(results, data, f"Search Results: {query}")
                 
         elif choice == 1:  # Favorites
-            show_list_menu(data['favorites'], data, "⭐ 즐겨찾기")
+            show_list_menu(data['favorites'], data, "⭐ Favorites")
             
         elif choice == 2:  # History
-            show_list_menu(data['history'], data, "🕒 최근 재생")
+            show_list_menu(data['history'], data, "🕒 Recent History")
             
         elif choice == 3:  # Stop
             stop_music()
             
         elif choice == 4 or choice is None:  # Exit
             os.system('clear')
-            print("\n👋 종료합니다.\n")
+            print("\\n👋 Goodbye!\\n")
             break
 
 if __name__ == "__main__":
