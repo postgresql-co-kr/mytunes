@@ -310,8 +310,8 @@ class MyTunesApp:
                 
                 # Update Resume Data (Memory)
                 if self.current_track and self.playback_duration > 30:
-                    # Clear if near end
-                    if self.playback_duration - self.playback_time < 10:
+                    # Clear if > 99% played
+                    if self.playback_time / self.playback_duration > 0.99:
                         self.dm.set_progress(self.current_track['url'], 0)
                     elif self.playback_time > 10:
                         self.dm.set_progress(self.current_track['url'], self.playback_time)
