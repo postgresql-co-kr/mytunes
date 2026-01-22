@@ -61,17 +61,24 @@ Linux 환경이 없는 Windows 사용자는 **WSL(리눅스용 윈도우 하위 
    *(이 명령어는 WSL 필수 구성 요소와 **Debian** 배포판을 한 번에 설치합니다.)*
 4. "설치가 완료되었습니다" 메시지가 뜨면 컴퓨터를 **재부팅**합니다.
 
-**2단계: 계정 설정**
-1. 재부팅 후 **Debian** 터미널 창이 자동으로 열립니다. (자동으로 안 열리면 시작 메뉴에서 'Debian'을 실행하세요.)
-2. 사용할 **User Name**(영문 아이디)과 **Password**를 입력합니다.
-   *(⚠️ 비밀번호 입력 시 화면에는 아무것도 나타나지 않습니다. 정상입니다. 입력 후 엔터를 치세요.)*
-
-**3단계: 윈도우 터미널(Windows Terminal) 활용 (권장)**
+64: **2단계: 계정 설정**
+65: 1. 재부팅 후 **Debian** 터미널 창이 자동으로 열립니다. (자동으로 안 열리면 시작 메뉴에서 'Debian'을 실행하세요.)
+66: 2. 사용할 **User Name**(영문 아이디)과 **Password**를 입력합니다.
+67:    *(⚠️ 비밀번호 입력 시 화면에는 아무것도 나타나지 않습니다. 정상입니다. 입력 후 엔터를 치세요.)*
+68: 
+69: **3단계: 필수 도구 설치 (중요)**
+70: 처음 설치된 Debian에는 `git` 등 필수 도구가 없습니다. 아래 명령어를 복사해서 터미널에 붙여넣고 엔터를 치세요 (비밀번호 입력 필요).
+71: ```bash
+72: sudo apt update
+73: sudo apt install git curl wget unzip -y
+74: ```
+75: 
+76: **4단계: 윈도우 터미널(Windows Terminal) 활용 (권장)**
 1. **Microsoft Store**에서 **Windows Terminal**을 검색하여 설치하면 훨씬 편리합니다.
 2. 실행 후 아이콘을 우클릭하여 **작업 표시줄에 고정**하세요.
 3. 터미널 상단의 `+` 버튼 옆 **화살표(`v`)**를 눌러 **Debian**을 선택하면 언제든 Linux 환경이 열립니다.
 
-**4단계: MyTunes 설치**
+**5단계: MyTunes 설치**
 이제 Debian 터미널에서 위 **Linux (Ubuntu/Debian)** 설치 명령어를 차례대로 입력하세요.
 
 ---
@@ -202,12 +209,19 @@ Recommended for Windows users to run Linux apps seamlessly.
 2. Create your **UNIX username** and **password**.
    *(⚠️ Password characters won't appear on screen while typing. Just type and press Enter.)*
 
-**Step 3: Using Windows Terminal (Recommended)**
+**Step 3: Install Essential Tools**
+Fresh Debian installs need basic tools. Copy & paste this command:
+```bash
+sudo apt update
+sudo apt install git curl wget unzip -y
+```
+
+**Step 4: Using Windows Terminal (Recommended)**
 1. Install **Windows Terminal** from the **Microsoft Store** for the best experience.
 2. Pin it to your **Taskbar** for quick access.
 3. Click the **arrow (`v`)** next to the `+` tab button and select **Debian** to open your Linux environment.
 
-**Step 4: Install MyTunes**
+**Step 5: Install MyTunes**
 Now, inside your Debian terminal, simply follow the **Linux** installation steps above.
 
 ## 🚀 Installation & Run
