@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-MyTunes Pro - Professional TUI Edition v2.1
+MyTunes Pro - Professional TUI Edition v1.0
 Premium CLI Music Player with Curses Interface
 Enhanced with Context7-researched MPV IPC & Resize Handling
 """
@@ -24,7 +24,7 @@ DATA_FILE = os.path.expanduser("~/.pymusic_data.json")
 MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "2.1.0"
+APP_VERSION = "1.0.0"
 
 # === [Strings & Localization] ===
 STRINGS = {
