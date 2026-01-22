@@ -105,6 +105,7 @@ alias mp="~/workspace/mytunes/venv/bin/python3 ~/workspace/mytunes/mytune.py"
 | **`4`** | **메인 (Main)** | 메인 화면으로 돌아가기 (단축키 `M`과 동일) |
 | **`5`** | **추가/삭제** | 선택한 곡 즐겨찾기 토글 (단축키 `A`와 동일) |
 | **`0`** | **뒤로가기** | 이전 화면으로 이동 (단축키 `Q`의 안전 모드) |
+| **`ESC`** | **배경재생** | **음악 끄지 않고 나가기** (백그라운드 재생) |
 
 ### 🧭 기본 탐색
 | 키 | 동작 |
@@ -198,6 +199,7 @@ Works instantly regardless of input method.
 | **`4`** | **Main Menu** | Go to Main Menu (Same as `M`) |
 | **`5`** | **Add/Del** | Toggle favorite status (Same as `A`) |
 | **`0`** | **Back** | Go back (Same as `Q`) |
+| **`ESC`** | **BG Play** | **Exit but keep playing** (Background Mode) |
 
 ### 🧭 Navigation
 | Key | Action |

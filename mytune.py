@@ -407,6 +407,11 @@ class MyTunesApp:
         elif k_char == ' ': 
             self.player.toggle_pause()
             
+        # ESC: Background Play (Exit but keep music)
+        elif key == 27:
+            self.stop_on_exit = False
+            self.running = False
+            
         # Add to Favorites: A, ㅁ, 5
         elif k_char in ['a', 'A', 'ㅁ', '5']:
             if current_list and 0 <= self.selection_idx < len(current_list):
