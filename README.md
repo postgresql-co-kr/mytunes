@@ -47,8 +47,17 @@ sudo apt install mpv python3 python3-pip python3-venv
 ```
 
 ### Windows
-Windows 환경에서는 **WSL (Windows Subsystem for Linux)**을 설치하여 Ubuntu 환경에서 실행하는 것을 권장합니다.
-WSL 터미널에서 위 Linux 설치 방법을 따르세요.
+### Windows (WSL)
+Windows 사용자는 **WSL (Windows Subsystem for Linux)**을 통해 Ubuntu 환경에서 실행하는 것을 권장합니다.
+
+1. **PowerShell**을 **관리자 권한**으로 실행합니다.
+2. 아래 명령어를 입력하여 WSL과 Ubuntu를 설치합니다.
+   ```powershell
+   wsl --install
+   ```
+3. 설치가 완료되면 **재부팅**합니다.
+4. 재부팅 후 자동으로 열리는 Ubuntu 터미널에서 `Username`과 `Password`를 설정합니다.
+5. 설정이 끝나면, 위 **Linux (Ubuntu/Debian)** 설치 방법을 그대로 따라하세요.
 
 ---
 
@@ -160,8 +169,17 @@ sudo apt install mpv python3 python3-pip python3-venv
 
 
 ### Windows
+### Windows (WSL)
 We recommend using **WSL (Windows Subsystem for Linux)** to run this application in an Ubuntu environment.
-Simply follow the Linux installation steps inside your WSL terminal.
+
+1. Open **PowerShell** as **Administrator**.
+2. Run the following command to install WSL and Ubuntu:
+   ```powershell
+   wsl --install
+   ```
+3. **Restart** your computer when prompted.
+4. After restart, complete the Ubuntu setup (Username/Password) in the terminal window that pops up.
+5. Once set up, simply follow the **Linux** installation steps above inside your WSL terminal.
 
 ## 🚀 Installation & Run
 
