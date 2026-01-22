@@ -650,7 +650,7 @@ class MyTunesApp:
 
             # Optimize search for music/audio
             search_query = f"{query} music"
-            cmd = [yt_dlp_cmd, f"ytsearch25:{search_query}", "--dump-json", "--flat-playlist", "--no-playlist", "--skip-download"]
+            cmd = [yt_dlp_cmd, f"ytsearch40:{search_query}", "--dump-json", "--flat-playlist", "--no-playlist", "--skip-download"]
             result = subprocess.check_output(cmd, stderr=subprocess.DEVNULL).decode('utf-8')
             new = []
             for line in result.strip().split("\n"):
