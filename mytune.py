@@ -229,6 +229,7 @@ class MyTunesApp:
         self.playback_duration = 0
         self.is_paused = False
         self.last_save_time = time.time()
+        self.status_blink = False
         
         # Colors
         curses.start_color()
@@ -422,6 +423,7 @@ class MyTunesApp:
         msg = msg_ko if self.lang == 'ko' else msg_en
         
         self.status_msg = msg
+        self.status_blink = True
         self.draw() 
         curses.flushinp()
         
@@ -432,11 +434,14 @@ class MyTunesApp:
                     time.sleep(0.05); continue
                 
                 # Enter / Space -> Resume
+                self.status_blink = False
                 if k in [10, 13, curses.KEY_ENTER, ord(' ')]: return True
                 # 0 / R -> Restart
                 if k in [ord('0'), ord('r'), ord('R')]: return False
                 return True
-            except: return True
+            except: 
+                self.status_blink = False
+                return True
 
     def activate_selection(self, items):
         if not items: return
@@ -652,7 +657,9 @@ class MyTunesApp:
              avail_w = branding_x - 4
              if avail_w > 5:
                 msg = self.truncate(self.status_msg, avail_w)
-                self.stdscr.addstr(h - 2, 2, f"📢 {msg}", curses.color_pair(6))
+                attr = curses.color_pair(6)
+                if self.status_blink: attr |= curses.A_BLINK | curses.A_BOLD
+                self.stdscr.addstr(h - 2, 2, f"📢 {msg}", attr)
 
         # List Area (Remaining Middle)
         list_top = 3
