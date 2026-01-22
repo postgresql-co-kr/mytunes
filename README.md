@@ -43,7 +43,7 @@ brew install mpv yt-dlp python3
 ### Linux (Ubuntu/Debian)
 ```bash
 sudo apt update
-sudo apt install mpv python3-pip
+sudo apt install mpv python3 python3-pip python3-venv
 pip3 install -U yt-dlp
 ```
 
@@ -147,8 +147,18 @@ Designed for speed and efficiency, with optimized controls for international key
 
 ## 🛠 Prerequisites
 
-### macOS / Linux
-Requires **mpv** and **yt-dlp**.
+### macOS
+Install via Homebrew:
+```bash
+brew install mpv yt-dlp python3
+```
+
+### Linux (Ubuntu/Debian)
+```bash
+sudo apt update
+sudo apt install mpv python3 python3-pip python3-venv
+pip3 install -U yt-dlp
+```
 
 
 ### Windows
