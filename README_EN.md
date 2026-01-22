@@ -11,14 +11,15 @@ A minimalist, keyboard-driven terminal player that **searches and streams YouTub
 - **Minimalist Design**: Zero clutter, no complex TUI boxes.
 - **Keyboard-First**: Navigate menus effortlessly with arrow keys and shortcuts.
 - **YouTube Integration**: High-quality audio streaming via `yt-dlp` and `mpv`.
-- **Cross-Platform**: Optimized for macOS and Linux (Debian/Ubuntu).
+- **Cross-Platform**: Optimized for Linux (Debian/Ubuntu). macOS support is **Experimental**.
+- **Multi-language**: Supports English and Korean (selectable on first run).
 - **Smart Features**: Favorites, History, and Search with auto-complete support.
 
-## � Prerequisites
+## 🛠 Prerequisites
 
 You need **mpv** (player) and **yt-dlp** (streamer) installed on your system.
 
-### macOS
+### macOS (Experimental)
 
 ```bash
 brew install mpv yt-dlp
@@ -61,6 +62,7 @@ pip install -U yt-dlp
    ```bash
    python mytune.py
    ```
+   > You will be asked to select your language on the first run.
 
 ## ⌨️ Controls
 
@@ -73,11 +75,9 @@ pip install -U yt-dlp
 | `q` | Go Back / Exit |
 
 ---
-**Troubleshooting**: If you encounter `403 Forbidden` errors, please update yt-dlp:
-
-```bash
-pip install -U yt-dlp
-```
+**Troubleshooting**:
+- **macOS Playback Issues**: If playback fails on macOS, check if your terminal has necessary permissions (Microphone/Automation). Also ensure `yt-dlp` is up to date.
+- **403 Forbidden**: Verify `yt-dlp` is updated: `pip install -U yt-dlp`
 
 ---
 [postgresql.co.kr](https://postgresql.co.kr)
