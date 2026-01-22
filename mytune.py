@@ -417,31 +417,51 @@ class MyTunesApp:
                     self.status_msg = self.t("fav_added") if is_added else self.t("fav_removed")
 
     def ask_resume(self, saved_time):
-        ts = self.format_time(saved_time)
-        msg_ko = f"이어듣기: {ts}? [Enter]예 [0]처음부터"
-        msg_en = f"Resume: {ts}? [Enter]Yes [0]Restart"
-        msg = msg_ko if self.lang == 'ko' else msg_en
+        self.stdscr.nodelay(False) # Blocking input for dialog
+        h, w = self.stdscr.getmaxyx()
+        box_h, box_w = 6, 50
+        box_y, box_x = (h - box_h) // 2, (w - box_w) // 2
         
-        self.status_msg = msg
-        self.status_blink = True
-        self.draw() 
-        curses.flushinp()
-        
-        while True:
-            try:
-                k = self.stdscr.getch()
-                if k == -1: 
-                    time.sleep(0.05); continue
+        try:
+            win = curses.newwin(box_h, box_w, box_y, box_x)
+            win.keypad(True)
+            try: win.bkgd(' ', curses.color_pair(1))
+            except: pass
+            
+            win.attron(curses.color_pair(1)); win.box()
+            
+            title = " Resume Playback " if self.lang == 'en' else " 이어듣기 "
+            val = self.format_time(saved_time)
+            msg = f"Last Position: {val}" if self.lang == 'en' else f"저장된 위치: {val}"
+            opts = "[Enter] Resume  [0/R] Restart" if self.lang == 'en' else "[Enter] 이어서  [0/R] 처음부터"
+            
+            win.addstr(0, 2, title, curses.A_BOLD | curses.color_pair(3))
+            win.addstr(2, 4, msg, curses.color_pair(1))
+            win.addstr(4, 4, opts, curses.color_pair(1) | curses.A_BOLD)
+            
+            win.refresh()
+            
+            # Flush input
+            curses.flushinp()
+            
+            while True:
+                k = win.getch()
+                if k == -1: continue
                 
-                # Enter / Space -> Resume
-                self.status_blink = False
-                if k in [10, 13, curses.KEY_ENTER, ord(' ')]: return True
-                # 0 / R -> Restart
-                if k in [ord('0'), ord('r'), ord('R')]: return False
-                return True
-            except: 
-                self.status_blink = False
-                return True
+                if k in [10, 13, curses.KEY_ENTER, ord(' ')]: 
+                    res = True
+                    break
+                if k in [ord('0'), ord('r'), ord('R')]: 
+                    res = False
+                    break
+                    
+        except: res = True # Default to Resume on error
+        
+        # Cleanup
+        self.stdscr.nodelay(True)
+        self.stdscr.touchwin()
+        self.stdscr.refresh()
+        return res
 
     def activate_selection(self, items):
         if not items: return
