@@ -46,76 +46,47 @@ sudo apt update
 sudo apt install mpv python3 python3-pip python3-venv
 ```
 
-### Windows
-### Windows (WSL) - 초보자용 상세 가이드
+### Windows (WSL) - 초보자용 완전 정복 가이드
 
-Linux 환경이 없는 Windows 사용자는 **WSL(리눅스용 윈도우 하위 시스템)**을 설치해야 합니다.
+Windows 사용자라면 이 가이드만 따라하세요. (복사 & 붙여넣기만 하면 됩니다!)
 
-**1단계: WSL 설치**
-1. 키보드의 **`Windows` 키 + `X`** 키를 동시에 누릅니다.
-2. 메뉴에서 **Windows PowerShell (관리자)** 또는 **터미널 (관리자)**를 클릭합니다. "예"를 눌러 승인합니다.
-3. 파란색(또는 검은색) 창이 뜨면 아래 명령어를 입력하고 엔터를 칩니다.
+**1단계: WSL 및 Debian 설치**
+1. **`Windows` 키 + `X`** -> **Windows PowerShell (관리자)** 실행.
+2. 아래 명령어 복사 & 붙여넣기 후 엔터:
    ```powershell
    wsl --install -d Debian
    ```
-   *(이 명령어는 WSL 필수 구성 요소와 **Debian** 배포판을 한 번에 설치합니다.)*
-4. "설치가 완료되었습니다" 메시지가 뜨면 컴퓨터를 **재부팅**합니다.
+3. 설치 완료 메시지가 뜨면 **재부팅**합니다.
 
-64: **2단계: 계정 설정**
-65: 1. 재부팅 후 **Debian** 터미널 창이 자동으로 열립니다. (자동으로 안 열리면 시작 메뉴에서 'Debian'을 실행하세요.)
-66: 2. 사용할 **User Name**(영문 아이디)과 **Password**를 입력합니다.
-67:    *(⚠️ 비밀번호 입력 시 화면에는 아무것도 나타나지 않습니다. 정상입니다. 입력 후 엔터를 치세요.)*
-68: 
-69: **3단계: 필수 도구 설치 (중요)**
-70: 처음 설치된 Debian에는 `git` 등 필수 도구가 없습니다. 아래 명령어를 복사해서 터미널에 붙여넣고 엔터를 치세요 (비밀번호 입력 필요).
-71: ```bash
-72: sudo apt update
-73: sudo apt install git curl wget unzip -y
-74: ```
-75: 
-76: **4단계: 윈도우 터미널(Windows Terminal) 활용 (권장)**
-1. **Microsoft Store**에서 **Windows Terminal**을 검색하여 설치하면 훨씬 편리합니다.
-2. 실행 후 아이콘을 우클릭하여 **작업 표시줄에 고정**하세요.
-3. 터미널 상단의 `+` 버튼 옆 **화살표(`v`)**를 눌러 **Debian**을 선택하면 언제든 Linux 환경이 열립니다.
+**2단계: 계정 설정 및 필수 도구 설치**
+1. 재부팅 후 **Debian** 창이 열리면 **User Name**(영문), **Password** 설정.
+2. 설정 완료 후, 아래 박스 내용을 **한 번에 복사**해서 터미널에 붙여넣고 엔터! (비밀번호 입력)
+   ```bash
+   sudo apt update && sudo apt install git curl wget unzip mpv python3 python3-venv -y
+   ```
 
-**5단계: MyTunes 설치**
-이제 Debian 터미널에서 위 **Linux (Ubuntu/Debian)** 설치 명령어를 차례대로 입력하세요.
+**3단계: MyTunes 설치 및 실행**
+이제 프로그램을 다운로드하고 실행합니다. 아래 내용을 한 줄씩 입력하세요.
 
----
-
-## 🚀 설치 및 실행 (Installation)
-
-1. **저장소 다운로드**
+1. **설치하기**:
    ```bash
    git clone https://github.com/postgresql-co-kr/mytunes.git
    cd mytunes
-   ```
-
-2. **가상환경 설정 (권장)**
-   ```bash
    python3 -m venv venv
-   source venv/bin/activate
+   venv/bin/pip install -r requirements.txt
    ```
 
-3. **라이브러리 설치**
+2. **단축 아이콘 만들기 (한 번만 실행)**:
    ```bash
-   pip install -r requirements.txt
+   echo "alias mp='~/mytunes/venv/bin/python3 ~/mytunes/mytune.py'" >> ~/.bashrc
+   source ~/.bashrc
    ```
 
-4. **실행**
+3. **실행**:
+   참 쉽죠? 이제 언제든지 **`mp`** 입력하면 실행됩니다!
    ```bash
-   python3 mytune.py
+   mp
    ```
-
-### 💡 꿀팁: 단축어로 실행하기 (초보자 추천)
-매번 긴 명령어를 칠 필요 없이, 아래 박스의 내용을 **전체 복사**해서 터미널에 붙여넣으세요.
-
-```bash
-# 한 번만 실행하면 됩니다 (Bash 기준)
-echo "alias mp='~/mytunes/venv/bin/python3 ~/mytunes/mytune.py'" >> ~/.bashrc
-source ~/.bashrc
-```
-이제 터미널에서 **`mp`** 두 글자만 치면 바로 실행됩니다!
 
 ---
 
@@ -191,98 +162,69 @@ sudo apt install mpv python3 python3-pip python3-venv
 ```
 
 
-### Windows
-### Windows (WSL) - Beginner's Guide
+### Windows (WSL) - Complete Beginner's Guide
 
-Recommended for Windows users to run Linux apps seamlessly.
+Follow these steps to install everything from scratch. Just copy & paste!
 
-**Step 1: Install WSL**
-1. Press **`Windows` + `X`** keys on your keyboard.
-2. Select **Windows PowerShell (Admin)** or **Terminal (Admin)**. Click 'Yes' to approve.
-3. Type the command below and press Enter:
+**Step 1: Install WSL & Debian**
+1. Press **`Windows` + `X`** -> Select **PowerShell (Admin)**.
+2. Copy & paste this command and Enter:
    ```powershell
    wsl --install -d Debian
    ```
-4. Once completed, **Restart** your computer.
+3. **Restart** computer.
 
-**Step 2: Account Setup**
-1. After restart, a **Debian** terminal window will open automatically. (If not, search for 'Debian' in Start menu).
-2. Create your **UNIX username** and **password**.
-   *(⚠️ Password characters won't appear on screen while typing. Just type and press Enter.)*
+**Step 2: Account & Tool Setup**
+1. After restart, set **User Name** and **Password** in the Debian window.
+2. Copy & paste this block to install tools (Type password when asked):
+   ```bash
+   sudo apt update && sudo apt install git curl wget unzip mpv python3 python3-venv -y
+   ```
 
-**Step 3: Install Essential Tools**
-Fresh Debian installs need basic tools. Copy & paste this command:
-```bash
-sudo apt update
-sudo apt install git curl wget unzip -y
-```
+**Step 3: Download & Install**
+Run these commands one by one:
 
-**Step 4: Using Windows Terminal (Recommended)**
-1. Install **Windows Terminal** from the **Microsoft Store** for the best experience.
-2. Pin it to your **Taskbar** for quick access.
-3. Click the **arrow (`v`)** next to the `+` tab button and select **Debian** to open your Linux environment.
-
-**Step 5: Install MyTunes**
-Now, inside your Debian terminal, simply follow the **Linux** installation steps above.
-
-## 🚀 Installation & Run
-
-1. **Clone Repository**
+1. **Install App**:
    ```bash
    git clone https://github.com/postgresql-co-kr/mytunes.git
    cd mytunes
-   ```
-
-2. **Setup Virtual Environment (Recommended)**
-   ```bash
    python3 -m venv venv
-   source venv/bin/activate
+   venv/bin/pip install -r requirements.txt
    ```
 
-3. **Install Dependencies**
+2. **Create Shortcut (One-time setup)**:
    ```bash
-   pip install -r requirements.txt
+   echo "alias mp='~/mytunes/venv/bin/python3 ~/mytunes/mytune.py'" >> ~/.bashrc
+   source ~/.bashrc
    ```
 
-4. **Run**
+3. **Run**:
+   Just type **`mp`** anytime!
    ```bash
-   python3 mytune.py
+   mp
    ```
-
-### 💡 Tip: One-Click Run (Alias)
-Instead of typing long commands, just **copy & paste** the block below into your terminal:
-
-```bash
-# Run this once to set up the shortcut (for Bash)
-echo "alias mp='~/mytunes/venv/bin/python3 ~/mytunes/mytune.py'" >> ~/.bashrc
-source ~/.bashrc
-```
-Now, simply type **`mp`** to run the player anytime!
 
 ## ⌨️ English Controls
 
 ### ⚡️ Instant Shortcuts (Number Keys)
-Works instantly regardless of input method.
+Works instantly even with non-English keyboard layouts.
 
 | Key | Function | Description |
 | :--- | :--- | :--- |
-| **`1`** | **Search** | Open search prompt (Same as `S`) |
-| **`2`** | **Favorites** | View favorites list (Same as `F`) |
-| **`3`** | **History** | View playback history (Same as `H`) |
-| **`4`** | **Main Menu** | Go to Main Menu (Same as `M`) |
-| **`5`** | **Add/Del** | Toggle favorite status (Same as `A`) |
-| **`0`** | **Back** | Go back (Same as `Q`) |
-| **`ESC`** | **BG Play** | **Exit but keep playing** (Background Mode) |
+| **`1`** | **Search** | Open search bar (Same as `S`) |
+| **`2`** | **Favs** | View favorites list (Same as `F`) |
+| **`3`** | **Hist** | View history (Same as `H`) |
+| **`4`** | **Main** | Go to Main Menu (Same as `M`) |
+| **`5`** | **Add/Del** | Toggle Favorite (Same as `A`) |
+| **`0`** | **Back** | Go back (Safe alternative to `Q`) |
+| **`ESC`** | **Bg Play** | **Exit app but keep music playing** |
 
 ### 🧭 Navigation
 | Key | Action |
 | :--- | :--- |
 | `↑` / `↓` | Move selection |
-| `Enter` | Select / Play |
+| `Enter` | **Select / Play** |
 | `Space` | Play / Pause |
-| `Q` | Go Back (Safe navigation) |
-| `Backspace` | Go Back |
-
----
-
-[postgresql.co.kr](https://postgresql.co.kr) / [debate300.com](https://debate300.com)
+| `<` / `,` | Rewind 10s |
+| `>` / `.` | Fast Forward 10s |
+| `Backspace` | Go back |
