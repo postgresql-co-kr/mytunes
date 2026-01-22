@@ -77,6 +77,15 @@ WSL 터미널에서 위 Linux 설치 방법을 따르세요.
    python3 mytune.py
    ```
 
+### 💡 꿀팁: 단축어로 실행하기
+매번 긴 경로를 입력하기 귀찮다면 터미널 설정(`~/.zshrc` 또는 `~/.bashrc`)에 단축어(Alias)를 추가하세요.
+
+```bash
+# 예시: 'mp' 입력 시 실행 (경로는 실제 위치로 변경)
+alias mp="python3 ~/workspace/mytunes/mytune.py"
+```
+적용 후 `source ~/.zshrc` 또는 터미널 재시작.
+
 ---
 
 ## ⌨️ 조작 방법 (Controls)
@@ -138,9 +147,43 @@ Designed for speed and efficiency, with optimized controls for international key
 ### macOS / Linux
 Requires **mpv** and **yt-dlp**.
 
+
 ### Windows
 We recommend using **WSL (Windows Subsystem for Linux)** to run this application in an Ubuntu environment.
 Simply follow the Linux installation steps inside your WSL terminal.
+
+## 🚀 Installation & Run
+
+1. **Clone Repository**
+   ```bash
+   git clone https://github.com/postgresql-co-kr/mytunes.git
+   cd mytunes
+   ```
+
+2. **Setup Virtual Environment (Recommended)**
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+3. **Install Dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Run**
+   ```bash
+   python3 mytune.py
+   ```
+
+### 💡 Tip: Run with Alias
+Add an alias to your shell config (`~/.zshrc` or `~/.bashrc`) for quick access.
+
+```bash
+# Example: Run with 'mp' (Adjust path to your actual directory)
+alias mp="python3 ~/workspace/mytunes/mytune.py"
+```
+After saving, run `source ~/.zshrc` or restart your terminal.
 
 ## ⌨️ English Controls
 
