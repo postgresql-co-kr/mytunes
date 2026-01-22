@@ -93,17 +93,25 @@ class DataManager:
         
     def load_data(self):
         if not os.path.exists(DATA_FILE):
-            return {"history": [], "favorites": [], "language": "ko"}
+            return {"history": [], "favorites": [], "language": "ko", "resume": {}}
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
+                if "resume" not in data: data["resume"] = {}
                 return data
         except Exception:
-            return {"history": [], "favorites": [], "language": "ko"}
+            return {"history": [], "favorites": [], "language": "ko", "resume": {}}
 
     def save_data(self):
         with open(DATA_FILE, "w", encoding="utf-8") as f:
             json.dump(self.data, f, indent=2, ensure_ascii=False)
+
+    def get_progress(self, url):
+        return self.data.get("resume", {}).get(url, 0)
+
+    def set_progress(self, url, time_pos):
+        if "resume" not in self.data: self.data["resume"] = {}
+        self.data["resume"][url] = time_pos
 
     def add_history(self, item):
         self.data['history'] = [h for h in self.data['history'] if h['url'] != item['url']]
@@ -131,7 +139,7 @@ class Player:
         self.current_proc = None
         self.loading = False
         
-    def play(self, url):
+    def play(self, url, start_pos=0):
         self.stop()
         self.loading = True
         if os.path.exists(MPV_SOCKET):
@@ -145,6 +153,9 @@ class Player:
             "--idle=yes", # Keep running even after track ends (optional, usually better to restart per track for stability herein)
             url
         ]
+        
+        if start_pos > 0:
+            cmd.append(f"--start={start_pos}")
         
         # Remove --idle=yes if we want it to close after song, 
         # but for consistent IPC let's stick to simple playback.
@@ -217,6 +228,7 @@ class MyTunesApp:
         self.playback_time = 0
         self.playback_duration = 0
         self.is_paused = False
+        self.last_save_time = time.time()
         
         # Colors
         curses.start_color()
@@ -294,6 +306,14 @@ class MyTunesApp:
                 # Clear loading state once we get valid time
                 if self.player.loading and self.playback_time > 0:
                     self.player.loading = False
+                
+                # Update Resume Data (Memory)
+                if self.current_track and self.playback_duration > 30:
+                    # Clear if near end
+                    if self.playback_duration - self.playback_time < 10:
+                        self.dm.set_progress(self.current_track['url'], 0)
+                    elif self.playback_time > 10:
+                        self.dm.set_progress(self.current_track['url'], self.playback_time)
             
             if d is not None: self.playback_duration = float(d)
             if p is not None: self.is_paused = p
@@ -301,6 +321,11 @@ class MyTunesApp:
             # Sync title if missing (Background Play persistence)
             if self.current_track is None and title:
                 self.current_track = {"title": title, "url": ""}
+                
+            # Periodic Save (Throttle 10s)
+            if time.time() - getattr(self, 'last_save_time', 0) > 10:
+                self.dm.save_data()
+                self.last_save_time = time.time()
         except: pass
 
     def format_time(self, seconds):
@@ -390,6 +415,29 @@ class MyTunesApp:
                     is_added = self.dm.toggle_favorite(target_item)
                     self.status_msg = self.t("fav_added") if is_added else self.t("fav_removed")
 
+    def ask_resume(self, saved_time):
+        ts = self.format_time(saved_time)
+        msg_ko = f"이어듣기: {ts}? [Enter]예 [0]처음부터"
+        msg_en = f"Resume: {ts}? [Enter]Yes [0]Restart"
+        msg = msg_ko if self.lang == 'ko' else msg_en
+        
+        self.status_msg = msg
+        self.draw() 
+        curses.flushinp()
+        
+        while True:
+            try:
+                k = self.stdscr.getch()
+                if k == -1: 
+                    time.sleep(0.05); continue
+                
+                # Enter / Space -> Resume
+                if k in [10, 13, curses.KEY_ENTER, ord(' ')]: return True
+                # 0 / R -> Restart
+                if k in [ord('0'), ord('r'), ord('R')]: return False
+                return True
+            except: return True
+
     def activate_selection(self, items):
         if not items: return
         item = items[self.selection_idx]
@@ -418,9 +466,16 @@ class MyTunesApp:
         else:
             self.current_track = item
             self.dm.add_history(item)
-            self.player.play(item['url'])
+            
+            start_pos = 0
+            if 'url' in item:
+                saved = self.dm.get_progress(item['url'])
+                if saved > 10: 
+                    if self.ask_resume(saved): start_pos = saved
+            
+            self.player.play(item['url'], start_pos)
             # Reset state for new track
-            self.playback_time = 0
+            self.playback_time = start_pos
             self.playback_duration = 0
             self.is_paused = False
 
