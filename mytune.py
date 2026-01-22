@@ -348,20 +348,19 @@ class MyTunesApp:
         # Handle formatting: invalid key might be int -1
         
         # Resize Info
-    # Resize Info
-    if key == curses.KEY_RESIZE:
-        self.stdscr.clear()
-        self.stdscr.refresh()
-        return
+        if key == curses.KEY_RESIZE:
+            self.stdscr.clear()
+            self.stdscr.refresh()
+            return
 
-    # GLOBAL ESC: Background Play (Exit but keep music)
-    if key == 27:
-        self.stop_on_exit = False
-        self.running = False
-        return
+        # GLOBAL ESC: Background Play (Exit but keep music)
+        if key == 27:
+            self.stop_on_exit = False
+            self.running = False
+            return
 
-    # Helper to normalize input for checking
-    k_char = key if isinstance(key, str) else ""
+        # Helper to normalize input for checking
+        k_char = key if isinstance(key, str) else ""
         
         # Navigation logic
         # Back: Q, Left Arrow, Backspace + Korean 'ㅂ' (q), 0
