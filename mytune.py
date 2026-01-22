@@ -641,9 +641,16 @@ class MyTunesApp:
 
     def perform_search(self, query):
         try:
+            # Resolve yt-dlp path: checks dirname of current python (venv/bin) first
+            yt_dlp_cmd = "yt-dlp"
+            venv_bin = os.path.dirname(sys.executable)
+            venv_yt_dlp = os.path.join(venv_bin, "yt-dlp")
+            if os.path.exists(venv_yt_dlp) and os.access(venv_yt_dlp, os.X_OK):
+                yt_dlp_cmd = venv_yt_dlp
+
             # Optimize search for music/audio
             search_query = f"{query} music"
-            cmd = ["yt-dlp", f"ytsearch25:{search_query}", "--dump-json", "--flat-playlist", "--no-playlist", "--skip-download"]
+            cmd = [yt_dlp_cmd, f"ytsearch25:{search_query}", "--dump-json", "--flat-playlist", "--no-playlist", "--skip-download"]
             result = subprocess.check_output(cmd, stderr=subprocess.DEVNULL).decode('utf-8')
             new = []
             for line in result.strip().split("\n"):
