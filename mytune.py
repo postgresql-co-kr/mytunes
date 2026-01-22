@@ -634,39 +634,44 @@ class MyTunesApp:
                 try:
                     curr_x = 2
                     # Base Style
-                    style = curses.color_pair(5) | curses.A_BOLD if is_sel else curses.A_NORMAL
+                    if is_sel:
+                         base_style = curses.color_pair(5) | curses.A_BOLD
+                    elif is_playing:
+                         base_style = curses.color_pair(2) | curses.A_BOLD
+                    else:
+                         base_style = curses.A_NORMAL
                     
                     # 1. Prefix
-                    self.stdscr.addstr(y_pos, curr_x, prefix, style)
+                    # If selected, base_style is Blue/White. If playing(unselected), Green.
+                    self.stdscr.addstr(y_pos, curr_x, prefix, base_style)
                     curr_x += len(prefix)
                     
                     # 2. Play Icon (Green if not selected)
-                    p_style = style
-                    if is_playing and not is_sel: p_style = curses.color_pair(2) | curses.A_BOLD
+                    # base_style already covers Green if playing and not selected.
                     if chk_icon:
-                         self.stdscr.addstr(y_pos, curr_x, chk_icon, p_style)
+                         self.stdscr.addstr(y_pos, curr_x, chk_icon, base_style)
                          curr_x += len(chk_icon)
                          
                     # 3. Fav Icon (Yellow if not selected)
-                    f_style = style
+                    f_style = base_style
                     if fav_icon and not is_sel: f_style = curses.color_pair(3) | curses.A_BOLD
                     if fav_icon:
                          self.stdscr.addstr(y_pos, curr_x, fav_icon, f_style)
                          curr_x += len(fav_icon)
                          
                     # 4. Title
-                    self.stdscr.addstr(y_pos, curr_x, title_txt, style)
+                    self.stdscr.addstr(y_pos, curr_x, title_txt, base_style)
                     curr_x += self.get_display_width(title_txt)
                     
                     # 5. Fill Padding
                     remain = w - 2 - curr_x - len(dur_txt)
                     if remain > 0:
-                        self.stdscr.addstr(y_pos, curr_x, " "*remain, style)
+                        self.stdscr.addstr(y_pos, curr_x, " "*remain, base_style)
                         curr_x += remain
                         
                     # 6. Duration
                     if dur_txt:
-                        self.stdscr.addstr(y_pos, curr_x, dur_txt, style)
+                        self.stdscr.addstr(y_pos, curr_x, dur_txt, base_style)
                         
                 except: pass
         
