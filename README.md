@@ -47,17 +47,32 @@ sudo apt install mpv python3 python3-pip python3-venv
 ```
 
 ### Windows
-### Windows (WSL)
-Windows 사용자는 **WSL (Windows Subsystem for Linux)**을 통해 Ubuntu 환경에서 실행하는 것을 권장합니다.
+### Windows (WSL) - 초보자용 상세 가이드
 
-1. **PowerShell**을 **관리자 권한**으로 실행합니다.
-2. 아래 명령어를 입력하여 WSL과 Ubuntu를 설치합니다.
+Linux 환경이 없는 Windows 사용자는 **WSL(리눅스용 윈도우 하위 시스템)**을 설치해야 합니다.
+
+**1단계: WSL 설치**
+1. 키보드의 **`Windows` 키 + `X`** 키를 동시에 누릅니다.
+2. 메뉴에서 **Windows PowerShell (관리자)** 또는 **터미널 (관리자)**를 클릭합니다. "예"를 눌러 승인합니다.
+3. 파란색(또는 검은색) 창이 뜨면 아래 명령어를 입력하고 엔터를 칩니다.
    ```powershell
    wsl --install
    ```
-3. 설치가 완료되면 **재부팅**합니다.
-4. 재부팅 후 자동으로 열리는 Ubuntu 터미널에서 `Username`과 `Password`를 설정합니다.
-5. 설정이 끝나면, 위 **Linux (Ubuntu/Debian)** 설치 방법을 그대로 따라하세요.
+   *(이 명령어는 최신 Ubuntu 배포판을 자동으로 다운로드하여 설치합니다.)*
+4. "설치가 완료되었습니다" 메시지가 뜨면 컴퓨터를 **재부팅**합니다.
+
+**2단계: 계정 설정**
+1. 재부팅 후 잠시 기다리면 **Ubuntu** 터미널 창이 자동으로 열립니다. (안 열리면 시작 메뉴에서 'Ubuntu'를 실행하세요.)
+2. 사용할 **User Name**(영문 아이디)과 **Password**를 입력합니다.
+   *(⚠️ 비밀번호 입력 시 화면에는 아무것도 나타나지 않습니다. 정상입니다. 입력 후 엔터를 치세요.)*
+
+**3단계: 윈도우 터미널(Windows Terminal) 활용 (권장)**
+1. **Microsoft Store**에서 **Windows Terminal**을 검색하여 설치하면 훨씬 편리합니다.
+2. 실행 후 아이콘을 우클릭하여 **작업 표시줄에 고정**하세요.
+3. 터미널 상단의 `+` 버튼 옆 **화살표(`v`)**를 눌러 **Ubuntu**를 선택하면 언제든 Linux 환경이 열립니다.
+
+**4단계: MyTunes 설치**
+이제 Ubuntu 터미널에서 위 **Linux (Ubuntu/Debian)** 설치 명령어를 차례대로 입력하세요.
 
 ---
 
@@ -169,17 +184,31 @@ sudo apt install mpv python3 python3-pip python3-venv
 
 
 ### Windows
-### Windows (WSL)
-We recommend using **WSL (Windows Subsystem for Linux)** to run this application in an Ubuntu environment.
+### Windows (WSL) - Beginner's Guide
 
-1. Open **PowerShell** as **Administrator**.
-2. Run the following command to install WSL and Ubuntu:
+Recommended for Windows users to run Linux apps seamlessly.
+
+**Step 1: Install WSL**
+1. Press **`Windows` + `X`** keys on your keyboard.
+2. Select **Windows PowerShell (Admin)** or **Terminal (Admin)**. Click 'Yes' to approve.
+3. Type the command below and press Enter:
    ```powershell
    wsl --install
    ```
-3. **Restart** your computer when prompted.
-4. After restart, complete the Ubuntu setup (Username/Password) in the terminal window that pops up.
-5. Once set up, simply follow the **Linux** installation steps above inside your WSL terminal.
+4. Once completed, **Restart** your computer.
+
+**Step 2: Account Setup**
+1. After restart, an **Ubuntu** terminal window will open automatically. (If not, search for 'Ubuntu' in Start menu).
+2. Create your **UNIX username** and **password**.
+   *(⚠️ Password characters won't appear on screen while typing. Just type and press Enter.)*
+
+**Step 3: Using Windows Terminal (Recommended)**
+1. Install **Windows Terminal** from the **Microsoft Store** for the best experience.
+2. Pin it to your **Taskbar** for quick access.
+3. Click the **arrow (`v`)** next to the `+` tab button and select **Ubuntu** to open your Linux environment.
+
+**Step 4: Install MyTunes**
+Now, inside your Ubuntu terminal, simply follow the **Linux** installation steps above.
 
 ## 🚀 Installation & Run
 
