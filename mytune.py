@@ -319,9 +319,12 @@ class MyTunesApp:
             if d is not None: self.playback_duration = float(d)
             if p is not None: self.is_paused = p
             
-            # Sync title if missing (Background Play persistence)
+            # Sync title/url if missing (Background Play persistence)
             if self.current_track is None and title:
-                self.current_track = {"title": title, "url": ""}
+                # Try to fetch URL as well to ensure list highlighting works
+                url_path = self.player.get_property("path")
+                if not url_path: url_path = ""
+                self.current_track = {"title": title, "url": url_path}
                 
             # Periodic Save (Throttle 10s)
             if time.time() - getattr(self, 'last_save_time', 0) > 10:
