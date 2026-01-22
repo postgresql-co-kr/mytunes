@@ -348,13 +348,20 @@ class MyTunesApp:
         # Handle formatting: invalid key might be int -1
         
         # Resize Info
-        if key == curses.KEY_RESIZE:
-            self.stdscr.clear()
-            self.stdscr.refresh()
-            return
+    # Resize Info
+    if key == curses.KEY_RESIZE:
+        self.stdscr.clear()
+        self.stdscr.refresh()
+        return
 
-        # Helper to normalize input for checking
-        k_char = key if isinstance(key, str) else ""
+    # GLOBAL ESC: Background Play (Exit but keep music)
+    if key == 27:
+        self.stop_on_exit = False
+        self.running = False
+        return
+
+    # Helper to normalize input for checking
+    k_char = key if isinstance(key, str) else ""
         
         # Navigation logic
         # Back: Q, Left Arrow, Backspace + Korean 'ㅂ' (q), 0
@@ -456,6 +463,13 @@ class MyTunesApp:
             while True:
                 k = win.getch()
                 if k == -1: continue
+                
+                # ESC -> Background Play (Exit app)
+                if k == 27:
+                    self.stop_on_exit = False
+                    self.running = False
+                    res = False # Or irrelevant since we quit
+                    break
                 
                 if k in [10, 13, curses.KEY_ENTER, ord(' ')]: 
                     res = True
@@ -568,6 +582,11 @@ class MyTunesApp:
                 
             # Enter
             if key in [10, 13, curses.KEY_ENTER]:
+                break
+                
+            # ESC -> Cancel
+            if key == 27:
+                chars = [] # Return empty
                 break
                 
             # Backspace
