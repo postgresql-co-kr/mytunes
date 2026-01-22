@@ -58,14 +58,27 @@ Windows 사용자라면 이 가이드만 따라하세요. (복사 & 붙여넣기
    ```
 3. 설치 완료 메시지가 뜨면 **재부팅**합니다.
 
-**2단계: 계정 설정 및 필수 도구 설치**
-1. 재부팅 후 **Debian** 창이 열리면 **User Name**(영문), **Password** 설정.
+**2단계: 윈도우 터미널 설정 (필수)**
+기본 터미널보다 훨씬 편리한 **Windows Terminal** 사용을 강력 추천합니다.
+
+1. **설치 및 실행**:
+   - **`Win` + `X`** -> **터미널** 실행 (없다면 Microsoft Store에서 설치).
+   - 아이콘 우클릭 -> **작업 표시줄에 고정**.
+2. **기본값 설정 (편의성 UP)**:
+   - 터미널 설정(`Ctrl` + `,`) -> **[시작]** 탭 -> **기본 프로필**을 **Debian**으로 변경 후 저장.
+   - 이제 터미널을 켜면 Debian이 바로 열립니다!
+3. **폰트 설정 (선택)**:
+   - 화면이 깨진다면 **[D2Coding](https://github.com/naver/d2codingfont/releases)** 폰트 설치를 권장합니다.
+   - 설정 -> **Debian** 프로필 -> **[모양]** -> **글꼴**에서 **D2Coding** 선택.
+
+**3단계: 계정 설정 및 필수 도구 설치**
+1. **Debian** 창이 열리면 **User Name**(영문), **Password** 설정.
 2. 설정 완료 후, 아래 박스 내용을 **한 번에 복사**해서 터미널에 붙여넣고 엔터! (비밀번호 입력)
    ```bash
    sudo apt update && sudo apt install git curl wget unzip mpv python3 python3-venv -y
    ```
 
-**3단계: MyTunes 설치 및 실행**
+**4단계: MyTunes 설치 및 실행**
 이제 프로그램을 다운로드하고 실행합니다. 아래 내용을 한 줄씩 입력하세요.
 
 1. **설치하기**:
@@ -174,14 +187,27 @@ Follow these steps to install everything from scratch. Just copy & paste!
    ```
 3. **Restart** computer.
 
-**Step 2: Account & Tool Setup**
-1. After restart, set **User Name** and **Password** in the Debian window.
+**Step 2: Windows Terminal Setup (Recommended)**
+Use **Windows Terminal** for the best experience.
+
+1. **Install & Run**:
+   - Press **`Win` + `X`** -> Open **Terminal** (Or install from Microsoft Store).
+   - Right-click icon -> **Pin to Taskbar**.
+2. **Set Default Profile**:
+   - Open Settings (`Ctrl` + `,`) -> **Startup** -> Change **Default profile** to **Debian**.
+   - Save. Now Debian opens automatically when you launch Terminal!
+3. **Font Setup (Optional)**:
+   - If icons look weird, install a **[Nerd Font](https://www.nerdfonts.com/)** (e.g., Cascadia Code NF).
+   - Go to Settings -> **Debian** -> **Appearance** -> **Font face**.
+
+**Step 3: Account & Tool Setup**
+1. After restart (or in new Debian tab), set **User Name** and **Password**.
 2. Copy & paste this block to install tools (Type password when asked):
    ```bash
    sudo apt update && sudo apt install git curl wget unzip mpv python3 python3-venv -y
    ```
 
-**Step 3: Download & Install**
+**Step 4: Download & Install**
 Run these commands one by one:
 
 1. **Install App**:
