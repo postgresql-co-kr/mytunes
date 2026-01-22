@@ -78,13 +78,13 @@ WSL 터미널에서 위 Linux 설치 방법을 따르세요.
    ```
 
 ### 💡 꿀팁: 단축어로 실행하기
-매번 긴 경로를 입력하기 귀찮다면 터미널 설정(`~/.zshrc` 또는 `~/.bashrc`)에 단축어(Alias)를 추가하세요.
+매번 `source venv/...` 입력이 귀찮다면 **가상환경 파이썬 경로**를 직접 지정하여 단축어(Alias)를 만드세요.
 
 ```bash
-# 예시: 'mp' 입력 시 실행 (경로는 실제 위치로 변경)
-alias mp="python3 ~/workspace/mytunes/mytune.py"
+# 예시: 가상환경(venv) 내의 파이썬으로 직접 실행 (별도 activate 불필요)
+alias mp="~/workspace/mytunes/venv/bin/python3 ~/workspace/mytunes/mytune.py"
 ```
-적용 후 `source ~/.zshrc` 또는 터미널 재시작.
+설정(`~/.zshrc`) 저장 후 터미널을 재시작하면, 언제든 `mp` 입력만으로 실행됩니다.
 
 ---
 
@@ -177,13 +177,13 @@ Simply follow the Linux installation steps inside your WSL terminal.
    ```
 
 ### 💡 Tip: Run with Alias
-Add an alias to your shell config (`~/.zshrc` or `~/.bashrc`) for quick access.
+You can run the app without activating venv manually by pointing to the **virtualenv python executable**.
 
 ```bash
-# Example: Run with 'mp' (Adjust path to your actual directory)
-alias mp="python3 ~/workspace/mytunes/mytune.py"
+# Example: Use python specific to the venv (No manual activate needed)
+alias mp="~/workspace/mytunes/venv/bin/python3 ~/workspace/mytunes/mytune.py"
 ```
-After saving, run `source ~/.zshrc` or restart your terminal.
+Add to shell config (`~/.zshrc`), restart terminal, and simply type `mp` to run.
 
 ## ⌨️ English Controls
 
