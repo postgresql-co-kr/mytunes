@@ -154,6 +154,7 @@ Designed for speed and efficiency, with optimized controls for international key
 
 ## ✨ Key Features
 - **Powerful Search**: High-quality audio streaming via `yt-dlp`.
+- **Pagination**: Explicit **[ Load Next 20... ]** button to load more results.
 - **Sequential Play**: Automatically plays the next song in the list.
 - **Smart Resume**: Option to resume playback from where you left off.
 - **Fast TUI**: Responsive `curses` interface.

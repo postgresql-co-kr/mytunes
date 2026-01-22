@@ -139,9 +139,14 @@ class Player:
         self.current_proc = None
         self.loading = False
         
+        self.current_proc = None
+        self.loading = False
+        self.loading_ts = 0
+        
     def play(self, url, start_pos=0):
         self.stop()
         self.loading = True
+        self.loading_ts = time.time()
         if os.path.exists(MPV_SOCKET):
             try: os.remove(MPV_SOCKET)
             except OSError: pass
@@ -228,6 +233,11 @@ class MyTunesApp:
         self.cached_history = [] # Snapshot for stable history view
         self.status_msg = ""
         
+        # Search State
+        self.current_search_query = None
+        self.search_page = 1
+        self.is_loading_more = False
+        
         # Playback State
         self.playback_time = 0
         self.playback_duration = 0
@@ -309,7 +319,7 @@ class MyTunesApp:
             if t is not None: 
                 self.playback_time = float(t)
                 # Clear loading state once we get valid time
-                if self.player.loading and self.playback_time > 0:
+                if self.player.loading and self.playback_time >= 0:
                     self.player.loading = False
                 
                 # Update Resume Data (Memory)
@@ -330,10 +340,20 @@ class MyTunesApp:
                 if not url_path: url_path = ""
                 self.current_track = {"title": title, "url": url_path}
                 
-            # Periodic Save (Throttle 10s)
+            # Force clear loading if idle or timeout
+            is_idle = self.player.get_property("idle-active")
+            if is_idle and self.player.loading: 
+                 self.player.loading = False
+            
+            # Timeout fallback (8 seconds)
+            if self.player.loading and (time.time() - getattr(self.player, 'loading_ts', 0) > 8):
+                 self.player.loading = False
+            
+            # Restore Periodic Save (Throttle 10s)
             if time.time() - getattr(self, 'last_save_time', 0) > 10:
                 self.dm.save_data()
                 self.last_save_time = time.time()
+                 
         except: pass
 
     def format_time(self, seconds):
@@ -393,7 +413,7 @@ class MyTunesApp:
                 list_area_height = h - 7 - 5
                 if self.selection_idx >= self.scroll_offset + list_area_height:
                     self.scroll_offset = self.selection_idx - list_area_height + 1
-        
+
         # Enter
         elif key == '\n' or key == 10 or key == 13:
             self.activate_selection(current_list)
@@ -526,20 +546,39 @@ class MyTunesApp:
                 self.status_msg = "" # Clear stale messages on language switch
             elif item["id"] == "quit": self.running = False
         else:
-            self.current_track = item
-            self.dm.add_history(item)
-            
-            start_pos = 0
-            if 'url' in item:
-                saved = self.dm.get_progress(item['url'])
-                if saved > 10: 
+            # Check for Load More Button
+            if item.get("id") == "load_more_btn":
+                self.load_more_results()
+                return
+
+            self.play_music(item, interactive=True)
+
+    def play_music(self, item, interactive=True):
+        self.current_track = item
+        self.dm.add_history(item)
+        
+        start_pos = 0
+        if 'url' in item:
+            saved = self.dm.get_progress(item['url'])
+            if saved > 10: 
+                # Autoskip resume prompt in Autoplay (interactive=False)
+                if interactive:
                     if self.ask_resume(saved, item.get('title', 'Unknown')): start_pos = saved
-            
-            self.player.play(item['url'], start_pos)
-            # Reset state for new track
-            self.playback_time = start_pos
-            self.playback_duration = 0
-            self.is_paused = False
+                else:
+                    # Non-interactive: Decide default? Resume (True) or Restart (False)?
+                    # Let's Restart (0) for seamless playlist flow, 
+                    # OR Resume (saved) if that's preferred.
+                    # Usually "Next track" implies fresh start, unless it's an audiobook?
+                    # Let's default to start_pos = 0 (Restart) for autoplay to avoid confusion,
+                    # or strictly follow user preference? 
+                    # Let's do Restart (0) to be safe/clean.
+                    start_pos = 0
+        
+        self.player.play(item['url'], start_pos)
+        # Reset state for new track
+        self.playback_time = start_pos
+        self.playback_duration = 0
+        self.is_paused = False
 
     def input_dialog(self, title, prompt):
         """Show a centered input dialog with robust byte-level handling (Fixes Double Enter)."""
@@ -639,8 +678,17 @@ class MyTunesApp:
             self.draw()
             self.perform_search(query)
 
-    def perform_search(self, query):
+    def perform_search(self, query, page=1):
         try:
+            self.is_loading_more = True
+            if page == 1:
+                self.current_search_query = query
+                self.search_page = 1
+                self.status_msg = self.t("searching")
+            else:
+                self.status_msg = "Loading next 50..."
+            self.draw() # Force redraw to show status
+
             # Resolve yt-dlp path: checks dirname of current python (venv/bin) first
             yt_dlp_cmd = "yt-dlp"
             venv_bin = os.path.dirname(sys.executable)
@@ -649,9 +697,30 @@ class MyTunesApp:
                 yt_dlp_cmd = venv_yt_dlp
 
             # Optimize search for music/audio
+            limit = 50
+            # yt-dlp logic: ytsearchN asks for N results total.
+            # to get page 2 (51-100), we ask for 100, checking playlist-items indices?
+            # actually ytsearchN with --playlist-start START works.
+            # We ask for (page * limit) because 'ytsearch' usually returns 'up to N'.
+            # If we just ask for 50 with start 51, it might fail depending on yt-dlp version.
+            # Safest is: ytsearch(page*limit) with --playlist-start ((page-1)*limit + 1)
+            
+            total_fetch = page * limit
+            start_index = (page - 1) * limit + 1
+            
             search_query = f"{query} music"
-            cmd = [yt_dlp_cmd, f"ytsearch150:{search_query}", "--dump-json", "--flat-playlist", "--no-playlist", "--skip-download"]
-            result = subprocess.check_output(cmd, stderr=subprocess.DEVNULL).decode('utf-8')
+            cmd = [
+                yt_dlp_cmd, 
+                f"ytsearch{total_fetch}:{search_query}", 
+                "--dump-json", "--flat-playlist", "--no-playlist", "--skip-download",
+                "--playlist-start", str(start_index)
+            ]
+            
+            try:
+                result = subprocess.check_output(cmd, stderr=subprocess.DEVNULL).decode('utf-8')
+            except subprocess.CalledProcessError:
+                result = "" # Handle error or empty
+                
             new = []
             for line in result.strip().split("\n"):
                 if line:
@@ -663,13 +732,46 @@ class MyTunesApp:
                         dur_str = f"{int(dur)//60}:{int(dur)%60:02d}" if dur else ""
                         new.append({"title": d.get("title", "Unknown"), "url": url, "duration": dur_str})
                     except: pass
+            
             if new:
-                self.search_results = new
-                self.view_stack.append("search")
-                self.selection_idx = 0; self.scroll_offset = 0
-                self.status_msg = "Search Done."
-            else: self.status_msg = self.t("no_results")
+                # Remove previous 'Load More' button if exists
+                if self.search_results and self.search_results[-1].get("id") == "load_more_btn":
+                    self.search_results.pop()
+                    
+                # Append Load More Button if we got full batch (likely more exists)
+                # Or just always add it if we got results.
+                # Adding it at the end of new list
+                load_more_item = {
+                    "title": "[ Next 50 Results... ]" if self.lang == 'en' else "[ 다음 50개 더 보기... ]",
+                    "id": "load_more_btn",
+                    "url": "", # Dummy
+                    "duration": ""
+                }
+                new.append(load_more_item)
+
+                if page == 1:
+                    self.search_results = new
+                    self.view_stack.append("search")
+                    self.selection_idx = 0; self.scroll_offset = 0
+                else:
+                    self.search_results.extend(new)
+                
+                self.search_page = page
+                self.status_msg = f"Search Done. ({len(self.search_results)-1})" # -1 for button
+            else:
+                if page == 1: self.status_msg = self.t("no_results")
+                else: 
+                     self.status_msg = "No more results."
+                     # Remove button if no more
+                     if self.search_results and self.search_results[-1].get("id") == "load_more_btn":
+                        self.search_results.pop()
         except Exception as e: self.status_msg = f"Error: {e}"
+        finally:
+            self.is_loading_more = False
+
+    def load_more_results(self):
+        if self.current_search_query and not self.is_loading_more:
+            self.perform_search(self.current_search_query, self.search_page + 1)
 
     def draw(self):
         self.stdscr.erase()
@@ -839,7 +941,10 @@ class MyTunesApp:
                      if self.selection_idx >= self.scroll_offset + inner_h:
                          self.scroll_offset = self.selection_idx - inner_h + 1
                      
-                     self.play_music(next_item)
+                     
+                     # To prevent freezing loop if play_music fails -> try check
+                     try: self.play_music(next_item, interactive=False)
+                     except: pass
                 else:
                     # End of list or track not in list -> Stop
                     self.current_track = None 
