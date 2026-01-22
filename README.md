@@ -24,6 +24,7 @@
 
 - **강력한 검색**: `yt-dlp` 엔진을 사용하여 광고 없는 고음질 오디오 스트리밍.
 - **쾌적한 조작**: `curses` 기반 TUI로 빠르고 직관적인 인터페이스.
+- **연속 재생**: 한 곡이 끝나면 **리스트의 다음 곡을 자동으로 재생**합니다.
 - **한글 최적화**: 한글 자소 조합 대기 시간 없이 즉시 반응하는 **숫자 단축키** 지원.
 - **스마트 기능**: 즐겨찾기, 재생 기록(최대 100곡), 자동 음악 필터링 검색.
 - **비주얼**: 현대적인 심볼 아이콘(⌕, ★, ◷)과 깔끔한 디자인.
@@ -125,6 +126,7 @@ Designed for speed and efficiency, with optimized controls for international key
 
 ## ✨ Key Features
 - **Powerful Search**: High-quality audio streaming via `yt-dlp`.
+- **Sequential Play**: Automatically plays the next song in the list.
 - **Fast TUI**: Responsive `curses` interface.
 - **Smart Shortcuts**: Instant number keys (1-5) for quick navigation.
 - **Visuals**: Clean aesthetic with system-style glyphs (⌕, ★, ◷).

@@ -677,9 +677,41 @@ class MyTunesApp:
         
         self.stdscr.refresh()
 
+    def check_autoplay(self):
+        # Auto-play next track if player is idle (song finished)
+        try:
+            is_idle = self.player.get_property("idle-active")
+            if is_idle and self.current_track:
+                # Find current track in current list
+                items = self.get_current_list()
+                curr_url = self.current_track.get('url')
+                
+                found_idx = -1
+                for i, item in enumerate(items):
+                    if item.get('url') == curr_url:
+                        found_idx = i
+                        break
+                
+                # If found and next item exists
+                if found_idx != -1 and found_idx + 1 < len(items):
+                     next_item = items[found_idx + 1]
+                     self.selection_idx = found_idx + 1 # Move cursor
+                     
+                     # Check if we need to scroll
+                     inner_h = self.stdscr.getmaxyx()[0] - 5 - 3 - 2
+                     if self.selection_idx >= self.scroll_offset + inner_h:
+                         self.scroll_offset = self.selection_idx - inner_h + 1
+                     
+                     self.play_music(next_item)
+                else:
+                    # End of list or track not in list -> Stop
+                    self.current_track = None 
+        except: pass
+
     def run(self):
         while self.running:
             self.update_playback_state()
+            self.check_autoplay()
             self.draw()
             self.handle_input()
         
