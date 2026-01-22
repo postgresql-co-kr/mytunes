@@ -12,6 +12,12 @@
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
+## 📸 Screenshots
+| | |
+| :---: | :---: |
+| ![Main](screenshots/screenshot_1.webp) | ![Search](screenshots/screenshot_2.webp) |
+| ![Play](screenshots/screenshot_3.webp) | ![List](screenshots/screenshot_4.webp) |
+
 ---
 
 ## ✨ 주요 기능
