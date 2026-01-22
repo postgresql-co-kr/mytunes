@@ -732,7 +732,13 @@ class MyTunesApp:
                 y_pos = inner_y + i
                 
                 is_sel = (idx == self.selection_idx)
-                is_playing = (self.current_track and item.get("url") == self.current_track.get("url"))
+                # Check URL match first, fallback to Title match (for robustness with MPV paths)
+                is_playing = False
+                if self.current_track:
+                    if item.get("url") and item.get("url") == self.current_track.get("url"):
+                        is_playing = True
+                    elif item.get("title") and item.get("title") == self.current_track.get("title"):
+                        is_playing = True
                 
                 prefix = "▶ " if is_sel else "  "
                 chk_icon = "♫ " if is_playing else ""
