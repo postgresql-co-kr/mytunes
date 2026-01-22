@@ -416,10 +416,10 @@ class MyTunesApp:
                     is_added = self.dm.toggle_favorite(target_item)
                     self.status_msg = self.t("fav_added") if is_added else self.t("fav_removed")
 
-    def ask_resume(self, saved_time):
+    def ask_resume(self, saved_time, track_title):
         self.stdscr.nodelay(False) # Blocking input for dialog
         h, w = self.stdscr.getmaxyx()
-        box_h, box_w = 6, 50
+        box_h, box_w = 8, 60
         box_y, box_x = (h - box_h) // 2, (w - box_w) // 2
         
         try:
@@ -432,12 +432,16 @@ class MyTunesApp:
             
             title = " Resume Playback " if self.lang == 'en' else " 이어듣기 "
             val = self.format_time(saved_time)
-            msg = f"Last Position: {val}" if self.lang == 'en' else f"저장된 위치: {val}"
+            msg = f"Last Pos: {val}" if self.lang == 'en' else f"저장된 위치: {val}"
             opts = "[Enter] Resume  [0/R] Restart" if self.lang == 'en' else "[Enter] 이어서  [0/R] 처음부터"
             
+            # Truncate title
+            disp_title = self.truncate(track_title, box_w - 6)
+            
             win.addstr(0, 2, title, curses.A_BOLD | curses.color_pair(3))
-            win.addstr(2, 4, msg, curses.color_pair(1))
-            win.addstr(4, 4, opts, curses.color_pair(1) | curses.A_BOLD)
+            win.addstr(2, 3, disp_title, curses.color_pair(2) | curses.A_BOLD)
+            win.addstr(4, 3, msg, curses.color_pair(1))
+            win.addstr(6, 3, opts, curses.color_pair(1) | curses.A_BOLD)
             
             win.refresh()
             
@@ -496,7 +500,7 @@ class MyTunesApp:
             if 'url' in item:
                 saved = self.dm.get_progress(item['url'])
                 if saved > 10: 
-                    if self.ask_resume(saved): start_pos = saved
+                    if self.ask_resume(saved, item.get('title', 'Unknown')): start_pos = saved
             
             self.player.play(item['url'], start_pos)
             # Reset state for new track
