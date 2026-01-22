@@ -207,6 +207,10 @@ class Player:
     def toggle_pause(self):
         self.send_cmd(["cycle", "pause"])
 
+    def seek(self, seconds):
+        """Seek relative to current position."""
+        self.send_cmd(["seek", seconds, "relative"])
+
 # === [TUI Application] ===
 class MyTunesApp:
     def __init__(self, stdscr):
@@ -416,6 +420,13 @@ class MyTunesApp:
         # Play/Pause: Space
         elif k_char == ' ': 
             self.player.toggle_pause()
+
+        # Seek: < (Rewind 10s), > (Forward 10s)
+        # Also support , and . for convenience
+        elif k_char in [',', '<']:
+            self.player.seek(-10)
+        elif k_char in ['.', '>']:
+            self.player.seek(10)
             
         # ESC: Background Play (Exit but keep music)
         elif key == 27:

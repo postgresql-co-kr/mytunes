@@ -113,6 +113,8 @@ alias mp="~/workspace/mytunes/venv/bin/python3 ~/workspace/mytunes/mytune.py"
 | `↑` / `↓` | 리스트 위/아래 이동 |
 | `Enter` | **선택 / 재생** (한글 모드에서도 확실하게 동작) |
 | `Space` | 재생 / 일시정지 (Play/Pause) |
+| `<` / `,` | 10초 뒤로 감기 |
+| `>` / `.` | 10초 앞으로 감기 |
 | `Backspace` | 뒤로 가기 / 검색어 지우기 |
 
 ---
