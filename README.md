@@ -107,14 +107,15 @@ Linux 환경이 없는 Windows 사용자는 **WSL(리눅스용 윈도우 하위 
    python3 mytune.py
    ```
 
-### 💡 꿀팁: 단축어로 실행하기
-매번 `source venv/...` 입력이 귀찮다면 **가상환경 파이썬 경로**를 직접 지정하여 단축어(Alias)를 만드세요.
+### 💡 꿀팁: 단축어로 실행하기 (초보자 추천)
+매번 긴 명령어를 칠 필요 없이, 아래 박스의 내용을 **전체 복사**해서 터미널에 붙여넣으세요.
 
 ```bash
-# 예시: 가상환경(venv) 내의 파이썬으로 직접 실행 (별도 activate 불필요)
-alias mp="~/workspace/mytunes/venv/bin/python3 ~/workspace/mytunes/mytune.py"
+# 한 번만 실행하면 됩니다 (Bash 기준)
+echo "alias mp='~/mytunes/venv/bin/python3 ~/mytunes/mytune.py'" >> ~/.bashrc
+source ~/.bashrc
 ```
-설정(`~/.zshrc`) 저장 후 터미널을 재시작하면, 언제든 `mp` 입력만으로 실행됩니다.
+이제 터미널에서 **`mp`** 두 글자만 치면 바로 실행됩니다!
 
 ---
 
@@ -248,14 +249,15 @@ Now, inside your Debian terminal, simply follow the **Linux** installation steps
    python3 mytune.py
    ```
 
-### 💡 Tip: Run with Alias
-You can run the app without activating venv manually by pointing to the **virtualenv python executable**.
+### 💡 Tip: One-Click Run (Alias)
+Instead of typing long commands, just **copy & paste** the block below into your terminal:
 
 ```bash
-# Example: Use python specific to the venv (No manual activate needed)
-alias mp="~/workspace/mytunes/venv/bin/python3 ~/workspace/mytunes/mytune.py"
+# Run this once to set up the shortcut (for Bash)
+echo "alias mp='~/mytunes/venv/bin/python3 ~/mytunes/mytune.py'" >> ~/.bashrc
+source ~/.bashrc
 ```
-Add to shell config (`~/.zshrc`), restart terminal, and simply type `mp` to run.
+Now, simply type **`mp`** to run the player anytime!
 
 ## ⌨️ English Controls
 
