@@ -44,7 +44,6 @@ brew install mpv yt-dlp python3
 ```bash
 sudo apt update
 sudo apt install mpv python3 python3-pip python3-venv
-pip3 install -U yt-dlp
 ```
 
 ### Windows
@@ -157,7 +156,6 @@ brew install mpv yt-dlp python3
 ```bash
 sudo apt update
 sudo apt install mpv python3 python3-pip python3-venv
-pip3 install -U yt-dlp
 ```
 
 
