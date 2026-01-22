@@ -554,6 +554,8 @@ class MyTunesApp:
             self.play_music(item, interactive=True)
 
     def play_music(self, item, interactive=True):
+        if not item.get("url"): return # Guard against dummy items
+        
         self.current_track = item
         self.dm.add_history(item)
         
@@ -940,6 +942,11 @@ class MyTunesApp:
                      inner_h = self.stdscr.getmaxyx()[0] - 5 - 3 - 2
                      if self.selection_idx >= self.scroll_offset + inner_h:
                          self.scroll_offset = self.selection_idx - inner_h + 1
+                     # Check if next item is "Load More" button
+                     if next_item.get('id') == 'load_more_btn':
+                         self.current_track = None # Stop Playback
+                         # Selection already moved to button, so user sees it.
+                         return
                      
                      
                      # To prevent freezing loop if play_music fails -> try check
