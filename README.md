@@ -4,6 +4,11 @@
 터미널 환경에서 **YouTube 음악을 검색하여 듣는** 가볍고 빠른 키보드 중심의 플레이어입니다.  
 한국어 입력 환경에서도 **숫자 키(1~5)**를 통해 지연 없는 쾌적한 조작이 가능합니다.
 
+> **💡 개발 배경**  
+> 이 프로그램은 하루 종일 터미널을 보는 개발자들이 **작업 흐름을 끊지 않고** 편하게 음악을 듣기 위해 만들어졌습니다.  
+> 특히 **모니터가 없는(Headless) 미니 PC (Debian Server)**를 거실이나 책상의 '뮤직 스테이션'으로 활용하고자 했던 개인적인 필요에서 시작되었습니다.  
+> 복잡한 설정 없이, 터미널 하나만 있으면 어디서든 당신만의 오디오 플레이어가 됩니다.
+
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
@@ -33,6 +38,10 @@ sudo apt update
 sudo apt install mpv python3-pip
 pip3 install -U yt-dlp
 ```
+
+### Windows
+Windows 환경에서는 **WSL (Windows Subsystem for Linux)**을 설치하여 Ubuntu 환경에서 실행하는 것을 권장합니다.
+WSL 터미널에서 위 Linux 설치 방법을 따르세요.
 
 ---
 
@@ -103,11 +112,25 @@ pip3 install -U yt-dlp
 A lightweight, keyboard-centric terminal player for streaming YouTube music.  
 Designed for speed and efficiency, with optimized controls for international keyboard imports.
 
+> **💡 Preface**  
+> This project was created to give developers a seamless way to enjoy music without leaving their terminal environment.  
+> It basically started from a personal need to turn a **headless mini-PC running Debian Server** into a dedicated living room music station (with no monitor or GUI).  
+> Just bring your terminal, and you have a full-featured audio player.
+
 ## ✨ Key Features
 - **Powerful Search**: High-quality audio streaming via `yt-dlp`.
 - **Fast TUI**: Responsive `curses` interface.
 - **Smart Shortcuts**: Instant number keys (1-5) for quick navigation.
 - **Visuals**: Clean aesthetic with system-style glyphs (⌕, ★, ◷).
+
+## 🛠 Prerequisites
+
+### macOS / Linux
+Requires **mpv** and **yt-dlp**.
+
+### Windows
+We recommend using **WSL (Windows Subsystem for Linux)** to run this application in an Ubuntu environment.
+Simply follow the Linux installation steps inside your WSL terminal.
 
 ## ⌨️ English Controls
 
