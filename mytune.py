@@ -354,7 +354,8 @@ class MyTunesApp:
             return
 
         # GLOBAL ESC: Background Play (Exit but keep music)
-        if key == 27:
+        # get_wch returns int 27 or str '\x1b' depending on system/lib
+        if key == 27 or key == '\x1b':
             self.stop_on_exit = False
             self.running = False
             return
