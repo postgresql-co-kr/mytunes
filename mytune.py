@@ -461,12 +461,17 @@ class MyTunesApp:
             self.player.change_volume(5)
             self.status_msg = "Volume +5"
 
-        # Seek: < (Rewind 10s), > (Forward 10s)
-        # Also support , and . for convenience
-        elif k_char in [',', '<']:
+        # Seek: ,/. (10s), </> (30s)
+        elif k_char == ',':
             self.player.seek(-10)
-        elif k_char in ['.', '>']:
+        elif k_char == '.':
             self.player.seek(10)
+        elif k_char == '<':
+            self.player.seek(-30)
+            self.status_msg = "Rewind 30s"
+        elif k_char == '>':
+            self.player.seek(30)
+            self.status_msg = "Forward 30s"
             
         # ESC: Background Play (Exit but keep music)
         elif key == 27:

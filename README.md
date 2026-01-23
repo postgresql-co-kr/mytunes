@@ -132,8 +132,8 @@ Windows 사용자라면 이 가이드만 따라하세요. (복사 & 붙여넣기
 | `Space` | 재생 / 일시정지 (Play/Pause) |
 | `9` / `0` | **볼륨 조절** (- / +) |
 | `[` / `]` | **볼륨 조절** (- / +) |
-| `<` / `,` | 10초 뒤로 감기 |
-| `>` / `.` | 10초 앞으로 감기 |
+| `,` / `.` | 10초 뒤로 / 앞으로 감기 |
+| `<` / `>` | **30초** 뒤로 / 앞으로 감기 (Shift) |
 | `Backspace` | 뒤로 가기 / 검색어 지우기 |
 | `/` | **검색** (Vim Style) |
 
@@ -261,7 +261,7 @@ Works instantly even with non-English keyboard layouts.
 | `Space` | Play / Pause |
 | `9` / `0` | **Volume** (- / +) |
 | `[` / `]` | **Volume** (- / +) |
-| `<` / `,` | Rewind 10s |
-| `>` / `.` | Fast Forward 10s |
+| `,` / `.` | Seek -10s / +10s |
+| `<` / `>` | **Seek -30s / +30s** (Shift) |
 | `Backspace` | Go back |
 | `/` | **Search** (Vim Style) |
