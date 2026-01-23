@@ -142,6 +142,11 @@ class Player:
         
         self.current_proc = None
         self.loading = False
+        
+        # Navigation Stacks
+        # self.view_stack initialized in main menu setup
+        self.forward_stack = [] # Browser-style forward history
+        
         self.loading_ts = 0
         
         # Cleanup pre-existing instance if any
@@ -449,9 +454,23 @@ class MyTunesApp:
         if key == curses.KEY_LEFT or key == curses.KEY_BACKSPACE or key == 127 or \
            k_char in ['q', 'ㅂ', '6', 'h']:
             if len(self.view_stack) > 1:
-                self.view_stack.pop(); self.selection_idx = 0; self.scroll_offset = 0
+                # Pop current view and push to forward stack
+                current_view = self.view_stack.pop()
+                self.forward_stack.append(current_view)
+                
+                self.selection_idx = 0; self.scroll_offset = 0
                 self.status_msg = "" 
             # Else: Do nothing (Prevent Quit on Q)
+            return
+
+        # Forward: L, Right Arrow (Browser Style)
+        # Re-visit the view we just popped from
+        if k_char in ['l', 'L', 'ㅣ']:
+            if self.forward_stack:
+                next_view = self.forward_stack.pop()
+                self.view_stack.append(next_view)
+                self.selection_idx = 0; self.scroll_offset = 0
+                self.status_msg = ""
             return
 
         current_list = self.get_current_list()
@@ -468,27 +487,31 @@ class MyTunesApp:
                 if self.selection_idx >= self.scroll_offset + list_area_height:
                     self.scroll_offset = self.selection_idx - list_area_height + 1
 
-        # Enter / Select / Next Screen: Enter, L, Korean 'ㅣ'
-        elif key == '\n' or key == 10 or key == 13 or k_char in ['l', 'L', 'ㅣ']:
+        # Enter / Select: Enter Only (L moved to Forward)
+        elif key == '\n' or key == 10 or key == 13:
             self.activate_selection(current_list)
         
         # Shortcuts with Korean support AND Number keys (for instant reaction)
         # Search: S, ㄴ, 1, /
         elif k_char in ['s', 'S', 'ㄴ', '1', '/']: 
+            self.forward_stack = [] # Clear forward history on new navigation
             self.prompt_search()
         
         # Favorites: F, ㄹ, 2
         elif k_char in ['f', 'F', 'ㄹ', '2']:
+            self.forward_stack = [] # Clear forward history
             self.view_stack.append("favorites"); self.selection_idx = 0
             self.status_msg = self.t("favorites_info", DATA_FILE)
             
         # History: R, ㄱ, 3 (Changed from H to avoid Back conflict)
         elif k_char in ['r', 'R', 'ㄱ', '3']:
+            self.forward_stack = [] # Clear forward history
             self.cached_history = list(self.dm.data['history']) # Snapshot
             self.view_stack.append("history"); self.selection_idx = 0; self.status_msg = self.t("hist_info")
             
         # Main Menu: M, ㅡ, 4
         elif k_char in ['m', 'M', 'ㅡ', '4']:
+            self.forward_stack = [] # Clear forward history
             self.view_stack = ["main"]; self.selection_idx = 0; self.scroll_offset = 0; self.status_msg = ""
             
         # Play/Pause: Space
