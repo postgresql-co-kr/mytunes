@@ -143,9 +143,6 @@ class Player:
         self.current_proc = None
         self.loading = False
         
-        # Navigation Stacks
-        # self.view_stack initialized in main menu setup
-        self.forward_stack = [] # Browser-style forward history
         
         self.loading_ts = 0
         
@@ -281,6 +278,7 @@ class MyTunesApp:
         self.running = True
         self.stop_on_exit = True
         self.view_stack = ["main"]
+        self.forward_stack = [] # Browser-style forward history
         self.search_results = []
         self.selection_idx = 0
         self.scroll_offset = 0
