@@ -24,7 +24,7 @@ DATA_FILE = os.path.expanduser("~/.pymusic_data.json")
 MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -175,8 +175,16 @@ class Player:
         self.current_proc = subprocess.Popen(cmd, **kwargs)
 
     def stop(self):
-        subprocess.run(["pkill", "-f", "mpv"], stderr=subprocess.DEVNULL)
-        self.current_proc = None
+        if self.current_proc:
+            try:
+                self.current_proc.terminate()
+                self.current_proc.wait(timeout=1)
+            except:
+                subprocess.run(["pkill", "-f", "mpv"], stderr=subprocess.DEVNULL)
+            self.current_proc = None
+
+    def change_volume(self, delta):
+        self.send_cmd(["add", "volume", delta])
 
     def send_cmd(self, command):
         """Send raw command list to MPV via JSON IPC."""
@@ -232,6 +240,10 @@ class MyTunesApp:
         self.current_track = None
         self.cached_history = [] # Snapshot for stable history view
         self.status_msg = ""
+        
+        # Queue System
+        self.queue = []
+        self.queue_idx = -1
         
         # Search State
         self.current_search_query = None
@@ -393,7 +405,7 @@ class MyTunesApp:
         # Navigation logic
         # Back: Q, Left Arrow, Backspace + Korean 'ㅂ' (q), 0
         if key == curses.KEY_LEFT or key == curses.KEY_BACKSPACE or key == 127 or \
-           k_char in ['q', 'Q', 'ㅂ', '0']:
+           k_char in ['q', 'Q', 'ㅂ', '0', 'h']:
             if len(self.view_stack) > 1:
                 self.view_stack.pop(); self.selection_idx = 0; self.scroll_offset = 0
                 self.status_msg = "" 
@@ -402,11 +414,11 @@ class MyTunesApp:
 
         current_list = self.get_current_list()
 
-        if key == curses.KEY_UP:
+        if key == curses.KEY_UP or k_char == 'k':
             if self.selection_idx > 0:
                 self.selection_idx -= 1
                 if self.selection_idx < self.scroll_offset: self.scroll_offset = self.selection_idx
-        elif key == curses.KEY_DOWN:
+        elif key == curses.KEY_DOWN or k_char == 'j':
             if self.selection_idx < len(current_list) - 1:
                 self.selection_idx += 1
                 h, _ = self.stdscr.getmaxyx()
@@ -419,8 +431,8 @@ class MyTunesApp:
             self.activate_selection(current_list)
         
         # Shortcuts with Korean support AND Number keys (for instant reaction)
-        # Search: S, ㄴ, 1
-        elif k_char in ['s', 'S', 'ㄴ', '1']: 
+        # Search: S, ㄴ, 1, /
+        elif k_char in ['s', 'S', 'ㄴ', '1', '/']: 
             self.prompt_search()
         
         # Favorites: F, ㄹ, 2
@@ -440,6 +452,14 @@ class MyTunesApp:
         # Play/Pause: Space
         elif k_char == ' ': 
             self.player.toggle_pause()
+
+        # Volume: 9/0 or [/]
+        elif k_char in ['9', '[']:
+            self.player.change_volume(-5)
+            self.status_msg = "Volume -5"
+        elif k_char in ['0', ']']:
+            self.player.change_volume(5)
+            self.status_msg = "Volume +5"
 
         # Seek: < (Rewind 10s), > (Forward 10s)
         # Also support , and . for convenience
@@ -553,11 +573,25 @@ class MyTunesApp:
 
             self.play_music(item, interactive=True)
 
-    def play_music(self, item, interactive=True):
+    def play_music(self, item, interactive=True, preserve_queue=False):
         if not item.get("url"): return # Guard against dummy items
         
         self.current_track = item
         self.dm.add_history(item)
+        
+        # Queue Management
+        if not preserve_queue:
+            # New Queue Context from current view
+            current_list = self.get_current_list()
+            # Copy list to queue (Filter only playable items)
+            self.queue = [i for i in current_list if i.get("url")]
+            # Find index in queue
+            try:
+                # Find by URL
+                self.queue_idx = next(i for i, x in enumerate(self.queue) if x['url'] == item['url'])
+            except StopIteration:
+                self.queue_idx = -1
+                self.queue = [] # Should not happen if item came from list
         
         start_pos = 0
         if 'url' in item:
@@ -567,13 +601,6 @@ class MyTunesApp:
                 if interactive:
                     if self.ask_resume(saved, item.get('title', 'Unknown')): start_pos = saved
                 else:
-                    # Non-interactive: Decide default? Resume (True) or Restart (False)?
-                    # Let's Restart (0) for seamless playlist flow, 
-                    # OR Resume (saved) if that's preferred.
-                    # Usually "Next track" implies fresh start, unless it's an audiobook?
-                    # Let's default to start_pos = 0 (Restart) for autoplay to avoid confusion,
-                    # or strictly follow user preference? 
-                    # Let's do Restart (0) to be safe/clean.
                     start_pos = 0
         
         self.player.play(item['url'], start_pos)
@@ -919,41 +946,22 @@ class MyTunesApp:
         self.stdscr.refresh()
 
     def check_autoplay(self):
-        # Auto-play next track if player is idle (song finished)
+        # Auto-play next track from Global Queue
         try:
             is_idle = self.player.get_property("idle-active")
-            if is_idle and self.current_track:
-                # Find current track in current list
-                items = self.get_current_list()
-                curr_url = self.current_track.get('url')
-                
-                found_idx = -1
-                for i, item in enumerate(items):
-                    if item.get('url') == curr_url:
-                        found_idx = i
-                        break
-                
-                # If found and next item exists
-                if found_idx != -1 and found_idx + 1 < len(items):
-                     next_item = items[found_idx + 1]
-                     self.selection_idx = found_idx + 1 # Move cursor
+            if is_idle and self.current_track and self.queue:
+                if self.queue_idx + 1 < len(self.queue):
+                     self.queue_idx += 1
+                     next_item = self.queue[self.queue_idx]
                      
-                     # Check if we need to scroll
-                     inner_h = self.stdscr.getmaxyx()[0] - 5 - 3 - 2
-                     if self.selection_idx >= self.scroll_offset + inner_h:
-                         self.scroll_offset = self.selection_idx - inner_h + 1
-                     # Check if next item is "Load More" button
                      if next_item.get('id') == 'load_more_btn':
-                         self.current_track = None # Stop Playback
-                         # Selection already moved to button, so user sees it.
+                         # TODO: Auto-trigger load more? For now just stop.
+                         self.current_track = None 
                          return
                      
-                     
-                     # To prevent freezing loop if play_music fails -> try check
-                     try: self.play_music(next_item, interactive=False)
+                     try: self.play_music(next_item, interactive=False, preserve_queue=True)
                      except: pass
                 else:
-                    # End of list or track not in list -> Stop
                     self.current_track = None 
         except: pass
 

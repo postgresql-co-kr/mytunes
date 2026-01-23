@@ -1,6 +1,6 @@
 # 🎵 MyTunes Pro (Korean)
 
-**현대적인 CLI 유튜브 뮤직 플레이어 (v1.0.0)**  
+**현대적인 CLI 유튜브 뮤직 플레이어 (v1.1.0)**  
 터미널 환경에서 **YouTube 음악을 검색하여 듣는** 가볍고 빠른 키보드 중심의 플레이어입니다.  
 한국어 입력 환경에서도 **숫자 키(1~5)**를 통해 지연 없는 쾌적한 조작이 가능합니다.
 
@@ -125,12 +125,15 @@ Windows 사용자라면 이 가이드만 따라하세요. (복사 & 붙여넣기
 ### 🧭 기본 탐색
 | 키 | 동작 |
 | :--- | :--- |
-| `↑` / `↓` | 리스트 위/아래 이동 |
+| `↑` / `↓` / `k` / `j` | 리스트 위/아래 이동 (Vim 키 지원) |
 | `Enter` | **선택 / 재생** (한글 모드에서도 확실하게 동작) |
 | `Space` | 재생 / 일시정지 (Play/Pause) |
+| `9` / `0` | **볼륨 조절** (- / +) |
+| `[` / `]` | **볼륨 조절** (- / +) |
 | `<` / `,` | 10초 뒤로 감기 |
 | `>` / `.` | 10초 앞으로 감기 |
 | `Backspace` | 뒤로 가기 / 검색어 지우기 |
+| `/` | **검색** (Vim Style) |
 
 ---
 
@@ -143,7 +146,7 @@ Windows 사용자라면 이 가이드만 따라하세요. (복사 & 붙여넣기
 
 # 🎵 MyTunes Pro (English)
 
-**Modern CLI YouTube Music Player (v1.0.0)**  
+**Modern CLI YouTube Music Player (v1.1.0)**  
 A lightweight, keyboard-centric terminal player for streaming YouTube music.  
 Designed for speed and efficiency, with optimized controls for international keyboard imports.
 
@@ -249,9 +252,12 @@ Works instantly even with non-English keyboard layouts.
 ### 🧭 Navigation
 | Key | Action |
 | :--- | :--- |
-| `↑` / `↓` | Move selection |
+| `↑` / `↓` / `k` / `j` | Move selection (Vim style supported) |
 | `Enter` | **Select / Play** |
 | `Space` | Play / Pause |
+| `9` / `0` | **Volume** (- / +) |
+| `[` / `]` | **Volume** (- / +) |
 | `<` / `,` | Rewind 10s |
 | `>` / `.` | Fast Forward 10s |
 | `Backspace` | Go back |
+| `/` | **Search** (Vim Style) |
