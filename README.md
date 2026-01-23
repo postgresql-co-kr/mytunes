@@ -119,7 +119,9 @@ Windows 사용자라면 이 가이드만 따라하세요. (복사 & 붙여넣기
 | **`3`** | **기록 (History)** | 최근 재생한 100곡 보기 (단축키 `H`와 동일) |
 | **`4`** | **메인 (Main)** | 메인 화면으로 돌아가기 (단축키 `M`과 동일) |
 | **`5`** | **추가/삭제** | 선택한 곡 즐겨찾기 토글 (단축키 `A`와 동일) |
-| **`0`** | **뒤로가기** | 이전 화면으로 이동 (단축키 `Q`의 안전 모드) |
+| **`0`** | **볼륨 UP** | 볼륨 +5% (단축키 `]`와 동일) |
+| **`9`** | **볼륨 DOWN** | 볼륨 -5% (단축키 `[`와 동일) |
+| **`P`** | **뒤로가기** | 이전 화면으로 이동 (단축키 `Q`와 동일) |
 | **`ESC`** | **배경재생** | **음악 끄지 않고 나가기** (백그라운드 재생) |
 
 ### 🧭 기본 탐색
@@ -246,7 +248,9 @@ Works instantly even with non-English keyboard layouts.
 | **`3`** | **Hist** | View history (Same as `H`) |
 | **`4`** | **Main** | Go to Main Menu (Same as `M`) |
 | **`5`** | **Add/Del** | Toggle Favorite (Same as `A`) |
-| **`0`** | **Back** | Go back (Safe alternative to `Q`) |
+| **`0`** | **Vol Up** | Volume +5% (Same as `]`) |
+| **`9`** | **Vol Down** | Volume -5% (Same as `[`) |
+| **`P`** | **Back** | Go back (Same as `Q`) |
 | **`ESC`** | **Bg Play** | **Exit app but keep music playing** |
 
 ### 🧭 Navigation

@@ -43,8 +43,8 @@ STRINGS = {
         "stopped": "⏹ 정지됨",
         "fav_added": "★ 즐겨찾기에 추가됨",
         "fav_removed": "☆ 즐겨찾기 해제됨",
-        "header_help": "[S/1]검색 [F/2]즐겨찾기 [H/3]기록 [M/4]메인 [A/5]추가/삭제 [SPC]재생/중지 [Q/0]이전",
-        "help_guide": "[↑/↓]이동 [Enter]선택 [S/1]검색 [F/2]즐겨찾기 [H/3]기록 [M/4]메인 [A/5]추가/삭제 [SPACE]재생/중지 [Q/0]이전",
+        "header_help": "[S/1]검색 [F/2]즐겨찾기 [H/3]기록 [M/4]메인 [A/5]추가/삭제 [SPC]재생/중지 [Q/P]이전",
+        "help_guide": "[↑/↓]이동 [Enter]선택 [S/1]검색 [F/2]즐겨찾기 [H/3]기록 [M/4]메인 [A/5]추가/삭제 [SPACE]재생/중지 [Q/P]이전",
         "menu_main": "☰ 메인 메뉴",
         "menu_search_results": "⌕ YouTube 음악 검색",
         "menu_favorites": "★ 나의 즐겨찾기",
@@ -71,8 +71,8 @@ STRINGS = {
         "stopped": "⏹ Stopped",
         "fav_added": "★ Added to Favorites",
         "fav_removed": "☆ Removed from Favorites",
-        "header_help": "[S/1]Search [F/2]Favs [H/3]Hist [M/4]Main [A/5]Add/Del [SPC]Play/Pause [Q/0]Back",
-        "help_guide": "[↑/↓]Move [Enter]Select [S/1]Search [F/2]Favs [H/3]Hist [M/4]Main [A/5]Add/Del [SPACE]Play/Pause [Q/0]Back",
+        "header_help": "[S/1]Search [F/2]Favs [H/3]Hist [M/4]Main [A/5]Add/Del [SPC]Play/Pause [Q/P]Back",
+        "help_guide": "[↑/↓]Move [Enter]Select [S/1]Search [F/2]Favs [H/3]Hist [M/4]Main [A/5]Add/Del [SPACE]Play/Pause [Q/P]Back",
         "menu_main": "☰ Main Menu",
         "menu_search_results": "⌕ Search YouTube Music",
         "menu_favorites": "★ My Favorites",
@@ -403,9 +403,9 @@ class MyTunesApp:
         k_char = key if isinstance(key, str) else ""
         
         # Navigation logic
-        # Back: Q, Left Arrow, Backspace + Korean 'ㅂ' (q), 0
+        # Back: Q, Left Arrow, Backspace + Korean 'ㅂ' (q), h, P
         if key == curses.KEY_LEFT or key == curses.KEY_BACKSPACE or key == 127 or \
-           k_char in ['q', 'Q', 'ㅂ', '0', 'h']:
+           k_char in ['q', 'Q', 'ㅂ', 'p', 'P', 'h']:
             if len(self.view_stack) > 1:
                 self.view_stack.pop(); self.selection_idx = 0; self.scroll_offset = 0
                 self.status_msg = "" 
