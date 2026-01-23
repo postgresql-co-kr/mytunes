@@ -23,6 +23,7 @@ locale.setlocale(locale.LC_ALL, '')
 DATA_FILE = os.path.expanduser("~/.pymusic_data.json")
 MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
+PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
 APP_VERSION = "1.1.0"
 
@@ -143,7 +144,20 @@ class Player:
         self.loading = False
         self.loading_ts = 0
         
+        # Cleanup pre-existing instance if any
+        # self.cleanup_orphaned_mpv() # Moved to play() per user request
+        
+    def cleanup_orphaned_mpv(self):
+        # User requested revert to aggressive pkill for reliability
+        # This ensures any previous background instances are killed
+        try:
+            subprocess.run(["pkill", "-f", "mpv"], stderr=subprocess.DEVNULL)
+        except: pass
+        
     def play(self, url, start_pos=0):
+        # Clean up ANY background/orphan mpv instances before starting new one
+        self.cleanup_orphaned_mpv()
+        
         self.stop()
         self.loading = True
         self.loading_ts = time.time()
@@ -173,15 +187,29 @@ class Player:
         if os.name != "nt": kwargs["preexec_fn"] = os.setpgrp
             
         self.current_proc = subprocess.Popen(cmd, **kwargs)
+        
+        # Save PID
+        try:
+            with open(PID_FILE, 'w') as f:
+                f.write(str(self.current_proc.pid))
+        except: pass
 
     def stop(self):
         if self.current_proc:
             try:
                 self.current_proc.terminate()
                 self.current_proc.wait(timeout=1)
+                self.current_proc.wait(timeout=1)
             except:
-                subprocess.run(["pkill", "-f", "mpv"], stderr=subprocess.DEVNULL)
+                # If terminate fails, try socket quit
+                try: self.send_cmd(["quit"])
+                except: pass
             self.current_proc = None
+        
+        # Cleanup PID file
+        if os.path.exists(PID_FILE):
+             try: os.remove(PID_FILE)
+             except: pass
 
     def change_volume(self, delta):
         self.send_cmd(["add", "volume", delta])
