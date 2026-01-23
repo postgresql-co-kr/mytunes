@@ -116,25 +116,25 @@ Windows 사용자라면 이 가이드만 따라하세요. (복사 & 붙여넣기
 | :--- | :--- | :--- |
 | **`1`** | **검색 (Search)** | 음악 검색창 열기 (단축키 `S`와 동일) |
 | **`2`** | **즐겨찾기 (Fav)** | 저장된 즐겨찾기 목록 보기 (단축키 `F`와 동일) |
-| **`3`** | **기록 (History)** | 최근 재생한 100곡 보기 (단축키 `H`와 동일) |
+| **`3`** | **기록 (History)** | 최근 재생한 100곡 보기 (단축키 `R`과 동일) |
 | **`4`** | **메인 (Main)** | 메인 화면으로 돌아가기 (단축키 `M`과 동일) |
 | **`5`** | **추가/삭제** | 선택한 곡 즐겨찾기 토글 (단축키 `A`와 동일) |
 | **`0`** | **볼륨 UP** | 볼륨 +5% (단축키 `]`와 동일) |
 | **`9`** | **볼륨 DOWN** | 볼륨 -5% (단축키 `[`와 동일) |
-| **`6`** | **뒤로가기** | 이전 화면으로 이동 (단축키 `Q`와 동일) |
+| **`6`** | **뒤로가기** | 이전 화면으로 이동 (단축키 `Q`, `H`와 동일) |
 | **`ESC`** | **배경재생** | **음악 끄지 않고 나가기** (백그라운드 재생) |
 
 ### 🧭 기본 탐색
 | 키 | 동작 |
 | :--- | :--- |
 | `↑` / `↓` / `k` / `j` | 리스트 위/아래 이동 (Vim 키 지원) |
-| `Enter` | **선택 / 재생** (한글 모드에서도 확실하게 동작) |
+| `Enter` / `l` | **선택 / 재생** (한글 `ㅣ`도 지원) |
 | `Space` | 재생 / 일시정지 (Play/Pause) |
 | `9` / `0` | **볼륨 조절** (- / +) |
 | `[` / `]` | **볼륨 조절** (- / +) |
 | `,` / `.` | 10초 뒤로 / 앞으로 감기 |
 | `<` / `>` | **30초** 뒤로 / 앞으로 감기 (Shift) |
-| `Backspace` | 뒤로 가기 / 검색어 지우기 |
+| `Backspace` / `h` / `q` | 뒤로 가기 / 검색어 지우기 |
 | `/` | **검색** (Vim Style) |
 
 ---
@@ -245,23 +245,23 @@ Works instantly even with non-English keyboard layouts.
 | :--- | :--- | :--- |
 | **`1`** | **Search** | Open search bar (Same as `S`) |
 | **`2`** | **Favs** | View favorites list (Same as `F`) |
-| **`3`** | **Hist** | View history (Same as `H`) |
+| **`3`** | **Hist** | View history (Same as `R`) |
 | **`4`** | **Main** | Go to Main Menu (Same as `M`) |
 | **`5`** | **Add/Del** | Toggle Favorite (Same as `A`) |
 | **`0`** | **Vol Up** | Volume +5% (Same as `]`) |
 | **`9`** | **Vol Down** | Volume -5% (Same as `[`) |
-| **`6`** | **Back** | Go back (Same as `Q`) |
+| **`6`** | **Back** | Go back (Same as `Q`, `H`) |
 | **`ESC`** | **Bg Play** | **Exit app but keep music playing** |
 
 ### 🧭 Navigation
 | Key | Action |
 | :--- | :--- |
 | `↑` / `↓` / `k` / `j` | Move selection (Vim style supported) |
-| `Enter` | **Select / Play** |
+| `Enter` / `l` | **Select / Play** (Includes `L`) |
 | `Space` | Play / Pause |
 | `9` / `0` | **Volume** (- / +) |
 | `[` / `]` | **Volume** (- / +) |
 | `,` / `.` | Seek -10s / +10s |
 | `<` / `>` | **Seek -30s / +30s** (Shift) |
-| `Backspace` | Go back |
+| `Backspace` / `h` / `q` | Go back |
 | `/` | **Search** (Vim Style) |
