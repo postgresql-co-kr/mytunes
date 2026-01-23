@@ -15,6 +15,7 @@ import time
 import unicodedata
 import socket
 import locale
+import signal
 
 # Ensure Unicode support
 locale.setlocale(locale.LC_ALL, '')
@@ -315,6 +316,16 @@ class MyTunesApp:
         curses.curs_set(0)
         self.stdscr.nodelay(True)
         self.stdscr.timeout(200) # Update loop every 200ms
+        
+        # Register Signal for Terminal Disconnect (Window Close)
+        try:
+            signal.signal(signal.SIGHUP, self.handle_disconnect)
+        except: pass
+
+    def handle_disconnect(self, signum, frame):
+        """Auto-background if terminal disconnects."""
+        self.stop_on_exit = False
+        self.running = False
         
     def t(self, key, *args):
         val = STRINGS.get(self.lang, STRINGS["en"]).get(key, "")
