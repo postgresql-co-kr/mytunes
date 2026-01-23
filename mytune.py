@@ -400,12 +400,12 @@ class MyTunesApp:
             return
 
         # Helper to normalize input for checking
-        k_char = key if isinstance(key, str) else ""
+        k_char = str(key).lower() if isinstance(key, str) else ""
         
         # Navigation logic
         # Back: Q, Left Arrow, Backspace + Korean 'ㅂ' (q), h, P
         if key == curses.KEY_LEFT or key == curses.KEY_BACKSPACE or key == 127 or \
-           k_char in ['q', 'Q', 'ㅂ', 'p', 'P', 'h']:
+           k_char in ['q', 'ㅂ', 'p', 'h']:
             if len(self.view_stack) > 1:
                 self.view_stack.pop(); self.selection_idx = 0; self.scroll_offset = 0
                 self.status_msg = "" 
