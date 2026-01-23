@@ -155,7 +155,21 @@ class Player:
         except: pass
         
     def play(self, url, start_pos=0):
-        # Clean up ANY background/orphan mpv instances before starting new one
+        # 1. Try to reuse existing instance via IPC (Graceful)
+        if os.path.exists(MPV_SOCKET):
+            try:
+                # "loadfile" <url> "replace" stops current and plays new
+                resp = self.send_cmd(["loadfile", url, "replace"])
+                if resp and not resp.get("error"):
+                    if start_pos > 0:
+                        self.send_cmd(["seek", str(start_pos), "absolute"])
+                    self.loading = True
+                    self.loading_ts = time.time()
+                    return # Success! No need to restart
+            except:
+                pass # Fallback to restart if IPC fails
+
+        # 2. Fallback: Clean up and start fresh (Aggressive)
         self.cleanup_orphaned_mpv()
         
         self.stop()
