@@ -121,7 +121,7 @@ Windows 사용자라면 이 가이드만 따라하세요. (복사 & 붙여넣기
 | **`5`** | **추가/삭제** | 선택한 곡 즐겨찾기 토글 (단축키 `A`와 동일) |
 | **`0`** | **볼륨 UP** | 볼륨 +5% (단축키 `]`와 동일) |
 | **`9`** | **볼륨 DOWN** | 볼륨 -5% (단축키 `[`와 동일) |
-| **`P`** | **뒤로가기** | 이전 화면으로 이동 (단축키 `Q`와 동일) |
+| **`6`** | **뒤로가기** | 이전 화면으로 이동 (단축키 `Q`와 동일) |
 | **`ESC`** | **배경재생** | **음악 끄지 않고 나가기** (백그라운드 재생) |
 
 ### 🧭 기본 탐색
@@ -250,7 +250,7 @@ Works instantly even with non-English keyboard layouts.
 | **`5`** | **Add/Del** | Toggle Favorite (Same as `A`) |
 | **`0`** | **Vol Up** | Volume +5% (Same as `]`) |
 | **`9`** | **Vol Down** | Volume -5% (Same as `[`) |
-| **`P`** | **Back** | Go back (Same as `Q`) |
+| **`6`** | **Back** | Go back (Same as `Q`) |
 | **`ESC`** | **Bg Play** | **Exit app but keep music playing** |
 
 ### 🧭 Navigation
