@@ -44,8 +44,8 @@ STRINGS = {
         "stopped": "⏹ 정지됨",
         "fav_added": "★ 즐겨찾기에 추가됨",
         "fav_removed": "☆ 즐겨찾기 해제됨",
-        "header_help": "[S/1]검색 [F/2]즐겨찾기 [H/3]기록 [M/4]메인 [A/5]추가/삭제 [SPC]재생/중지 [Q/6]이전",
-        "help_guide": "[↑/↓]이동 [Enter]선택 [S/1]검색 [F/2]즐겨찾기 [H/3]기록 [M/4]메인 [A/5]추가/삭제 [SPACE]재생/중지 [Q/6]이전",
+        "header_help": "[S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [SPC]재생/소리± [Q/6]이전",
+        "help_guide": "[j/k]이동 [l/En]선택 [h/q]뒤로 [S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [SPC]재생 [Vol]9/0",
         "menu_main": "☰ 메인 메뉴",
         "menu_search_results": "⌕ YouTube 음악 검색",
         "menu_favorites": "★ 나의 즐겨찾기",
@@ -72,8 +72,8 @@ STRINGS = {
         "stopped": "⏹ Stopped",
         "fav_added": "★ Added to Favorites",
         "fav_removed": "☆ Removed from Favorites",
-        "header_help": "[S/1]Search [F/2]Favs [H/3]Hist [M/4]Main [A/5]Add/Del [SPC]Play/Pause [Q/6]Back",
-        "help_guide": "[↑/↓]Move [Enter]Select [S/1]Search [F/2]Favs [H/3]Hist [M/4]Main [A/5]Add/Del [SPACE]Play/Pause [Q/6]Back",
+        "header_help": "[S/1]Search [F/2]Favs [R/3]Hist [M/4]Main [SPC]Play/Vol± [Q/6]Back",
+        "help_guide": "[j/k]Move [l/En]Select [h/q]Back [S/1]Srch [F/2]Fav [R/3]Hist [M/4]Main [SPC]Play [Vol]9/0",
         "menu_main": "☰ Main Menu",
         "menu_search_results": "⌕ Search YouTube Music",
         "menu_favorites": "★ My Favorites",
@@ -445,7 +445,7 @@ class MyTunesApp:
         k_char = str(key).lower() if isinstance(key, str) else ""
         
         # Navigation logic
-        # Back: Q, Left Arrow, Backspace + Korean 'ㅂ' (q), h, 6
+        # Back: Q, Left Arrow, Backspace, Korean 'ㅂ' (q), h, 6
         if key == curses.KEY_LEFT or key == curses.KEY_BACKSPACE or key == 127 or \
            k_char in ['q', 'ㅂ', '6', 'h']:
             if len(self.view_stack) > 1:
@@ -468,8 +468,8 @@ class MyTunesApp:
                 if self.selection_idx >= self.scroll_offset + list_area_height:
                     self.scroll_offset = self.selection_idx - list_area_height + 1
 
-        # Enter
-        elif key == '\n' or key == 10 or key == 13:
+        # Enter / Select / Next Screen: Enter, L, Korean 'ㅣ'
+        elif key == '\n' or key == 10 or key == 13 or k_char in ['l', 'L', 'ㅣ']:
             self.activate_selection(current_list)
         
         # Shortcuts with Korean support AND Number keys (for instant reaction)
@@ -482,8 +482,8 @@ class MyTunesApp:
             self.view_stack.append("favorites"); self.selection_idx = 0
             self.status_msg = self.t("favorites_info", DATA_FILE)
             
-        # History: H, ㅗ, 3
-        elif k_char in ['h', 'H', 'ㅗ', '3']:
+        # History: R, ㄱ, 3 (Changed from H to avoid Back conflict)
+        elif k_char in ['r', 'R', 'ㄱ', '3']:
             self.cached_history = list(self.dm.data['history']) # Snapshot
             self.view_stack.append("history"); self.selection_idx = 0; self.status_msg = self.t("hist_info")
             
