@@ -44,8 +44,8 @@ STRINGS = {
         "stopped": "⏹ 정지됨",
         "fav_added": "★ 즐겨찾기에 추가됨",
         "fav_removed": "☆ 즐겨찾기 해제됨",
-        "header_help": "[S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [SPC]재생/소리(±) [Q/6]이전",
-        "help_guide": "[j/k]이동 [l/En]선택 [h/q]뒤로 [S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [SPC]재생 [Vol]9/0",
+        "header_help": "[S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [SPC]재생/정지 [Vol]+/- [Q/6]이전",
+        "help_guide": "[j/k]이동 [l/En]선택 [h/q]뒤로 [S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [SPC]재생/정지 [Vol]+/-",
         "menu_main": "☰ 메인 메뉴",
         "menu_search_results": "⌕ YouTube 음악 검색",
         "menu_favorites": "★ 나의 즐겨찾기",
@@ -72,8 +72,8 @@ STRINGS = {
         "stopped": "⏹ Stopped",
         "fav_added": "★ Added to Favorites",
         "fav_removed": "☆ Removed from Favorites",
-        "header_help": "[S/1]Search [F/2]Favs [R/3]Hist [M/4]Main [SPC]Play/Vol(±) [Q/6]Back",
-        "help_guide": "[j/k]Move [l/En]Select [h/q]Back [S/1]Srch [F/2]Fav [R/3]Hist [M/4]Main [SPC]Play [Vol]9/0",
+        "header_help": "[S/1]Search [F/2]Favs [R/3]Hist [M/4]Main [SPC]Play/Pause [Vol]+/- [Q/6]Back",
+        "help_guide": "[j/k]Move [l/En]Select [h/q]Back [S/1]Srch [F/2]Fav [R/3]Hist [M/4]Main [SPC]Play/Pause [Vol]+/-",
         "menu_main": "☰ Main Menu",
         "menu_search_results": "⌕ Search YouTube Music",
         "menu_favorites": "★ My Favorites",
@@ -517,10 +517,10 @@ class MyTunesApp:
             self.player.toggle_pause()
 
         # Volume: 9/0 or [/] or -/+
-        elif k_char in ['9', '[', '-', '_']:
+        elif k_char in ['-','_']:
             self.player.change_volume(-5)
             self.status_msg = "Volume -5"
-        elif k_char in ['0', ']', '+', '=']:
+        elif k_char in ['+','=']:
             self.player.change_volume(5)
             self.status_msg = "Volume +5"
 
