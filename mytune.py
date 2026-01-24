@@ -484,15 +484,16 @@ class MyTunesApp:
 
         current_list = self.get_current_list()
 
-        if key == curses.KEY_UP or k_char == 'k':
+        if key == curses.KEY_UP or k_char in ['k', 'ㅏ']:
             if self.selection_idx > 0:
                 self.selection_idx -= 1
                 if self.selection_idx < self.scroll_offset: self.scroll_offset = self.selection_idx
-        elif key == curses.KEY_DOWN or k_char == 'j':
+        elif key == curses.KEY_DOWN or k_char in ['j', 'ㅓ']:
             if self.selection_idx < len(current_list) - 1:
                 self.selection_idx += 1
                 h, _ = self.stdscr.getmaxyx()
-                list_area_height = h - 7 - 5
+                # Use h - 10 to match inner_h in draw() (h - footer_h(5) - header_top(3) - borders(2))
+                list_area_height = h - 10
                 if self.selection_idx >= self.scroll_offset + list_area_height:
                     self.scroll_offset = self.selection_idx - list_area_height + 1
 
