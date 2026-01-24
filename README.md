@@ -1,6 +1,6 @@
 # 🎵 MyTunes Pro (Korean)
 
-**현대적인 CLI 유튜브 뮤직 플레이어 (v1.4.8)**  
+**현대적인 CLI 유튜브 뮤직 플레이어 (v1.4.9)**  
 터미널 환경에서 **YouTube 음악을 검색하여 듣는** 가볍고 빠른 키보드 중심의 플레이어입니다.  
 한국어 입력 환경에서도 **숫자 키(1~5)**를 통해 지연 없는 쾌적한 조작이 가능합니다.
 
@@ -41,6 +41,7 @@
 ```bash
 brew install pipx    # macOS (설치 안 된 경우)
 pipx install mytunes-pro
+pipx ensurepath      # 터미널 명령어 경로 등록 (최초 1회 필수)
 ```
 
 ### 2. 일반 pip 방식
@@ -145,7 +146,7 @@ sudo apt update && sudo apt install mpv
 
 # 🎵 MyTunes Pro (English)
 
-**Modern CLI YouTube Music Player (v1.4.8)**  
+**Modern CLI YouTube Music Player (v1.4.9)**  
 A lightweight, keyboard-centric terminal player for streaming YouTube music.  
 Designed for speed and efficiency, with optimized controls for international keyboard imports.
 
@@ -174,6 +175,7 @@ Automatically manages virtual environments and global paths.
 ```bash
 brew install pipx    # macOS (if not installed)
 pipx install mytunes-pro
+pipx ensurepath      # Registers command paths (required once)
 ```
 
 ### 2. Standard pip
