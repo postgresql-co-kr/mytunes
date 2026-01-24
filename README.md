@@ -1,6 +1,6 @@
 # 🎵 MyTunes Pro (Korean)
 
-**현대적인 CLI 유튜브 뮤직 플레이어 (v1.4.4)**  
+**현대적인 CLI 유튜브 뮤직 플레이어 (v1.4.6)**  
 터미널 환경에서 **YouTube 음악을 검색하여 듣는** 가볍고 빠른 키보드 중심의 플레이어입니다.  
 한국어 입력 환경에서도 **숫자 키(1~5)**를 통해 지연 없는 쾌적한 조작이 가능합니다.
 
@@ -15,8 +15,8 @@
 ## 📸 Screenshots
 | | |
 | :---: | :---: |
-| ![Main](screenshots/screenshot_1.webp) | ![Search](screenshots/screenshot_2.webp) |
-| ![Play](screenshots/screenshot_3.webp) | ![List](screenshots/screenshot_4.webp) |
+| ![Main](https://raw.githubusercontent.com/postgresql-co-kr/mytunes/master/screenshots/screenshot_1.webp) | ![Search](https://raw.githubusercontent.com/postgresql-co-kr/mytunes/master/screenshots/screenshot_2.webp) |
+| ![Play](https://raw.githubusercontent.com/postgresql-co-kr/mytunes/master/screenshots/screenshot_3.webp) | ![List](https://raw.githubusercontent.com/postgresql-co-kr/mytunes/master/screenshots/screenshot_4.webp) |
 
 ---
 
@@ -30,7 +30,7 @@
 - **스마트 기능**: 즐겨찾기, 재생 기록(최대 100곡), 자동 음악 필터링 검색.
 - **비주얼**: 현대적인 심볼 아이콘(⌕, ★, ◷)과 깔끔한 디자인.
 
-이 프로그램은 오디오 재생을 위해 **mpv**가 시스템에 설치되어 있어야 합니다. (검색 엔진 `yt-dlp`는 자동 설치됩니다.)
+**이 프로그램은 오디오 재생을 위해 `mpv`가 시스템에 설치되어 있어야 합니다.**
 
 ## 🚀 빠른 설치 (Quick Install)
 
@@ -44,101 +44,50 @@ pip install mytunes-pro
 
 ---
 
-## 🛠 상세 설치 가이드
+## 🛠 환경별 요구사항 (Prerequisites)
+
+`pip install` 이후 실행이 안 된다면, 각 운영체제에 맞는 오디오 엔진(`mpv`)을 설치해 주세요.
 
 ### macOS
-
-Homebrew를 통해 필수 도구를 설치하고 아래 가이드를 따르세요.
-
-1. **필수 도구 설치**:
-
-   ```bash
-   brew install mpv yt-dlp python3
-   ```
-
-2. **프로그램 다운로드 및 설정**:
-
-   ```bash
-   git clone https://github.com/postgresql-co-kr/mytunes.git
-   cd mytunes
-   python3 -m venv venv
-   venv/bin/pip install -r requirements.txt
-   ```
-
-3. **단축축 아이콘 만들기 (zsh 기준)**:
-
-   ```bash
-   echo "alias mp='~/mytunes/venv/bin/python3 ~/mytunes/mytune.py'" >> ~/.zshrc
-   source ~/.zshrc
-   ```
-
-4. **실행**:
-   터미널 어디서든 **`mp`**를 입력하세요!
+```bash
+brew install mpv
+```
 
 ### Linux (Ubuntu/Debian)
 ```bash
-sudo apt update
-sudo apt install mpv python3 python3-pip python3-venv
+sudo apt update && sudo apt install mpv
 ```
 
-### Windows (WSL) - 초보자용 완전 정복 가이드
+### Windows (WSL)
+1. **WSL 설치**: `wsl --install -d Debian` (PowerShell 관리자 권한)
+2. **필수 도구**: `sudo apt update && sudo apt install mpv -y`
 
-Windows 사용자라면 이 가이드만 따라하세요. (복사 & 붙여넣기만 하면 됩니다!)
+---
 
-**1단계: WSL 및 Debian 설치**
-1. **`Windows` 키 + `X`** -> **Windows PowerShell (관리자)** 실행.
-2. 아래 명령어 복사 & 붙여넣기 후 엔터:
-   ```powershell
-   wsl --install -d Debian
-   ```
-3. 설치 완료 메시지가 뜨면 **재부팅**합니다.
+## 🧑‍💻 개발자용 수동 설치 (Manual Installation)
 
-**2단계: 윈도우 터미널 설정 (필수)**
-기본 터미널보다 훨씬 편리한 **Windows Terminal** 사용을 강력 추천합니다.
+직접 소스를 수정하거나 개발 버전을 사용하려면 아래 과정을 따르세요.
 
-1. **설치 및 실행**:
-   - **`Win` + `X`** -> **터미널** 실행 (없다면 Microsoft Store에서 설치).
-   - 아이콘 우클릭 -> **작업 표시줄에 고정**.
-2. **기본값 설정 (편의성 UP)**:
-   - 터미널 설정(`Ctrl` + `,`) -> **[시작]** 탭 -> **기본 프로필**을 **Debian**으로 변경 후 저장.
-   - 이제 터미널을 켜면 Debian이 바로 열립니다!
-3. **폰트 설정 (선택)**:
-   - 화면이 깨진다면 **[D2Coding](https://github.com/naver/d2codingfont/releases)** 폰트 설치를 권장합니다.
-   - 설정 -> **Debian** 프로필 -> **[모양]** -> **글꼴**에서 **D2Coding** 선택.
-
-**3단계: 계정 설정 및 필수 도구 설치**
-1. **Debian** 창이 열리면 **User Name**(영문), **Password** 설정.
-2. 설정 완료 후, 아래 박스 내용을 **한 번에 복사**해서 터미널에 붙여넣고 엔터! (비밀번호 입력)
-   ```bash
-   sudo apt update && sudo apt install git curl wget unzip mpv python3 python3-venv -y
-   ```
-
-**4단계: MyTunes 설치 및 실행**
-이제 프로그램을 다운로드하고 실행합니다. 아래 내용을 한 줄씩 입력하세요.
-
-1. **설치하기**:
+1. **저장소 클론**:
    ```bash
    git clone https://github.com/postgresql-co-kr/mytunes.git
    cd mytunes
-   python3 -m venv venv
-   venv/bin/pip install -r requirements.txt
    ```
 
-2. **단축 아이콘 만들기 (한 번만 실행)**:
+2. **가상환경 설정**:
    ```bash
-   echo "alias mp='~/mytunes/venv/bin/python3 ~/mytunes/mytune.py'" >> ~/.bashrc
-   source ~/.bashrc
+   python3 -m venv venv
+   source venv/bin/activate  # macOS/Linux
+   pip install -r requirements.txt
    ```
 
 3. **실행**:
-   참 쉽죠? 이제 언제든지 **`mp`** 입력하면 실행됩니다!
    ```bash
-   mp
+   python3 mytune.py
    ```
-4. **최신 버전으로 업데이트**:
-   새로운 기능이나 버그 수정이 있을 때 아래 명령어로 간단히 업데이트할 수 있습니다.
+
+4. **업데이트**:
    ```bash
-   cd ~/mytunes
    git pull
    ```
 
@@ -148,7 +97,6 @@ Windows 사용자라면 이 가이드만 따라하세요. (복사 & 붙여넣기
 
 **MyTunes Pro**는 키보드만으로 모든 기능을 제어합니다.  
 한글 입력 상태에서도 끊김 없는 조작을 위해 **숫자 단축키** 사용을 권장합니다.
-(한글 입력 중에는 알파벳 단축키가 즉시 인식되지 않을 수 있으므로, 숫자키나 Enter를 활용하세요.)
 
 ### ⚡️ 즉시 반응 단축키 (숫자키)
 한영 전환 없이 언제든 누르면 즉시 실행됩니다.
@@ -188,7 +136,7 @@ Windows 사용자라면 이 가이드만 따라하세요. (복사 & 붙여넣기
 
 # 🎵 MyTunes Pro (English)
 
-**Modern CLI YouTube Music Player (v1.4.4)**  
+**Modern CLI YouTube Music Player (v1.4.6)**  
 A lightweight, keyboard-centric terminal player for streaming YouTube music.  
 Designed for speed and efficiency, with optimized controls for international keyboard imports.
 
@@ -206,103 +154,66 @@ Designed for speed and efficiency, with optimized controls for international key
 - **Smart Shortcuts**: Instant number keys (1-5) for quick navigation.
 - **Visuals**: Clean aesthetic with system-style glyphs (⌕, ★, ◷).
 
+**This app requires `mpv` to be installed on your system.**
+
+## 🚀 Quick Start
+
+Install via pip:
+
+```bash
+pip install mytunes-pro
+```
+
+Run simply by typing **`mytunes`** in your terminal!
+
+---
+
 ## 🛠 Prerequisites
 
+If the command fails, please ensure the `mpv` audio engine is installed.
+
 ### macOS
-
-Follow these steps to set up everything on your Mac.
-
-1. **Install Prerequisites**:
-
-   ```bash
-   brew install mpv yt-dlp python3
-   ```
-
-2. **Clone & Setup**:
-
-   ```bash
-   git clone https://github.com/postgresql-co-kr/mytunes.git
-   cd mytunes
-   python3 -m venv venv
-   venv/bin/pip install -r requirements.txt
-   ```
-
-3. **Create Alias (zsh)**:
-
-   ```bash
-   echo "alias mp='~/mytunes/venv/bin/python3 ~/mytunes/mytune.py'" >> ~/.zshrc
-   source ~/.zshrc
-   ```
-
-4. **Run**:
-   Just type **`mp`** anywhere!
+```bash
+brew install mpv
+```
 
 ### Linux (Ubuntu/Debian)
 ```bash
-sudo apt update
-sudo apt install mpv python3 python3-pip python3-venv
+sudo apt update && sudo apt install mpv
 ```
 
-### Windows (WSL) - Complete Beginner's Guide
+### Windows (WSL)
+1. **Install WSL**: `wsl --install -d Debian` (PowerShell Admin)
+2. **Install mpv**: `sudo apt update && sudo apt install mpv -y`
 
-Follow these steps to install everything from scratch. Just copy & paste!
+---
 
-**Step 1: Install WSL & Debian**
-1. Press **`Windows` + `X`** -> Select **PowerShell (Admin)**.
-2. Copy & paste this command and Enter:
-   ```powershell
-   wsl --install -d Debian
-   ```
-3. **Restart** computer.
+## 🧑‍💻 Manual Installation (For Developers)
 
-**Step 2: Windows Terminal Setup (Recommended)**
-Use **Windows Terminal** for the best experience.
-
-1. **Install & Run**:
-   - Press **`Win` + `X`** -> Open **Terminal** (Or install from Microsoft Store).
-   - Right-click icon -> **Pin to Taskbar**.
-2. **Set Default Profile**:
-   - Open Settings (`Ctrl` + `,`) -> **Startup** -> Change **Default profile** to **Debian**.
-   - Save. Now Debian opens automatically when you launch Terminal!
-3. **Font Setup (Optional)**:
-   - If icons look weird, install a **[Nerd Font](https://www.nerdfonts.com/)** (e.g., Cascadia Code NF).
-   - Go to Settings -> **Debian** -> **Appearance** -> **Font face**.
-
-**Step 3: Account & Tool Setup**
-1. After restart (or in new Debian tab), set **User Name** and **Password**.
-2. Copy & paste this block to install tools (Type password when asked):
-   ```bash
-   sudo apt update && sudo apt install git curl wget unzip mpv python3 python3-venv -y
-   ```
-
-**Step 4: Download & Install**
-Run these commands one by one:
-
-1. **Install App**:
+1. **Clone Repository**:
    ```bash
    git clone https://github.com/postgresql-co-kr/mytunes.git
    cd mytunes
-   python3 -m venv venv
-   venv/bin/pip install -r requirements.txt
    ```
 
-2. **Create Shortcut (One-time setup)**:
+2. **Virtual Environment**:
    ```bash
-   echo "alias mp='~/mytunes/venv/bin/python3 ~/mytunes/mytune.py'" >> ~/.bashrc
-   source ~/.bashrc
+   python3 -m venv venv
+   source venv/bin/activate  # macOS/Linux
+   pip install -r requirements.txt
    ```
 
 3. **Run**:
-   Just type **`mp`** anytime!
    ```bash
-   mp
+   python3 mytune.py
    ```
+
 4. **How to Update**:
-   You can easily update to the latest version with new features or bug fixes.
    ```bash
-   cd ~/mytunes
    git pull
    ```
+
+---
 
 ## ⌨️ English Controls
 
@@ -326,7 +237,6 @@ Works instantly even with non-English keyboard layouts.
 | :--- | :--- |
 | `↑` / `↓` / `k` / `j` | Move selection (Vim style supported) |
 | `Enter` / `l` | **Select / Play** (Includes `L`) |
-| `Space` | Play / Pause |
 | `Space` | Play / Pause |
 | `-` / `+` | **Volume** (- / +) |
 | `,` / `.` | Seek -10s / +10s |
