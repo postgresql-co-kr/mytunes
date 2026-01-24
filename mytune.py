@@ -1053,6 +1053,7 @@ class MyTunesApp:
         
         if self.stop_on_exit:
             self.player.stop()
+            self.player.cleanup_orphaned_mpv()
 
 def main(stdscr):
     app = MyTunesApp(stdscr)
