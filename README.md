@@ -1,6 +1,6 @@
 # 🎵 MyTunes Pro (Korean)
 
-**현대적인 CLI 유튜브 뮤직 플레이어 (v1.5.1)**  
+**현대적인 CLI 유튜브 뮤직 플레이어 (v1.5.2)**  
 터미널 환경에서 **YouTube 음악을 검색하여 듣는** 가볍고 빠른 키보드 중심의 플레이어입니다.  
 한국어 입력 환경에서도 **숫자 키(1~5)**를 통해 지연 없는 쾌적한 조작이 가능합니다.
 
@@ -30,7 +30,17 @@
 - **스마트 기능**: 즐겨찾기, 재생 기록(최대 100곡), 자동 음악 필터링 검색.
 - **비주얼**: 현대적인 심볼 아이콘(⌕, ★, ◷)과 깔끔한 디자인.
 
-**이 프로그램은 오디오 재생을 위해 `mpv`가 시스템에 설치되어 있어야 합니다.**
+---
+
+## 💻 구동 환경 안내
+
+**MyTunes Pro**는 터미널(CLI) 기반 애플리케이션입니다. 각 운영체제에서 고음질 오디오를 재생하기 위해 **`mpv`**라는 엔진을 사용합니다.
+
+- **macOS**: 터미널(iTerm2, Warp 추천)에서 즉시 실행 가능.
+- **Linux**: 우분투, 데비안 등 모든 리눅스 배포판 지원.
+- **Windows**: **WSL(Windows Subsystem for Linux)** 환경이 필요합니다. (아래 가이드를 참고하세요.)
+
+---
 
 ## 🚀 빠른 설치 (Quick Install)
 
@@ -38,6 +48,7 @@
 
 ### 1. 추천 방식 (pipx)
 자동으로 격리된 환경을 만들고 명령어를 등록해줍니다.
+
 ```bash
 brew install pipx    # macOS (설치 안 된 경우)
 pipx install mytunes-pro
@@ -46,6 +57,7 @@ pipx ensurepath      # 터미널 명령어 경로 등록 (최초 1회 필수)
 
 ### 2. 일반 pip 방식
 만약 `externally-managed-environment` 에러가 발생한다면 아래 플래그를 추가하세요:
+
 ```bash
 pip install mytunes-pro --break-system-packages
 ```
@@ -54,6 +66,7 @@ pip install mytunes-pro --break-system-packages
 
 ### 🔄 최신 버전 업데이트 (Update)
 이미 설치되어 있다면 아래 명령어로 간단히 최신 기능을 반영하세요:
+
 ```bash
 pipx upgrade mytunes-pro
 ```
@@ -74,9 +87,32 @@ brew install mpv
 sudo apt update && sudo apt install mpv
 ```
 
-### Windows (WSL)
-1. **WSL 설치**: `wsl --install -d Debian` (PowerShell 관리자 권한)
-2. **필수 도구**: `sudo apt update && sudo apt install mpv -y`
+### Windows (초보자용 WSL 가이드)
+
+Windows 환경이 익숙한 일반인도 따라할 수 있는 **완전 정복 가이드**입니다.
+
+> **❓ WSL이란?**  
+> 윈도우 안에서 리눅스(강력한 개발 도구들)를 마치 일반 앱처럼 쓸 수 있게 해주는 마이크로소프트의 공식 기능입니다. MyTunes는 이 환경에서 리눅스의 강력한 오디오 엔진을 활용해 작동합니다.
+
+1. **WSL 설치하기**:
+   - `시작` 버튼 우클릭 -> `터미널(관리자)` 혹은 `PowerShell(관리자)` 실행.
+   - 아래 명령어를 복사해서 붙여넣고 엔터!
+     ```powershell
+     wsl --install -d Debian
+     ```
+   - 설치가 끝나면 **컴퓨터를 다시 시작**하세요.
+
+2. **기본 설정**:
+   - 재부팅 후 `데비안(Debian)` 창이 자동으로 뜨면, 사용할 아이디(영문)와 비밀번호를 정하세요.
+
+3. **필수 도구 설치**:
+   - 데비안 창에서 아래 명령어를 한 번에 복사해서 붙여넣으세요:
+     ```bash
+     sudo apt update && sudo apt install mpv python3-pip pipx -y
+     ```
+
+4. **MyTunes 설치**:
+   - 이제 위 `빠른 설치` 섹션의 `pipx install` 과정을 그대로 따라하면 끝!
 
 ---
 
@@ -152,25 +188,25 @@ sudo apt update && sudo apt install mpv
 
 # 🎵 MyTunes Pro (English)
 
-**Modern CLI YouTube Music Player (v1.5.1)**  
+**Modern CLI YouTube Music Player (v1.5.2)**  
 A lightweight, keyboard-centric terminal player for streaming YouTube music.  
 Designed for speed and efficiency, with optimized controls for international keyboard imports.
 
 > **💡 Preface**  
 > This project was created to give developers a seamless way to enjoy music without leaving their terminal environment.  
-> It basically started from a personal need to turn a **headless mini-PC running Debian Server** into a dedicated living room music station (with no monitor or GUI).  
-> Just bring your terminal, and you have a full-featured audio player.
+> It basically started from a personal need to turn a **headless mini-PC running Debian Server** into a dedicated living room music station.
 
-## ✨ Key Features
-- **Powerful Search**: High-quality audio streaming via `yt-dlp`.
-- **Pagination**: Explicit **[ Load Next 20... ]** button to load more results.
-- **Sequential Play**: Automatically plays the next song in the list.
-- **Smart Resume**: Option to resume playback from where you left off.
-- **Fast TUI**: Responsive `curses` interface.
-- **Smart Shortcuts**: Instant number keys (1-5) for quick navigation.
-- **Visuals**: Clean aesthetic with system-style glyphs (⌕, ★, ◷).
+---
 
-**This app requires `mpv` to be installed on your system.**
+## 💻 Environment Support
+
+**MyTunes Pro** is a Terminal-native application. It uses the **`mpv`** engine for high-quality audio playback.
+
+- **macOS**: Runs natively in Terminal (iTerm2, Warp recommended).
+- **Linux**: Supports all distributions (Ubuntu, Debian, etc.).
+- **Windows**: Requires **WSL (Windows Subsystem for Linux)**. See the guide below.
+
+---
 
 ## 🚀 Quick Start
 
@@ -178,6 +214,7 @@ On modern macOS/Linux systems (PEP 668), using **`pipx`** is highly recommended.
 
 ### 1. Recommended (pipx)
 Automatically manages virtual environments and global paths.
+
 ```bash
 brew install pipx    # macOS (if not installed)
 pipx install mytunes-pro
@@ -186,6 +223,7 @@ pipx ensurepath      # Registers command paths (required once)
 
 ### 2. Standard pip
 If you encounter an `externally-managed-environment` error, use this flag:
+
 ```bash
 pip install mytunes-pro --break-system-packages
 ```
@@ -194,6 +232,7 @@ Run simply by typing **`mp`** in your terminal!
 
 ### 🔄 How to Update
 If already installed, update to the latest version with one command:
+
 ```bash
 pipx upgrade mytunes-pro
 ```
@@ -214,9 +253,32 @@ brew install mpv
 sudo apt update && sudo apt install mpv
 ```
 
-### Windows (WSL)
-1. **Install WSL**: `wsl --install -d Debian` (PowerShell Admin)
-2. **Install mpv**: `sudo apt update && sudo apt install mpv -y`
+### Windows (Beginner's WSL Guide)
+
+A step-by-step guide for Windows users to get started with CLI tools.
+
+> **❓ What is WSL?**  
+> It stands for "Windows Subsystem for Linux". It's an official Microsoft feature that lets you run Linux powerful tools directly inside Windows like a regular app.
+
+1. **Install WSL**:
+   - Right-click `Start` -> Select `Terminal (Admin)` or `PowerShell (Admin)`.
+   - Paste this command and hit Enter:
+     ```powershell
+     wsl --install -d Debian
+     ```
+   - **Restart your computer** after installation.
+
+2. **Basic Setup**:
+   - After restart, the `Debian` window will pop up. Choose your username and password.
+
+3. **Install Core Tools**:
+   - Inside the Debian window, run:
+     ```bash
+     sudo apt update && sudo apt install mpv python3-pip pipx -y
+     ```
+
+4. **Install MyTunes**:
+   - Follow the `Quick Start` section above inside the Debian window. Done!
 
 ---
 
