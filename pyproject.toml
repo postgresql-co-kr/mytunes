@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mytunes-pro"
-version = "1.4.6"
+version = "1.4.7"
 authors = [
   { name = "loxo", email = "loxo5432@gmail.com" },
 ]
@@ -27,6 +27,7 @@ dependencies = [
 "Bug Tracker" = "https://github.com/postgresql-co-kr/mytunes/issues"
 
 [project.scripts]
+mp = "mytunes.app:main"
 mytunes = "mytunes.app:main"
 
 [tool.setuptools.packages.find]
