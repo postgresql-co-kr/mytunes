@@ -1,6 +1,6 @@
 # 🎵 MyTunes Pro (Korean)
 
-**현대적인 CLI 유튜브 뮤직 플레이어 (v1.4.2)**  
+**현대적인 CLI 유튜브 뮤직 플레이어 (v1.4.3)**  
 터미널 환경에서 **YouTube 음악을 검색하여 듣는** 가볍고 빠른 키보드 중심의 플레이어입니다.  
 한국어 입력 환경에서도 **숫자 키(1~5)**를 통해 지연 없는 쾌적한 조작이 가능합니다.
 
@@ -30,9 +30,21 @@
 - **스마트 기능**: 즐겨찾기, 재생 기록(최대 100곡), 자동 음악 필터링 검색.
 - **비주얼**: 현대적인 심볼 아이콘(⌕, ★, ◷)과 깔끔한 디자인.
 
-## 🛠 필수 요구사항 (Prerequisites)
+이 프로그램은 오디오 재생을 위해 **mpv**가 시스템에 설치되어 있어야 합니다. (검색 엔진 `yt-dlp`는 자동 설치됩니다.)
 
-이 프로그램은 오디오 재생을 위해 **mpv**와 검색을 위해 **yt-dlp**가 시스템에 설치되어 있어야 합니다.
+## 🚀 빠른 설치 (Quick Install)
+
+터미널에서 아래 명령어를 입력하여 즉시 설치하세요:
+
+```bash
+pip install mytunes-pro
+```
+
+설치 후 터미널 어디서든 **`mytunes`**를 입력하면 실행됩니다!
+
+---
+
+## 🛠 상세 설치 가이드
 
 ### macOS
 
@@ -176,7 +188,7 @@ Windows 사용자라면 이 가이드만 따라하세요. (복사 & 붙여넣기
 
 # 🎵 MyTunes Pro (English)
 
-**Modern CLI YouTube Music Player (v1.4.2)**  
+**Modern CLI YouTube Music Player (v1.4.3)**  
 A lightweight, keyboard-centric terminal player for streaming YouTube music.  
 Designed for speed and efficiency, with optimized controls for international keyboard imports.
 
