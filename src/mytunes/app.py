@@ -26,7 +26,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.5.0"
+APP_VERSION = "1.5.1"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -1096,6 +1096,18 @@ def main(stdscr):
     app = MyTunesApp(stdscr)
     app.run()
 
+def cli():
+    try:
+        curses.wrapper(main)
+    except KeyboardInterrupt:
+        sys.exit(0)
+    except Exception as e:
+        # Don't show technical curses errors to user if box/win fails
+        if "addstr() returned ERR" in str(e):
+            print("Error: Terminal window is too small.")
+        else:
+            print(f"Error: {e}")
+        sys.exit(1)
+
 if __name__ == "__main__":
-    try: curses.wrapper(main)
-    except KeyboardInterrupt: sys.exit(0)
+    cli()
