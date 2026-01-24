@@ -92,6 +92,7 @@ STRINGS = {
 class DataManager:
     def __init__(self):
         self.data = self.load_data()
+        self.favorites_set = {f['url'] for f in self.data.get('favorites', []) if 'url' in f}
         
     def load_data(self):
         if not os.path.exists(DATA_FILE):
@@ -122,18 +123,22 @@ class DataManager:
         self.save_data()
 
     def toggle_favorite(self, item):
-        is_fav = any(f['url'] == item['url'] for f in self.data['favorites'])
+        url = item.get('url')
+        if not url: return False
+        is_fav = url in self.favorites_set
         if is_fav:
-            self.data['favorites'] = [f for f in self.data['favorites'] if f['url'] != item['url']]
+            self.data['favorites'] = [f for f in self.data['favorites'] if f.get('url') != url]
+            self.favorites_set.remove(url)
             status = False
         else:
             self.data['favorites'].insert(0, item)
+            self.favorites_set.add(url)
             status = True
         self.save_data()
         return status
 
     def is_favorite(self, url):
-        return any(f['url'] == url for f in self.data['favorites'])
+        return url in self.favorites_set
 
 # === [Player Logic with Advanced IPC] ===
 class Player:
@@ -303,6 +308,9 @@ class MyTunesApp:
         self.last_save_time = time.time()
         self.status_blink = False
         
+        # Throttling Counters
+        self.loop_count = 0
+        
         # Colors
         curses.start_color()
         curses.use_default_colors()
@@ -377,47 +385,47 @@ class MyTunesApp:
         return []
 
     def update_playback_state(self):
-        # Poll MPV for true state
+        # Poll MPV for state with throttling to reduce CPU/IPC overhead
         try:
+            # 1. Mandatory every loop: Current time (for progress bar)
             t = self.player.get_property("time-pos")
-            d = self.player.get_property("duration")
-            p = self.player.get_property("pause")
-            title = self.player.get_property("media-title")
-            
             if t is not None: 
                 self.playback_time = float(t)
-                # Clear loading state once we get valid time
                 if self.player.loading and self.playback_time >= 0:
                     self.player.loading = False
                 
-                # Update Resume Data (Memory)
+                # Update Resume Data (Memory) - Throttle save logic
                 if self.current_track and self.playback_duration > 30:
-                    # Clear if > 99% played
                     if self.playback_time / self.playback_duration > 0.99:
                         self.dm.set_progress(self.current_track['url'], 0)
                     elif self.playback_time > 10:
                         self.dm.set_progress(self.current_track['url'], self.playback_time)
-            
-            if d is not None: self.playback_duration = float(d)
-            if p is not None: self.is_paused = p
-            
-            # Sync title/url if missing (Background Play persistence)
-            if self.current_track is None and title:
-                # Try to fetch URL as well to ensure list highlighting works
-                url_path = self.player.get_property("path")
-                if not url_path: url_path = ""
-                self.current_track = {"title": title, "url": url_path}
+
+            # 2. Frequent: Pause state (Every 2 loops ~400ms)
+            if self.loop_count % 2 == 0:
+                p = self.player.get_property("pause")
+                if p is not None: self.is_paused = p
+
+            # 3. Infrequent: Duration, Title, Idle state (Every 5 loops ~1s)
+            if self.loop_count % 5 == 0:
+                d = self.player.get_property("duration")
+                if d is not None: self.playback_duration = float(d)
                 
-            # Force clear loading if idle or timeout
-            is_idle = self.player.get_property("idle-active")
-            if is_idle and self.player.loading: 
-                 self.player.loading = False
-            
-            # Timeout fallback (8 seconds)
+                title = self.player.get_property("media-title")
+                if self.current_track is None and title:
+                    url_path = self.player.get_property("path")
+                    if not url_path: url_path = ""
+                    self.current_track = {"title": title, "url": url_path}
+
+                is_idle = self.player.get_property("idle-active")
+                if is_idle and self.player.loading: 
+                    self.player.loading = False
+
+            # Timeout fallback for loading state (remains every loop logic)
             if self.player.loading and (time.time() - getattr(self.player, 'loading_ts', 0) > 8):
                  self.player.loading = False
             
-            # Restore Periodic Save (Throttle 10s)
+            # Periodic Save (Throttle 10s)
             if time.time() - getattr(self, 'last_save_time', 0) > 10:
                 self.dm.save_data()
                 self.last_save_time = time.time()
@@ -620,7 +628,7 @@ class MyTunesApp:
         except: res = True # Default to Resume on error
         
         # Cleanup
-        self.stdscr.nodelay(True)
+        self.stdscr.timeout(200) # Ensure timeout is restored, NOT nodelay(True)
         self.stdscr.touchwin()
         self.stdscr.refresh()
         return res
@@ -779,7 +787,7 @@ class MyTunesApp:
                 pass
         
         curses.curs_set(0)
-        self.stdscr.nodelay(True)
+        self.stdscr.timeout(200) # Ensure timeout is restored
         self.stdscr.touchwin(); self.stdscr.refresh()
         
         return "".join(chars).strip()
@@ -1053,6 +1061,7 @@ class MyTunesApp:
 
     def run(self):
         while self.running:
+            self.loop_count = (self.loop_count + 1) % 1000
             self.update_playback_state()
             self.check_autoplay()
             self.draw()
