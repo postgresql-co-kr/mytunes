@@ -461,7 +461,7 @@ class MyTunesApp:
         # Navigation logic
         # Back: Q, Left Arrow, Backspace, Korean 'ㅂ' (q), h, 6
         if key == curses.KEY_LEFT or key == curses.KEY_BACKSPACE or key == 127 or \
-           k_char in ['q', 'ㅂ', '6', 'h']:
+           k_char in ['q', 'ㅂ', '6', 'h', 'ㅗ']:
             if len(self.view_stack) > 1:
                 # Pop current view and push to forward stack
                 current_view = self.view_stack.pop()
@@ -472,14 +472,16 @@ class MyTunesApp:
             # Else: Do nothing (Prevent Quit on Q)
             return
 
-        # Forward: L, Right Arrow (Browser Style)
-        # Re-visit the view we just popped from
-        if k_char in ['l', 'L', 'ㅣ']:
+        # Forward: L, Right Arrow (Browser Style) or Select
+        # Re-visit the view we just popped from, or Select if nothing to go forward to
+        if k_char in ['l', 'L', 'ㅣ'] or key == curses.KEY_RIGHT:
             if self.forward_stack:
                 next_view = self.forward_stack.pop()
                 self.view_stack.append(next_view)
                 self.selection_idx = 0; self.scroll_offset = 0
                 self.status_msg = ""
+            else:
+                self.activate_selection(current_list)
             return
 
         current_list = self.get_current_list()
@@ -509,15 +511,20 @@ class MyTunesApp:
         
         # Favorites: F, ㄹ, 2
         elif k_char in ['f', 'F', 'ㄹ', '2']:
-            self.forward_stack = [] # Clear forward history
-            self.view_stack.append("favorites"); self.selection_idx = 0
+            if self.view_stack[-1] != "favorites":
+                self.forward_stack = [] 
+                self.view_stack.append("favorites")
+                self.selection_idx = 0
             self.status_msg = self.t("favorites_info", DATA_FILE)
             
         # History: R, ㄱ, 3 (Changed from H to avoid Back conflict)
         elif k_char in ['r', 'R', 'ㄱ', '3']:
-            self.forward_stack = [] # Clear forward history
-            self.cached_history = list(self.dm.data['history']) # Snapshot
-            self.view_stack.append("history"); self.selection_idx = 0; self.status_msg = self.t("hist_info")
+            if self.view_stack[-1] != "history":
+                self.forward_stack = []
+                self.cached_history = list(self.dm.data['history']) # Snapshot
+                self.view_stack.append("history")
+                self.selection_idx = 0
+            self.status_msg = self.t("hist_info")
             
         # Main Menu: M, ㅡ, 4
         elif k_char in ['m', 'M', 'ㅡ', '4']:
@@ -860,7 +867,8 @@ class MyTunesApp:
 
                 if page == 1:
                     self.search_results = new
-                    self.view_stack.append("search")
+                    if self.view_stack[-1] != "search":
+                        self.view_stack.append("search")
                     self.selection_idx = 0; self.scroll_offset = 0
                 else:
                     self.search_results.extend(new)
