@@ -458,6 +458,8 @@ class MyTunesApp:
         # Helper to normalize input for checking
         k_char = str(key).lower() if isinstance(key, str) else ""
         
+        current_list = self.get_current_list()
+
         # Navigation logic
         # Back: Q, Left Arrow, Backspace, Korean 'ㅂ' (q), h, 6
         if key == curses.KEY_LEFT or key == curses.KEY_BACKSPACE or key == 127 or \
@@ -483,8 +485,6 @@ class MyTunesApp:
             else:
                 self.activate_selection(current_list)
             return
-
-        current_list = self.get_current_list()
 
         if key == curses.KEY_UP or k_char in ['k', 'ㅏ']:
             if self.selection_idx > 0:
