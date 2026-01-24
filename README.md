@@ -1,6 +1,6 @@
 # 🎵 MyTunes Pro (Korean)
 
-**현대적인 CLI 유튜브 뮤직 플레이어 (v1.3.1)**  
+**현대적인 CLI 유튜브 뮤직 플레이어 (v1.3.2)**  
 터미널 환경에서 **YouTube 음악을 검색하여 듣는** 가볍고 빠른 키보드 중심의 플레이어입니다.  
 한국어 입력 환경에서도 **숫자 키(1~5)**를 통해 지연 없는 쾌적한 조작이 가능합니다.
 
@@ -35,10 +35,33 @@
 이 프로그램은 오디오 재생을 위해 **mpv**와 검색을 위해 **yt-dlp**가 시스템에 설치되어 있어야 합니다.
 
 ### macOS
-Homebrew를 사용하여 간단히 설치할 수 있습니다.
-```bash
-brew install mpv yt-dlp python3
-```
+
+Homebrew를 통해 필수 도구를 설치하고 아래 가이드를 따르세요.
+
+1. **필수 도구 설치**:
+
+   ```bash
+   brew install mpv yt-dlp python3
+   ```
+
+2. **프로그램 다운로드 및 설정**:
+
+   ```bash
+   git clone https://github.com/postgresql-co-kr/mytunes.git
+   cd mytunes
+   python3 -m venv venv
+   venv/bin/pip install -r requirements.txt
+   ```
+
+3. **단축축 아이콘 만들기 (zsh 기준)**:
+
+   ```bash
+   echo "alias mp='~/mytunes/venv/bin/python3 ~/mytunes/mytune.py'" >> ~/.zshrc
+   source ~/.zshrc
+   ```
+
+4. **실행**:
+   터미널 어디서든 **`mp`**를 입력하세요!
 
 ### Linux (Ubuntu/Debian)
 ```bash
@@ -153,7 +176,7 @@ Windows 사용자라면 이 가이드만 따라하세요. (복사 & 붙여넣기
 
 # 🎵 MyTunes Pro (English)
 
-**Modern CLI YouTube Music Player (v1.3.1)**  
+**Modern CLI YouTube Music Player (v1.3.2)**  
 A lightweight, keyboard-centric terminal player for streaming YouTube music.  
 Designed for speed and efficiency, with optimized controls for international keyboard imports.
 
@@ -174,10 +197,33 @@ Designed for speed and efficiency, with optimized controls for international key
 ## 🛠 Prerequisites
 
 ### macOS
-Install via Homebrew:
-```bash
-brew install mpv yt-dlp python3
-```
+
+Follow these steps to set up everything on your Mac.
+
+1. **Install Prerequisites**:
+
+   ```bash
+   brew install mpv yt-dlp python3
+   ```
+
+2. **Clone & Setup**:
+
+   ```bash
+   git clone https://github.com/postgresql-co-kr/mytunes.git
+   cd mytunes
+   python3 -m venv venv
+   venv/bin/pip install -r requirements.txt
+   ```
+
+3. **Create Alias (zsh)**:
+
+   ```bash
+   echo "alias mp='~/mytunes/venv/bin/python3 ~/mytunes/mytune.py'" >> ~/.zshrc
+   source ~/.zshrc
+   ```
+
+4. **Run**:
+   Just type **`mp`** anywhere!
 
 ### Linux (Ubuntu/Debian)
 ```bash
