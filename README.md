@@ -1,6 +1,6 @@
 # 🎵 MyTunes Pro (Korean)
 
-**현대적인 CLI 유튜브 뮤직 플레이어 (v1.4.7)**  
+**현대적인 CLI 유튜브 뮤직 플레이어 (v1.4.8)**  
 터미널 환경에서 **YouTube 음악을 검색하여 듣는** 가볍고 빠른 키보드 중심의 플레이어입니다.  
 한국어 입력 환경에서도 **숫자 키(1~5)**를 통해 지연 없는 쾌적한 조작이 가능합니다.
 
@@ -34,13 +34,22 @@
 
 ## 🚀 빠른 설치 (Quick Install)
 
-터미널에서 아래 명령어를 입력하여 즉시 설치하세요:
+최신 macOS/Linux 시스템(PEP 668)에서는 **`pipx`** 사용을 강력히 권장합니다.
 
+### 1. 추천 방식 (pipx)
+자동으로 격리된 환경을 만들고 명령어를 등록해줍니다.
 ```bash
-pip install mytunes-pro
+brew install pipx    # macOS (설치 안 된 경우)
+pipx install mytunes-pro
 ```
 
-설치 후 터미널 어디서든 **`mp`**를 입력하면 실행됩니다! (기존 `mytunes`도 사용 가능합니다.)
+### 2. 일반 pip 방식
+만약 `externally-managed-environment` 에러가 발생한다면 아래 플래그를 추가하세요:
+```bash
+pip install mytunes-pro --break-system-packages
+```
+
+설치 후 터미널 어디서든 **`mp`**를 입력하면 실행됩니다!
 
 ---
 
@@ -136,7 +145,7 @@ sudo apt update && sudo apt install mpv
 
 # 🎵 MyTunes Pro (English)
 
-**Modern CLI YouTube Music Player (v1.4.7)**  
+**Modern CLI YouTube Music Player (v1.4.8)**  
 A lightweight, keyboard-centric terminal player for streaming YouTube music.  
 Designed for speed and efficiency, with optimized controls for international keyboard imports.
 
@@ -158,13 +167,22 @@ Designed for speed and efficiency, with optimized controls for international key
 
 ## 🚀 Quick Start
 
-Install via pip:
+On modern macOS/Linux systems (PEP 668), using **`pipx`** is highly recommended.
 
+### 1. Recommended (pipx)
+Automatically manages virtual environments and global paths.
 ```bash
-pip install mytunes-pro
+brew install pipx    # macOS (if not installed)
+pipx install mytunes-pro
 ```
 
-Run simply by typing **`mp`** in your terminal! (The full command `mytunes` is also available.)
+### 2. Standard pip
+If you encounter an `externally-managed-environment` error, use this flag:
+```bash
+pip install mytunes-pro --break-system-packages
+```
+
+Run simply by typing **`mp`** in your terminal!
 
 ---
 
