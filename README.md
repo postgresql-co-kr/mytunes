@@ -1,6 +1,6 @@
 # 🎵 MyTunes Pro (Korean)
 
-**현대적인 CLI 유튜브 뮤직 플레이어 (v1.2.1)**  
+**현대적인 CLI 유튜브 뮤직 플레이어 (v1.2.2)**  
 터미널 환경에서 **YouTube 음악을 검색하여 듣는** 가볍고 빠른 키보드 중심의 플레이어입니다.  
 한국어 입력 환경에서도 **숫자 키(1~5)**를 통해 지연 없는 쾌적한 조작이 가능합니다.
 
@@ -101,6 +101,13 @@ Windows 사용자라면 이 가이드만 따라하세요. (복사 & 붙여넣기
    mp
    ```
 
+3. **최신 버전으로 업데이트**:
+   새로운 기능이나 버그 수정이 있을 때 아래 명령어로 간단히 업데이트할 수 있습니다.
+   ```bash
+   cd ~/mytunes
+   git pull
+   ```
+
 ---
 
 ## ⌨️ 조작 방법 (Controls)
@@ -147,7 +154,7 @@ Windows 사용자라면 이 가이드만 따라하세요. (복사 & 붙여넣기
 
 # 🎵 MyTunes Pro (English)
 
-**Modern CLI YouTube Music Player (v1.2.1)**  
+**Modern CLI YouTube Music Player (v1.2.2)**  
 A lightweight, keyboard-centric terminal player for streaming YouTube music.  
 Designed for speed and efficiency, with optimized controls for international keyboard imports.
 
@@ -233,6 +240,13 @@ Run these commands one by one:
    Just type **`mp`** anytime!
    ```bash
    mp
+   ```
+
+3. **How to Update**:
+   You can easily update to the latest version with new features or bug fixes.
+   ```bash
+   cd ~/mytunes
+   git pull
    ```
 
 ## ⌨️ English Controls
