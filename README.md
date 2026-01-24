@@ -1,6 +1,6 @@
 # 🎵 MyTunes Pro (Korean)
 
-**현대적인 CLI 유튜브 뮤직 플레이어 (v1.5.3)**  
+**현대적인 CLI 유튜브 뮤직 플레이어 (v1.5.4)**  
 터미널 환경에서 **YouTube 음악을 검색하여 듣는** 가볍고 빠른 키보드 중심의 플레이어입니다.  
 한국어 입력 환경에서도 **숫자 키(1~5)**를 통해 지연 없는 쾌적한 조작이 가능합니다.
 
@@ -103,18 +103,9 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
      wsl --install -d Debian
      ```
 
-2. **한글 검색 문제 해결 (Locale 설정)**:
-   - WSL(Debian) 창에서 한글 입력이 안 된다면 아래 명령어를 순서대로 입력하세요:
-     ```bash
-     sudo apt update && sudo apt install locales -y
-     sudo locale-gen ko_KR.UTF-8
-     sudo update-locale LANG=ko_KR.UTF-8
-     ```
-   - 명령어를 다 입력했다면 **데비안 창을 껐다 다시 켜세요.**
-
 3. **필수 도구 설치**:
    ```bash
-   sudo apt install mpv python3-pip pipx -y
+   sudo apt update && sudo apt install mpv python3-pip pipx -y
    ```
 
 4. **MyTunes 설치**:
@@ -193,7 +184,7 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 
 # 🎵 MyTunes Pro (English)
 
-**Modern CLI YouTube Music Player (v1.5.3)**  
+**Modern CLI YouTube Music Player (v1.5.4)**  
 A lightweight, keyboard-centric terminal player for streaming YouTube music.  
 
 ---
@@ -249,18 +240,9 @@ sudo apt install mpv python3 python3-pip pipx python3-venv -y
    ```
    **Restart your computer** after installation.
 
-2. **Fix Korean Input (Locale Setup)**:
-   Inside the Debian window:
+2. **Install Core Tools**:
    ```bash
-   sudo apt update && sudo apt install locales -y
-   sudo locale-gen ko_KR.UTF-8
-   sudo update-locale LANG=ko_KR.UTF-8
-   ```
-   **Restart the Debian terminal.**
-
-3. **Install Tools**:
-   ```bash
-   sudo apt install mpv python3-pip pipx -y
+   sudo apt update && sudo apt install mpv python3-pip pipx -y
    ```
 
 4. **Install MyTunes**:

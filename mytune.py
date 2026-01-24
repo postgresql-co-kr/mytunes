@@ -18,7 +18,7 @@ import locale
 import signal
 
 # Ensure Unicode support
-locale.setlocale(locale.LC_ALL, '')
+# locale.setlocale(locale.LC_ALL, '')
 
 # === [Configuration] ===
 DATA_FILE = os.path.expanduser("~/.pymusic_data.json")
@@ -26,7 +26,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.5.3"
+APP_VERSION = "1.5.4"
 
 # === [Strings & Localization] ===
 STRINGS = {
