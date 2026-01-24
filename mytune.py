@@ -26,7 +26,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.2.2"
+APP_VERSION = "1.3.1"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -187,34 +187,55 @@ class Player:
             try: os.remove(MPV_SOCKET)
             except OSError: pass
         
-        # Start mpv with IPC server
+        # A. Core mpv flags (Universal)
         cmd = [
-            "mpv", "--no-video", "--vo=null", "--no-terminal", "--force-window=no",
+            "mpv", "--video=no", "--vo=null", "--force-window=no",
+            "--audio-display=no", "--no-config",
             f"--input-ipc-server={MPV_SOCKET}", 
-            "--idle=yes", # Keep running even after track ends (optional, usually better to restart per track for stability herein)
+            "--idle=yes", 
             url
         ]
         
+        # B. macOS Specific UI Optimizations
+        if sys.platform == "darwin":
+            # 'accessory' hides Dock but allows system resources
+            cmd.append("--macos-app-activation-policy=accessory")
+            
+        # C. YouTube 403 Forbidden Bypass (Cross-platform robustness)
+        # This uses the Android player client which is currently the most stable
+        # and avoids HLS segment blocks on both Linux and macOS.
+        cmd.extend([
+            "--ytdl-format=bestaudio/best",
+            "--ytdl-raw-options=extractor-args=youtube:player-client=android"
+        ])
+        
+        # D. Bridge to updated yt-dlp in venv (Critical for parity)
+        venv_bin = os.path.dirname(sys.executable)
+        venv_yt_dlp = os.path.join(venv_bin, "yt-dlp")
+        if os.path.exists(venv_yt_dlp):
+            cmd.append(f"--script-opts=ytdl_hook-ytdl_path={venv_yt_dlp}")
+            
         if start_pos > 0:
             cmd.append(f"--start={start_pos}")
         
-        # Remove --idle=yes if we want it to close after song, 
-        # but for consistent IPC let's stick to simple playback.
-        # Actually without --idle=yes, it exits after song.
-        
-        try: log = open(LOG_FILE, "a")
-        except: log = subprocess.DEVNULL
+        try:
+            log = open(LOG_FILE, "a")
+            log.write(f"\n--- Launching {url} at {time.ctime()} ---\n")
+            log.flush()
+        except:
+            log = subprocess.DEVNULL
             
-        kwargs = {"stdout": subprocess.DEVNULL, "stderr": log}
+        # Capture BOTH stdout and stderr to see what mpv is doing
+        kwargs = {"stdout": log, "stderr": log}
         if os.name != "nt": kwargs["preexec_fn"] = os.setpgrp
             
-        self.current_proc = subprocess.Popen(cmd, **kwargs)
-        
-        # Save PID
         try:
+            self.current_proc = subprocess.Popen(cmd, **kwargs)
+            # Save PID
             with open(PID_FILE, 'w') as f:
                 f.write(str(self.current_proc.pid))
-        except: pass
+        except Exception as e:
+            self.loading = False
 
     def stop(self):
         if self.current_proc:
