@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mytunes-pro"
-version = "1.5.2"
+version = "1.5.3"
 authors = [
   { name = "loxo", email = "loxo5432@gmail.com" },
 ]
