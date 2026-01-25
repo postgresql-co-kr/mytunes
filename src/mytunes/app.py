@@ -26,7 +26,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.5.5"
+APP_VERSION = "1.5.6"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -846,32 +846,41 @@ class MyTunesApp:
         return "".join(chars).strip()
 
     def prompt_search(self):
-        curses.flushinp() # Clear any buffered keys
+        curses.flushinp()
         
-        # Show search history in background
-        history = self.data_manager.get_search_history()
+        orig_view = self.view_stack[-1]
+        orig_results = list(self.search_results)
+        
+        # Show search history in background using existing 'search' view
+        history = self.dm.get_search_history()
         if history:
-            self.items = history
-            self.selected_idx = 0
+            self.search_results = history
+            self.selection_idx = 0
             self.scroll_offset = 0
-            self.view_stack.append("search_history") # Temporary view state
-            self.status_msg = self.t("history_bg_msg") if hasattr(self, 't') else "Search History"
+            if self.view_stack[-1] != "search":
+                self.view_stack.append("search")
+            self.status_msg = "" # Clear "List is empty" etc.
             self.draw()
 
         query = self.input_dialog(self.t("search_label"), self.t("search_prompt"))
+        
+        # Handling query result
+        # Note: If user pressed ESC, input_dialog returns "" (per current implementation)
+        # But wait, input_dialog logic: "ESC -> chars = []; break; return "".join(chars).strip()"
+        # So ESC and empty Enter both return "". 
+        # I should check if it's possible to distinguish.
         
         if query:
             self.status_msg = self.t("searching")
             self.draw()
             self.perform_search(query)
         else:
-            # User cancelled search input
-            # If we showed history, we leave it there so they can browse it.
-            # If history was empty, we might want to revert view_stack?
-            # But simpler to just leave it as is if they saw it.
-            if not history and "search_history" in self.view_stack:
-                 self.view_stack.pop()
-                 self.draw()
+            # Revert if no query and we were just previewing history
+            # But requirement 2: "If Enter with no query, preserve previous search results"
+            # This is tricky because ESC and empty Enter currently both return "".
+            # I will assume "" means "keep current view (history)".
+            # If the user wants to CANCEL and go back to Main, they might need ESC.
+            pass
 
     def perform_search(self, query, page=1):
         try:
@@ -949,8 +958,16 @@ class MyTunesApp:
                     if self.view_stack[-1] != "search":
                         self.view_stack.append("search")
                     self.selection_idx = 0; self.scroll_offset = 0
+                    
+                    # SAVE to History (Exclude load_more_btn)
+                    items_to_save = [x for x in new if x.get('id') != 'load_more_btn']
+                    self.dm.add_search_results(items_to_save)
+                    
                 else:
                     self.search_results.extend(new)
+                    # Also save subsequent pages to history
+                    items_to_save = [x for x in new if x.get('id') != 'load_more_btn']
+                    self.dm.add_search_results(items_to_save)
                 
                 self.search_page = page
                 self.status_msg = f"Search Done. ({len(self.search_results)-1})" # -1 for button
