@@ -18,6 +18,7 @@ import locale
 import signal
 import pusher
 import requests
+import webbrowser
 
 
 # Ensure Unicode support
@@ -48,8 +49,8 @@ STRINGS = {
         "stopped": "⏹ 정지됨",
         "fav_added": "★ 즐겨찾기에 추가됨",
         "fav_removed": "☆ 즐겨찾기 해제됨",
-        "header_help": "[S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [A/5]즐찾추가 [SPC]재생/정지 [Vol]+/- [Q/6]이전",
-        "help_guide": "[j/k]이동 [En]선택 [h/q]뒤로 [S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [A/5]즐찾추가 [SPC]재생/정지",
+        "header_help": "[S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [A/5]추가 [F7]유튜브 [F8]라이브 [SPC]P/P [Q/6]뒤로",
+        "help_guide": "[j/k]이동 [En]선택 [h/q]뒤로 [S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [F7]유튜브 [F8]라이브 [F9]공유",
         "menu_main": "☰ 메인 메뉴",
         "menu_search_results": "⌕ YouTube 음악 검색",
         "menu_favorites": "★ 나의 즐겨찾기",
@@ -76,8 +77,8 @@ STRINGS = {
         "stopped": "⏹ Stopped",
         "fav_added": "★ Added to Favorites",
         "fav_removed": "☆ Removed from Favorites",
-        "header_help": "[S/1]Search [F/2]Favs [R/3]Hist [M/4]Main [A/5]Add Fav [SPC]Play/Pause [Vol]+/- [Q/6]Back",
-        "help_guide": "[j/k]Move [En]Select [h/q]Back [S/1]Srch [F/2]Fav [R/3]Hist [M/4]Main [A/5]Add Fav [SPC]P/P",
+        "header_help": "[S/1]Srch [F/2]Favs [R/3]Hist [M/4]Main [A/5]Add [F7]YT [F8]Live [F9]Share [SPC]P/P [Q/6]Back",
+        "help_guide": "[j/k]Move [En]Select [h/q]Back [S/1]Srch [F/2]Fav [R/3]Hist [M/4]Main [F7]YT [F8]Live [F9]Share",
         "menu_main": "☰ Main Menu",
         "menu_search_results": "⌕ Search YouTube Music",
         "menu_favorites": "★ My Favorites",
@@ -680,8 +681,8 @@ class MyTunesApp:
             self.stop_on_exit = False
             self.running = False
             
-        # Share Track (F12): Real-time Publish
-        elif key == curses.KEY_F12:
+        # Share Track (F9): Real-time Publish
+        elif key == curses.KEY_F9:
             if current_list and 0 <= self.selection_idx < len(current_list):
                 target_item = current_list[self.selection_idx]
                 url = target_item.get('url')
@@ -709,7 +710,8 @@ class MyTunesApp:
                             if self.pusher:
                                 self.pusher.trigger('mytunes-global', 'share-track', payload)
                                 self.sent_history[url] = time.time()
-                                self.status_msg = "🚀 Shared to Live!"
+                                safe_title = self.truncate(title, 50)
+                                self.status_msg = f"🚀 Shared: {safe_title}..."
                             else:
                                 self.status_msg = "❌ Pusher Error"
                         except Exception as e:
@@ -724,6 +726,29 @@ class MyTunesApp:
                 if "url" in target_item:
                     is_added = self.dm.toggle_favorite(target_item)
                     self.status_msg = self.t("fav_added") if is_added else self.t("fav_removed")
+
+        # Open in Browser (YouTube): F7
+        elif key == curses.KEY_F7:
+            if current_list and 0 <= self.selection_idx < len(current_list):
+                target_item = current_list[self.selection_idx]
+                url = target_item.get('url')
+                if url:
+                    if self.is_remote():
+                        self.show_copy_dialog("YouTube", url)
+                    else:
+                        webbrowser.open(url)
+                        self.status_msg = "🌐 Opening YouTube in Browser..."
+
+        # Open Live Station: F8
+        elif key == curses.KEY_F8:
+            # Replace localhost with production URL if needed, or keep as project landing page
+            live_url = "https://mytunes-pro.vercel.app" # Example production URL or relative
+            
+            if self.is_remote():
+                self.show_copy_dialog("Live Station", live_url)
+            else:
+                webbrowser.open(live_url)
+                self.status_msg = "📡 Opening Live Station Dash..."
 
     def ask_resume(self, saved_time, track_title):
         self.stdscr.nodelay(False) # Blocking input for dialog
@@ -782,6 +807,56 @@ class MyTunesApp:
         self.stdscr.touchwin()
         self.stdscr.refresh()
         return res
+
+    def is_remote(self):
+        """Check if running in a remote SSH session (excluding WSL)."""
+        # WSL is technically "local" enough to open browsers
+        if 'WSL_DISTRO_NAME' in os.environ or 'WSL_INTEROP' in os.environ:
+            return False
+        return os.environ.get('SSH_CLIENT') or os.environ.get('SSH_TTY')
+
+    def show_copy_dialog(self, title, url):
+        """Show a dialog with the URL for manual copying in remote sessions."""
+        self.stdscr.nodelay(False)
+        h, w = self.stdscr.getmaxyx()
+        box_h, box_w = 8, min(80, w - 4)
+        box_y, box_x = (h - box_h) // 2, (w - box_w) // 2
+        
+        try:
+            win = curses.newwin(box_h, box_w, box_y, box_x)
+            win.keypad(True)
+            try: win.bkgd(' ', curses.color_pair(1))
+            except: pass
+            
+            win.attron(curses.color_pair(1)); win.box()
+            
+            # Title
+            header = " Remote Link " if self.lang == 'en' else " 원격 링크 "
+            win.addstr(0, 2, header, curses.A_BOLD | curses.color_pair(3))
+            
+            # Content
+            lbl = "Open this URL in your local browser:" if self.lang == 'en' else "아래 주소를 로컬 브라우저에서여세요:"
+            win.addstr(2, 3, lbl, curses.color_pair(1))
+            
+            # URL (Truncate if needed but try to show mostly)
+            disp_url = self.truncate(url, box_w - 6)
+            win.addstr(3, 3, disp_url, curses.color_pair(5) | curses.A_BOLD)
+            
+            # Exit instruction
+            exit_msg = "[Enter/ESC] Close" if self.lang == 'en' else "[Enter/ESC] 닫기"
+            win.addstr(6, box_w - len(exit_msg) - 2, exit_msg, curses.color_pair(1))
+            
+            win.refresh()
+            curses.flushinp()
+            
+            # Wait for key
+            while True:
+                k = win.getch()
+                if k in [10, 13, curses.KEY_ENTER, 27, ord(' ')]: 
+                    break
+        except: pass
+        finally:
+            self.stdscr.timeout(200) # Restore non-blocking
 
     def activate_selection(self, items):
         if not items: return
