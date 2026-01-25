@@ -16,6 +16,9 @@ import unicodedata
 import socket
 import locale
 import signal
+import pusher
+import requests
+
 
 # Ensure Unicode support
 # locale.setlocale(locale.LC_ALL, '')
@@ -94,6 +97,11 @@ class DataManager:
         self.data = self.load_data()
         self.favorites_set = {f['url'] for f in self.data.get('favorites', []) if 'url' in f}
         
+        # Auto-fetch country if missing
+        if 'country' not in self.data:
+             threading.Thread(target=self.fetch_country, daemon=True).start()
+
+        
     def load_data(self):
         if not os.path.exists(DATA_FILE):
             return {"history": [], "favorites": [], "language": "ko", "resume": {}, "search_results_history": []}
@@ -140,6 +148,47 @@ class DataManager:
 
     def is_favorite(self, url):
         return url in self.favorites_set
+
+    def fetch_country(self):
+        """Fetch country code asynchronously and save."""
+        apis = [
+            ('https://ipapi.co/json/', 'country_code'),
+            ('http://ip-api.com/json/', 'countryCode'),
+            ('https://ipwho.is/', 'country_code')
+        ]
+        
+        for url, key in apis:
+            try:
+                resp = requests.get(url, timeout=3)
+                if resp.status_code == 200:
+                    country = resp.json().get(key)
+                    if country:
+                        self.data['country'] = country
+                        self.save_data()
+                        return
+            except:
+                continue
+        
+        # Fallback to Locale
+        try:
+            loc, _ = locale.getdefaultlocale()
+            if loc:
+                country = loc.split('_')[-1]
+                self.data['country'] = country
+                self.save_data()
+                return
+        except: pass
+        
+        # Final Fallback
+        if 'country' not in self.data:
+            self.data['country'] = 'UN'
+            self.save_data()
+
+    def get_country(self):
+        # If it's US or UN, maybe it was a mistake or fallback, try to refresh once per session?
+        # Actually, let's just use what's there but allow re-fetch if requested.
+        return self.data.get('country', 'UN')
+
 
     def get_search_history(self):
         return self.data.get('search_results_history', [])
@@ -383,6 +432,19 @@ class MyTunesApp:
             signal.signal(signal.SIGHUP, self.handle_disconnect)
         except: pass
 
+        # Pusher Client
+        try:
+            self.pusher = pusher.Pusher(
+                app_id='2106370',
+                key='44e3d7e4957944c867ec',
+                secret='0be8e65a287bbccc7369',
+                cluster='ap3',
+                ssl=True
+            )
+        except: self.pusher = None
+        self.sent_history = {}
+
+
     def handle_disconnect(self, signum, frame):
         """Auto-background if terminal disconnects."""
         self.stop_on_exit = False
@@ -614,10 +676,45 @@ class MyTunesApp:
             self.player.seek(30)
             self.status_msg = "Forward 30s"
             
-        # ESC: Background Play (Exit but keep music)
         elif key == 27:
             self.stop_on_exit = False
             self.running = False
+            
+        # Share Track (F12): Real-time Publish
+        elif key == curses.KEY_F12:
+            if current_list and 0 <= self.selection_idx < len(current_list):
+                target_item = current_list[self.selection_idx]
+                url = target_item.get('url')
+                title = target_item.get('title', 'Unknown Title')
+                
+                if url:
+                    # If it's US, try to re-fetch country info one more time (maybe misdetected)
+                    if self.dm.get_country() == 'US':
+                        threading.Thread(target=self.dm.fetch_country, daemon=True).start()
+
+                    # Dedup Check: Using a time-based cooldown (e.g. 5 seconds) for same URL
+                    last_sent_time = self.sent_history.get(url, 0)
+                    if time.time() - last_sent_time < 5:
+                        self.status_msg = "⚠️  Already Shared Recently!"
+                    else:
+                        try:
+                            # Send to Pusher
+                            payload = {
+                                "title": title,
+                                "url": url,
+                                "duration": target_item.get('duration', '--:--'),
+                                "country": self.dm.get_country(),
+                                "timestamp": time.time()
+                            }
+                            if self.pusher:
+                                self.pusher.trigger('mytunes-global', 'share-track', payload)
+                                self.sent_history[url] = time.time()
+                                self.status_msg = "🚀 Shared to Live!"
+                            else:
+                                self.status_msg = "❌ Pusher Error"
+                        except Exception as e:
+                            self.status_msg = f"❌ Share Failed: {str(e)}"
+
             
         # Add to Favorites: A, ㅁ, 5
         elif k_char in ['a', 'A', 'ㅁ', '5']:
