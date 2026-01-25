@@ -26,7 +26,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.5.4"
+APP_VERSION = "1.5.5"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -96,14 +96,15 @@ class DataManager:
         
     def load_data(self):
         if not os.path.exists(DATA_FILE):
-            return {"history": [], "favorites": [], "language": "ko", "resume": {}}
+            return {"history": [], "favorites": [], "language": "ko", "resume": {}, "search_results_history": []}
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 if "resume" not in data: data["resume"] = {}
+                if "search_results_history" not in data: data["search_results_history"] = []
                 return data
         except Exception:
-            return {"history": [], "favorites": [], "language": "ko", "resume": {}}
+            return {"history": [], "favorites": [], "language": "ko", "resume": {}, "search_results_history": []}
 
     def save_data(self):
         with open(DATA_FILE, "w", encoding="utf-8") as f:
@@ -139,6 +140,37 @@ class DataManager:
 
     def is_favorite(self, url):
         return url in self.favorites_set
+
+    def get_search_history(self):
+        return self.data.get('search_results_history', [])
+
+    def add_search_results(self, items):
+        """Add new search results to history, deduping and limiting to 200."""
+        history = self.data.get('search_results_history', [])
+        
+        # Create a set of existing URLs for fast lookup if needed, 
+        # but since we want to bring duplicates to top or merge, 
+        # let's just filter out any incoming items that are already in history?
+        # Requirement: "Accumulate actual result items... Dedup... Latest first"
+        
+        # Strategy: Prepend new items. Remove duplicates based on URL.
+        # 1. Combine new + old
+        combined = items + history
+        
+        # 2. Dedup (keep first occurrence)
+        seen_urls = set()
+        unique_history = []
+        for item in combined:
+            url = item.get('url')
+            if url and url not in seen_urls:
+                seen_urls.add(url)
+                unique_history.append(item)
+            elif not url: # Should not happen for valid items
+                unique_history.append(item)
+        
+        # 3. Limit to 200
+        self.data['search_results_history'] = unique_history[:200]
+        self.save_data()
 
 # === [Player Logic with Advanced IPC] ===
 class Player:
@@ -815,11 +847,31 @@ class MyTunesApp:
 
     def prompt_search(self):
         curses.flushinp() # Clear any buffered keys
+        
+        # Show search history in background
+        history = self.data_manager.get_search_history()
+        if history:
+            self.items = history
+            self.selected_idx = 0
+            self.scroll_offset = 0
+            self.view_stack.append("search_history") # Temporary view state
+            self.status_msg = self.t("history_bg_msg") if hasattr(self, 't') else "Search History"
+            self.draw()
+
         query = self.input_dialog(self.t("search_label"), self.t("search_prompt"))
+        
         if query:
             self.status_msg = self.t("searching")
             self.draw()
             self.perform_search(query)
+        else:
+            # User cancelled search input
+            # If we showed history, we leave it there so they can browse it.
+            # If history was empty, we might want to revert view_stack?
+            # But simpler to just leave it as is if they saw it.
+            if not history and "search_history" in self.view_stack:
+                 self.view_stack.pop()
+                 self.draw()
 
     def perform_search(self, query, page=1):
         try:
