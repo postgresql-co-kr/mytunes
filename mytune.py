@@ -26,7 +26,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.5.4"
+APP_VERSION = "1.5.6"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -96,14 +96,15 @@ class DataManager:
         
     def load_data(self):
         if not os.path.exists(DATA_FILE):
-            return {"history": [], "favorites": [], "language": "ko", "resume": {}}
+            return {"history": [], "favorites": [], "language": "ko", "resume": {}, "search_results_history": []}
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 if "resume" not in data: data["resume"] = {}
+                if "search_results_history" not in data: data["search_results_history"] = []
                 return data
         except Exception:
-            return {"history": [], "favorites": [], "language": "ko", "resume": {}}
+            return {"history": [], "favorites": [], "language": "ko", "resume": {}, "search_results_history": []}
 
     def save_data(self):
         with open(DATA_FILE, "w", encoding="utf-8") as f:
@@ -139,6 +140,37 @@ class DataManager:
 
     def is_favorite(self, url):
         return url in self.favorites_set
+
+    def get_search_history(self):
+        return self.data.get('search_results_history', [])
+
+    def add_search_results(self, items):
+        """Add new search results to history, deduping and limiting to 200."""
+        history = self.data.get('search_results_history', [])
+        
+        # Create a set of existing URLs for fast lookup if needed, 
+        # but since we want to bring duplicates to top or merge, 
+        # let's just filter out any incoming items that are already in history?
+        # Requirement: "Accumulate actual result items... Dedup... Latest first"
+        
+        # Strategy: Prepend new items. Remove duplicates based on URL.
+        # 1. Combine new + old
+        combined = items + history
+        
+        # 2. Dedup (keep first occurrence)
+        seen_urls = set()
+        unique_history = []
+        for item in combined:
+            url = item.get('url')
+            if url and url not in seen_urls:
+                seen_urls.add(url)
+                unique_history.append(item)
+            elif not url: # Should not happen for valid items
+                unique_history.append(item)
+        
+        # 3. Limit to 200
+        self.data['search_results_history'] = unique_history[:200]
+        self.save_data()
 
 # === [Player Logic with Advanced IPC] ===
 class Player:
@@ -814,12 +846,41 @@ class MyTunesApp:
         return "".join(chars).strip()
 
     def prompt_search(self):
-        curses.flushinp() # Clear any buffered keys
+        curses.flushinp()
+        
+        orig_view = self.view_stack[-1]
+        orig_results = list(self.search_results)
+        
+        # Show search history in background using existing 'search' view
+        history = self.dm.get_search_history()
+        if history:
+            self.search_results = history
+            self.selection_idx = 0
+            self.scroll_offset = 0
+            if self.view_stack[-1] != "search":
+                self.view_stack.append("search")
+            self.status_msg = "" # Clear "List is empty" etc.
+            self.draw()
+
         query = self.input_dialog(self.t("search_label"), self.t("search_prompt"))
+        
+        # Handling query result
+        # Note: If user pressed ESC, input_dialog returns "" (per current implementation)
+        # But wait, input_dialog logic: "ESC -> chars = []; break; return "".join(chars).strip()"
+        # So ESC and empty Enter both return "". 
+        # I should check if it's possible to distinguish.
+        
         if query:
             self.status_msg = self.t("searching")
             self.draw()
             self.perform_search(query)
+        else:
+            # Revert if no query and we were just previewing history
+            # But requirement 2: "If Enter with no query, preserve previous search results"
+            # This is tricky because ESC and empty Enter currently both return "".
+            # I will assume "" means "keep current view (history)".
+            # If the user wants to CANCEL and go back to Main, they might need ESC.
+            pass
 
     def perform_search(self, query, page=1):
         try:
@@ -897,8 +958,16 @@ class MyTunesApp:
                     if self.view_stack[-1] != "search":
                         self.view_stack.append("search")
                     self.selection_idx = 0; self.scroll_offset = 0
+                    
+                    # SAVE to History (Exclude load_more_btn)
+                    items_to_save = [x for x in new if x.get('id') != 'load_more_btn']
+                    self.dm.add_search_results(items_to_save)
+                    
                 else:
                     self.search_results.extend(new)
+                    # Also save subsequent pages to history
+                    items_to_save = [x for x in new if x.get('id') != 'load_more_btn']
+                    self.dm.add_search_results(items_to_save)
                 
                 self.search_page = page
                 self.status_msg = f"Search Done. ({len(self.search_results)-1})" # -1 for button
@@ -1096,6 +1165,18 @@ def main(stdscr):
     app = MyTunesApp(stdscr)
     app.run()
 
+def cli():
+    try:
+        curses.wrapper(main)
+    except KeyboardInterrupt:
+        sys.exit(0)
+    except Exception as e:
+        # Don't show technical curses errors to user if box/win fails
+        if "addstr() returned ERR" in str(e):
+            print("Error: Terminal window is too small.")
+        else:
+            print(f"Error: {e}")
+        sys.exit(1)
+
 if __name__ == "__main__":
-    try: curses.wrapper(main)
-    except KeyboardInterrupt: sys.exit(0)
+    cli()
