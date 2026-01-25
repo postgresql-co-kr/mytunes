@@ -273,19 +273,24 @@ sudo apt install mpv python3 python3-pip pipx python3-venv -y
 ## 🔄 Changelog
 
 ### v1.5.5
+
 - **Search Result History**: Automatically saves up to 200 search results.
 - **Enhanced Search UX**: Previously searched items are displayed in the background automatically when opening search.
 - **Deduplication**: Automatically removes duplicate search results to keep history clean.
 
 ### v1.5.4
+
 - **Documentation Refinement**: Clarified installation steps and removed redundant WSL locale guide.
 - **Code Cleanup**: Reverted unnecessary locale settings in source code.
 
 ### v1.5.3
+
 - **Locale Optimization**: Removed complicated locale generation steps for Windows/WSL users. Now relies on standard system locale or simple `C.UTF-8` fallback.
 
 ### v1.5.2
+
 - **Documentation**: Major README overhaul for beginner friendliness. Added dedicated Windows/WSL "Zero-to-Hero" guide.
 
 ### v1.5.0
+
 - **Release**: Milestone v1.5.0 release with polished documentation and stable features.
