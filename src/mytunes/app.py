@@ -35,7 +35,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.7.3"
+APP_VERSION = "1.7.4"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -763,17 +763,19 @@ class MyTunesApp:
                 self.show_copy_dialog("Live Station", live_url)
                 return
 
-            # Robust Cross-Platform Browser Launch
             # Add timestamp to user-data-dir to force size/position flags to be respected (prevents "remembering")
-            temp_user_data = os.path.join(tempfile.gettempdir(), f"mytunes_live_{int(time.time())}")
+            # Using int(time.time() / 3600) to keep it stable within the same hour but fresh enough for new versions
+            temp_user_data = os.path.join(tempfile.gettempdir(), f"mytunes_v174_{int(time.time() / 10)}")
             
+            # Universal flags
             flags = [
                 f"--app={live_url}", 
                 "--window-size=712,800", 
                 "--window-position=100,100",
-                "--new-window",
                 f"--user-data-dir={temp_user_data}", 
                 "--no-first-run",
+                "--disable-extensions",
+                "--disable-default-apps",
                 "--disable-features=Translation",
                 "--disable-save-password-bubble",
                 "--disable-translate"
@@ -804,8 +806,8 @@ class MyTunesApp:
                     os.path.join(os.environ.get('PROGRAMFILES(X86)', 'C:\\Program Files (x86)'), 'Microsoft\\Edge\\Application\\msedge.exe'),
                     os.path.join(os.environ.get('PROGRAMFILES', 'C:\\Program Files'), 'Microsoft\\Edge\\Application\\msedge.exe'),
                 ]
-                # Reorder flags for Windows: size first can sometimes help with initialization
-                win_flags = ["--window-size=712,800"] + [f for f in flags if "--window-size" not in f]
+                # Windows specific order: --app MUST be early for some Chrome versions to ignore toolbars
+                win_flags = flags + ["--new-window"] # Add back new-window at the end for Windows specifically if needed
                 for p in win_paths:
                     if os.path.exists(p):
                         try:
