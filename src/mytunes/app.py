@@ -17,6 +17,7 @@ import socket
 import locale
 import signal
 import warnings
+import webbrowser
 # Suppress urllib3 warning about LibreSSL compatibility
 warnings.filterwarnings("ignore", message=".*urllib3 v2 only supports OpenSSL 1.1.1+.*")
 import webbrowser
@@ -35,7 +36,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.9.3"
+APP_VERSION = "1.9.4"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -765,20 +766,23 @@ class MyTunesApp:
                 self.show_copy_dialog("Live Station", live_url)
                 return
 
-            # v1.9.2 - Critical WSL Fix: Disable Profile Isolation
-            # Executing cmd.exe or managing paths in WSL has proven unstable due to environment differences.
-            # We explicitly DISABLE profile isolation in WSL, using the default Chrome profile data.
-            # This ensures stability at the cost of session isolation.
+            # v1.9.4 - Ultimate WSL Fix: Use Standard Webbrowser Module
+            # Subprocess/cmd.exe based launching in WSL is unstable.
+            # We switch to the standard `webbrowser` module which handles system default browser reliably.
+            # This sacrifices window sizing but guarantees the URL opens.
             if self.is_wsl():
-                temp_user_data = None
-            else:
-                temp_user_data = os.path.join(tempfile.gettempdir(), f"mytunes_v190_{int(time.time() / 10)}")
+                threading.Thread(target=webbrowser.open, args=(live_url,), daemon=True).start()
+                return
+
+            # Native (Mac/Windows/Linux) Logic Continues Below...
+            temp_user_data = os.path.join(tempfile.gettempdir(), f"mytunes_v190_{int(time.time() / 10)}")
 
             # Optimized Flag Set (Context7 Research)
             flags = [
                 f"--app={live_url}", 
                 "--window-size=712,800", 
                 "--window-position=100,100",
+                f"--user-data-dir={temp_user_data}",
                 "--no-first-run",
                 "--no-default-browser-check",
                 "--disable-default-apps",
@@ -790,10 +794,6 @@ class MyTunesApp:
                 "--new-window",
                 "--disable-extensions"
             ]
-            
-            # Only add user-data-dir if we have a valid path (Non-WSL)
-            if temp_user_data:
-                flags.append(f"--user-data-dir={temp_user_data}")
             
             launched = False
             # v1.8.4 - Subprocess Isolation (start_new_session) to prevent crashes on WSL/Linux
