@@ -49,8 +49,9 @@ STRINGS = {
         "stopped": "⏹ 정지됨",
         "fav_added": "★ 즐겨찾기에 추가됨",
         "fav_removed": "☆ 즐겨찾기 해제됨",
-        "header_help": "[S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [A/5]추가 [F7]유튜브 [F8]라이브 [SPC]P/P [Q/6]뒤로",
-        "help_guide": "[j/k]이동 [En]선택 [h/q]뒤로 [S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [F7]유튜브 [F8]라이브 [F9]공유",
+        "header_r1": "[S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [A/5]즐겨찾기추가 [Q/6]뒤로",
+        "header_r2": "[F7]유튜브 [F8]라이브 [F9]라이브공유 [SPC]Play/Stop [+/-]볼륨 [<>]빨리감기",
+        "help_guide": "[j/k]이동 [En]선택 [h/q]뒤로 [S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [F7]유튜브 [F8]라이브 [F9]라이브공유",
         "menu_main": "☰ 메인 메뉴",
         "menu_search_results": "⌕ YouTube 음악 검색",
         "menu_favorites": "★ 나의 즐겨찾기",
@@ -77,7 +78,8 @@ STRINGS = {
         "stopped": "⏹ Stopped",
         "fav_added": "★ Added to Favorites",
         "fav_removed": "☆ Removed from Favorites",
-        "header_help": "[S/1]Srch [F/2]Favs [R/3]Hist [M/4]Main [A/5]Add [F7]YT [F8]Live [F9]Share [SPC]P/P [Q/6]Back",
+        "header_r1": "[S/1]Srch [F/2]Favs [R/3]Hist [M/4]Main [A/5]AddFav [Q/6]Back",
+        "header_r2": "[F7]YT [F8]Live [F9]LiveShare [SPC]Play/Stop [+/-]Vol [<>]Seek",
         "help_guide": "[j/k]Move [En]Select [h/q]Back [S/1]Srch [F/2]Fav [R/3]Hist [M/4]Main [F7]YT [F8]Live [F9]Share",
         "menu_main": "☰ Main Menu",
         "menu_search_results": "⌕ Search YouTube Music",
@@ -742,13 +744,30 @@ class MyTunesApp:
         # Open Live Station: F8
         elif key == curses.KEY_F8:
             # Replace localhost with production URL if needed, or keep as project landing page
-            live_url = "https://mytunes-pro.vercel.app" # Example production URL or relative
+            live_url = "https://mytunes.postgresql.co.kr/live" # Production Live URL
             
             if self.is_remote():
                 self.show_copy_dialog("Live Station", live_url)
             else:
-                webbrowser.open(live_url)
-                self.status_msg = "📡 Opening Live Station Dash..."
+                # Try to launch in "App Mode" (Popup) if on macOS with Chrome/Brave
+                launched = False
+                if sys.platform == 'darwin':
+                    browsers = [
+                        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+                        "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+                    ]
+                    for b_path in browsers:
+                        if os.path.exists(b_path):
+                            try:
+                                subprocess.Popen([b_path, f"--app={live_url}", "--window-size=600,800"])
+                                self.status_msg = "📡 Opening Live Popup..."
+                                launched = True
+                                break
+                            except: pass
+                
+                if not launched:
+                    webbrowser.open(live_url)
+                    self.status_msg = "📡 Opening Live Station..."
 
     def ask_resume(self, saved_time, track_title):
         self.stdscr.nodelay(False) # Blocking input for dialog
@@ -1166,14 +1185,23 @@ class MyTunesApp:
             self.stdscr.addstr(0, 0, "Window too small!")
             return
 
-        # Header (3 lines)
-        self.draw_box(self.stdscr, 0, 0, 3, w, APP_NAME)
+        # Header (4 lines)
+        self.draw_box(self.stdscr, 0, 0, 4, w, APP_NAME)
         title = self.t("title", APP_VERSION)
-        help_txt = self.t("header_help")
-        gap = w - 4 - self.get_display_width(title) - self.get_display_width(help_txt)
-        if gap < 2: gap = 2
-        hdr_txt = f"{title}{' '*gap}{help_txt}"
-        self.stdscr.addstr(1, 2, self.truncate(hdr_txt, w-4), curses.color_pair(1) | curses.A_BOLD)
+        
+        # Row 1: Nav
+        r1 = self.t("header_r1")
+        gap1 = w - 4 - self.get_display_width(title) - self.get_display_width(r1)
+        if gap1 < 2: gap1 = 2
+        line1 = f"{title}{' '*gap1}{r1}"
+        self.stdscr.addstr(1, 2, self.truncate(line1, w-4), curses.color_pair(1) | curses.A_BOLD)
+
+        # Row 2: Actions
+        r2 = self.t("header_r2")
+        gap2 = w - 4 - self.get_display_width(r2)
+        if gap2 < 2: gap2 = 2
+        line2 = f"{' '*gap2}{r2}"
+        self.stdscr.addstr(2, 2, self.truncate(line2, w-4), curses.color_pair(1) | curses.A_BOLD)
 
         # Footer (5 lines)
         footer_h = 5
@@ -1218,7 +1246,7 @@ class MyTunesApp:
                 self.stdscr.addstr(h - 2, 2, f"📢 {msg}", attr)
 
         # List Area (Remaining Middle)
-        list_top = 3
+        list_top = 4
         list_h = h - footer_h - list_top
         self.draw_box(self.stdscr, list_top, 0, list_h, w)
         
