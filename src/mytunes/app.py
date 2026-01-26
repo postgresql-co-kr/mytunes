@@ -759,7 +759,8 @@ class MyTunesApp:
                     for b_path in browsers:
                         if os.path.exists(b_path):
                             try:
-                                subprocess.Popen([b_path, f"--app={live_url}", "--window-size=712,800"])
+                                # Use 'open -na' to force a new instance, which ensures window-size is respected
+                                subprocess.Popen(["open", "-na", b_path, "--args", f"--app={live_url}", "--window-size=712,800"])
                                 self.status_msg = "📡 Opening Live Popup..."
                                 launched = True
                                 break
