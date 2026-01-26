@@ -35,7 +35,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.9.2"
+APP_VERSION = "1.9.3"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -794,17 +794,6 @@ class MyTunesApp:
             # Only add user-data-dir if we have a valid path (Non-WSL)
             if temp_user_data:
                 flags.append(f"--user-data-dir={temp_user_data}")
-                "--no-first-run",
-                "--no-default-browser-check",
-                "--disable-default-apps",
-                "--disable-infobars",
-                "--disable-translate",
-                "--disable-features=Translation",
-                "--disable-save-password-bubble",
-                "--autoplay-policy=no-user-gesture-required",
-                "--new-window",
-                "--disable-extensions"
-            ]
             
             launched = False
             # v1.8.4 - Subprocess Isolation (start_new_session) to prevent crashes on WSL/Linux
