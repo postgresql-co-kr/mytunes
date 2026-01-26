@@ -1,6 +1,6 @@
 # 🎵 MyTunes Pro (Korean)
 
-**현대적인 CLI 유튜브 뮤직 플레이어 (v1.7.6)**  
+**현대적인 CLI 유튜브 뮤직 플레이어 (v1.7.7)**  
 터미널 환경에서 **YouTube 음악을 검색하여 듣는** 가볍고 빠른 키보드 중심의 플레이어입니다.  
 한국어 입력 환경에서도 **숫자 키(1~5)**를 통해 지연 없는 쾌적한 조작이 가능합니다.
 
@@ -189,7 +189,7 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 
 # 🎵 MyTunes Pro (English)
 
-**Modern CLI YouTube Music Player (v1.7.6)**  
+**Modern CLI YouTube Music Player (v1.7.7)**  
 A lightweight, keyboard-centric terminal player for streaming YouTube music.  
 
 ---
@@ -277,7 +277,13 @@ sudo apt install mpv python3 python3-pip pipx python3-venv -y
 
 ## 🔄 Changelog
 
-### v1.7.6 (Latest)
+### v1.7.7 (Latest)
+
+- **PowerShell Launch (WSL/Win)**: Switched to `powershell.exe` for launching browsers from WSL to ensure robust argument parsing and path handling.
+- **Directory Fix**: Resolved "cannot read or write" error on Windows/WSL by utilizing `$env:TEMP` directly within a native shell context.
+- **Reliable Sizing**: Guaranteed window size application by combining isolated profiles with PowerShell's superior process management.
+
+### v1.7.6
 
 - **Isolated Browser Profile**: Guaranteed window sizing for the Live Station (F8) on Windows/WSL by forcing an isolated browser profile using the Windows `%TEMP%` directory.
 - **WSL Path Translation**: Implemented automatic Windows temp path resolution in WSL to enable session persistence and profile isolation.
