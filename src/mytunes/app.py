@@ -16,9 +16,9 @@ import unicodedata
 import socket
 import locale
 import signal
-import pusher
-import requests
 import webbrowser
+import tempfile
+import shutil
 
 
 # Ensure Unicode support
@@ -754,8 +754,8 @@ class MyTunesApp:
                 return
 
             # Robust Cross-Platform Browser Launch
-            temp_user_data = os.path.join(tempfile.gettempdir(), "mytunes_live_state")
-            flags = [f"--app={live_url}", "--window-size=712,800", f"--user-data-dir={temp_user_data}", "--no-first-run"]
+            temp_user_data = os.path.join(tempfile.gettempdir(), "mytunes_live_session")
+            flags = [f"--app={live_url}", f"--window-size=712,800", f"--user-data-dir={temp_user_data}", "--no-first-run"]
             
             launched = False
             # 1. macOS
