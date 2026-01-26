@@ -35,7 +35,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.7.8"
+APP_VERSION = "1.7.9"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -819,30 +819,28 @@ class MyTunesApp:
                             launched = True; break
                         except: pass
             
-            # 3. WSL (Run Windows Chrome via powershell.exe with pure Windows-side pathing)
+            # 3. WSL (Run Windows Chrome via cmd.exe for reliable %LOCALAPPDATA% expansion)
             elif self.is_wsl():
                 try:
-                    # We move ALL logic to PowerShell to avoid WSL path translation issues (mixed slashes).
-                    # 1. Determine profile path in LOCALAPPDATA (Standard Windows writable area)
-                    # 2. Create the directory using Windows-native command
-                    # 3. Start chrome with backslash-safe path
-                    # Using a stable subfolder for MyTunes to avoid Temp cleanup issues but keep it isolated
-                    ps_setup = '$p = \"$env:LOCALAPPDATA\\MyTunesApp\\v178\"; if (!(Test-Path $p)) { New-Item -ItemType Directory -Path $p -Force }'
-                    ps_args = [
+                    # Switching to cmd.exe as requested. cmd expand variables like %LOCALAPPDATA% natively.
+                    # 1. Create directory in standard Windows local app data
+                    # 2. Launch chrome with explicit window flags
+                    p_dir = "%LOCALAPPDATA%\\MyTunesApp\\v179"
+                    
+                    c_args = [
                         f'--app=\"{live_url}\"',
                         '--window-size=712,800',
                         '--window-position=100,100',
-                        '--user-data-dir=\"$p\"',
+                        f'--user-data-dir=\"{p_dir}\"',
                         '--new-window',
                         '--no-first-run',
                         '--disable-extensions'
                     ]
-                    arg_list = ",".join([f"'{a}'" for a in ps_args])
-                    ps_launch = f'Start-Process chrome -ArgumentList {arg_list}'
                     
-                    # Full command combining directory setup and launch
-                    full_ps = f"{ps_setup}; {ps_launch}"
-                    subprocess.Popen(["powershell.exe", "-NoProfile", "-Command", full_ps], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    # Chain commands: mkdir (ignore error if exists) then start chrome
+                    full_cmd = f'mkdir "{p_dir}" 2>nul & start chrome {" ".join(c_args)}'
+                    
+                    subprocess.Popen(["cmd.exe", "/c", full_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     launched = True
                 except:
                     # Fallback to general start
