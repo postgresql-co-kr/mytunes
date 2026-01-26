@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore", message=".*urllib3 v2 only supports OpenSSL 1.
 import webbrowser
 import tempfile
 import shutil
-import pusher
+
 import requests
 
 
@@ -446,16 +446,9 @@ class MyTunesApp:
         curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
         print("\033[?1003h") # Enable mouse tracking
 
-        # Pusher Client
-        try:
-            self.pusher = pusher.Pusher(
-                app_id='2106370',
-                key='44e3d7e4957944c867ec',
-                secret='0be8e65a287bbccc7369',
-                cluster='ap3',
-                ssl=True
-            )
-        except: self.pusher = None
+        # Sharing Client (Serverless Proxy)
+        self.pusher = None # Deprecated: Direct Pusher client removed for security
+        self.share_api_url = "https://postgresql.co.kr/api/pusher/mytunes"
         self.sent_history = {}
 
 
@@ -750,7 +743,7 @@ class MyTunesApp:
                         self.status_msg = "⚠️  Already Shared Recently!"
                     else:
                         try:
-                            # Send to Pusher
+                            # Send to Serverless Proxy (Secure)
                             payload = {
                                 "title": title,
                                 "url": url,
@@ -758,13 +751,28 @@ class MyTunesApp:
                                 "country": self.dm.get_country(),
                                 "timestamp": time.time()
                             }
-                            if self.pusher:
-                                self.pusher.trigger('mytunes-pro', 'share-track', payload)
-                                self.sent_history[url] = time.time()
-                                safe_title = self.truncate(title, 50)
-                                self.status_msg = f"🚀 Shared: {safe_title}..."
-                            else:
-                                self.status_msg = "❌ Pusher Error"
+                            
+                            # v1.9.9 Security Update: Use centralized API with Auth Header
+                            try:
+                                headers = {
+                                    "Content-Type": "application/json",
+                                    "x-mytunes-secret": "mytunes-v1-secret-8822"
+                                }
+                                resp = requests.post(
+                                    self.share_api_url, 
+                                    json=payload, 
+                                    headers=headers, 
+                                    timeout=3
+                                )
+                                if resp.status_code == 200:
+                                    self.sent_history[url] = time.time()
+                                    safe_title = self.truncate(title, 50)
+                                    self.status_msg = f"🚀 Shared: {safe_title}..."
+                                else:
+                                    self.status_msg = f"❌ Share Error: {resp.status_code}"
+                            except:
+                                self.status_msg = "❌ Network Error (API)"
+                                
                         except Exception as e:
                             self.status_msg = f"❌ Share Failed: {str(e)}"
 
