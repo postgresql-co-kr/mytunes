@@ -35,7 +35,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.8.8"
+APP_VERSION = "1.8.9"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -767,6 +767,14 @@ class MyTunesApp:
 
             # v1.8.6 - Force window size/position by isolating profile
             temp_user_data = os.path.join(tempfile.gettempdir(), f"mytunes_v186_{int(time.time() / 10)}")
+
+            # v1.8.9 - Critical Fix for WSL: Convert Linux path to Windows path upstream
+            # This ensures both Direct Launch and Fallback methods receive the correct path.
+            if self.is_wsl():
+                try:
+                    win_path = subprocess.check_output(['wslpath', '-w', temp_user_data], text=True).strip()
+                    temp_user_data = win_path
+                except: pass
             
             # Optimized Flag Set (Context7 Research)
             flags = [
@@ -831,14 +839,8 @@ class MyTunesApp:
                 
                 if not launched:
                     try:
-                        # Fallback for WSL to CMD (Convert path to Windows format)
-                        win_user_data = temp_user_data
-                        try:
-                            # Use wslpath -w to convert /tmp/... to C:\Users\...
-                            win_user_data = subprocess.check_output(['wslpath', '-w', temp_user_data], text=True).strip()
-                        except: pass
-                        
-                        subprocess.Popen(["cmd.exe", "/c", f"start chrome --app={live_url} --user-data-dir={win_user_data}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                        # Fallback for WSL to CMD (path is already converted upstream)
+                        subprocess.Popen(["cmd.exe", "/c", f"start chrome --app={live_url} --user-data-dir={temp_user_data}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
                         launched = True
                     except: pass
 
