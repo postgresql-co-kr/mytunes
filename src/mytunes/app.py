@@ -763,7 +763,7 @@ class MyTunesApp:
                                 subprocess.Popen(["open", "-na", b_path, "--args", f"--app={live_url}", "--window-size=712,800", "--window-position=100,100"])
                                 
                                 # AppleScript Fallback: Force resize via System Events
-                                script = f'delay 0.8\ntell application "System Events"\n    tell process "{b_name}"\n        set size of window 1 to {{712, 800}}\n    end tell\ntell'
+                                script = f'delay 0.8\ntell application "System Events"\n    tell process "{b_name}"\n        set size of window 1 to {{712, 800}}\n    end tell\nend tell'
                                 subprocess.Popen(["osascript", "-e", script])
                                 
                                 self.status_msg = "📡 Opening Live Popup (Forced Size)..."
