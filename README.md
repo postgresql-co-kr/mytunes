@@ -277,12 +277,12 @@ sudo apt install mpv python3 python3-pip pipx python3-venv -y
 
 ## 🔄 Changelog
 
-### v1.6.1 (Latest)
+### v1.7.1 (Latest)
 
 - **Performance & Logic Optimization**: Standardized browser launch logic for Live Station (F8) across Mac, Windows, and Linux.
 - **UI Polish**: Silenced browser launch warnings in the terminal and added professional UI flags (disable translation/bubble) for a cleaner experience.
 - **Improved Popup Behavior**: Optimized web interface to reuse the same window for Live Station, matching CLI application behavior.
-- **Global Sync**: Version 1.7.0 synchronization across all platforms.
+- **Global Sync**: Version 1.7.1 synchronization across all platforms.
 
 ### v1.6.0
 
