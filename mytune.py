@@ -16,6 +16,10 @@ import unicodedata
 import socket
 import locale
 import signal
+import pusher
+import requests
+import webbrowser
+
 
 # Ensure Unicode support
 # locale.setlocale(locale.LC_ALL, '')
@@ -26,7 +30,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.5.6"
+APP_VERSION = "1.5.7"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -45,8 +49,9 @@ STRINGS = {
         "stopped": "⏹ 정지됨",
         "fav_added": "★ 즐겨찾기에 추가됨",
         "fav_removed": "☆ 즐겨찾기 해제됨",
-        "header_help": "[S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [A/5]즐찾추가 [SPC]재생/정지 [Vol]+/- [Q/6]이전",
-        "help_guide": "[j/k]이동 [En]선택 [h/q]뒤로 [S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [A/5]즐찾추가 [SPC]재생/정지",
+        "header_r1": "[S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [A/5]즐겨찾기추가 [Q/6]뒤로",
+        "header_r2": "[F7]유튜브 [F8]라이브 [F9]라이브공유 [SPC]Play/Stop [+/-]볼륨 [<>]빨리감기",
+        "help_guide": "[j/k]이동 [En]선택 [h/q]뒤로 [S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [F7]유튜브 [F8]라이브 [F9]라이브공유",
         "menu_main": "☰ 메인 메뉴",
         "menu_search_results": "⌕ YouTube 음악 검색",
         "menu_favorites": "★ 나의 즐겨찾기",
@@ -73,8 +78,9 @@ STRINGS = {
         "stopped": "⏹ Stopped",
         "fav_added": "★ Added to Favorites",
         "fav_removed": "☆ Removed from Favorites",
-        "header_help": "[S/1]Search [F/2]Favs [R/3]Hist [M/4]Main [A/5]Add Fav [SPC]Play/Pause [Vol]+/- [Q/6]Back",
-        "help_guide": "[j/k]Move [En]Select [h/q]Back [S/1]Srch [F/2]Fav [R/3]Hist [M/4]Main [A/5]Add Fav [SPC]P/P",
+        "header_r1": "[S/1]Srch [F/2]Favs [R/3]Hist [M/4]Main [A/5]AddFav [Q/6]Back",
+        "header_r2": "[F7]YT [F8]Live [F9]LiveShare [SPC]Play/Stop [+/-]Vol [<>]Seek",
+        "help_guide": "[j/k]Move [En]Select [h/q]Back [S/1]Srch [F/2]Fav [R/3]Hist [M/4]Main [F7]YT [F8]Live [F9]Share",
         "menu_main": "☰ Main Menu",
         "menu_search_results": "⌕ Search YouTube Music",
         "menu_favorites": "★ My Favorites",
@@ -93,6 +99,11 @@ class DataManager:
     def __init__(self):
         self.data = self.load_data()
         self.favorites_set = {f['url'] for f in self.data.get('favorites', []) if 'url' in f}
+        
+        # Auto-fetch country if missing
+        if 'country' not in self.data:
+             threading.Thread(target=self.fetch_country, daemon=True).start()
+
         
     def load_data(self):
         if not os.path.exists(DATA_FILE):
@@ -140,6 +151,47 @@ class DataManager:
 
     def is_favorite(self, url):
         return url in self.favorites_set
+
+    def fetch_country(self):
+        """Fetch country code asynchronously and save."""
+        apis = [
+            ('https://ipapi.co/json/', 'country_code'),
+            ('http://ip-api.com/json/', 'countryCode'),
+            ('https://ipwho.is/', 'country_code')
+        ]
+        
+        for url, key in apis:
+            try:
+                resp = requests.get(url, timeout=3)
+                if resp.status_code == 200:
+                    country = resp.json().get(key)
+                    if country:
+                        self.data['country'] = country
+                        self.save_data()
+                        return
+            except:
+                continue
+        
+        # Fallback to Locale
+        try:
+            loc, _ = locale.getdefaultlocale()
+            if loc:
+                country = loc.split('_')[-1]
+                self.data['country'] = country
+                self.save_data()
+                return
+        except: pass
+        
+        # Final Fallback
+        if 'country' not in self.data:
+            self.data['country'] = 'UN'
+            self.save_data()
+
+    def get_country(self):
+        # If it's US or UN, maybe it was a mistake or fallback, try to refresh once per session?
+        # Actually, let's just use what's there but allow re-fetch if requested.
+        return self.data.get('country', 'UN')
+
 
     def get_search_history(self):
         return self.data.get('search_results_history', [])
@@ -383,6 +435,19 @@ class MyTunesApp:
             signal.signal(signal.SIGHUP, self.handle_disconnect)
         except: pass
 
+        # Pusher Client
+        try:
+            self.pusher = pusher.Pusher(
+                app_id='2106370',
+                key='44e3d7e4957944c867ec',
+                secret='0be8e65a287bbccc7369',
+                cluster='ap3',
+                ssl=True
+            )
+        except: self.pusher = None
+        self.sent_history = {}
+
+
     def handle_disconnect(self, signum, frame):
         """Auto-background if terminal disconnects."""
         self.stop_on_exit = False
@@ -614,10 +679,46 @@ class MyTunesApp:
             self.player.seek(30)
             self.status_msg = "Forward 30s"
             
-        # ESC: Background Play (Exit but keep music)
         elif key == 27:
             self.stop_on_exit = False
             self.running = False
+            
+        # Share Track (F9): Real-time Publish
+        elif key == curses.KEY_F9:
+            if current_list and 0 <= self.selection_idx < len(current_list):
+                target_item = current_list[self.selection_idx]
+                url = target_item.get('url')
+                title = target_item.get('title', 'Unknown Title')
+                
+                if url:
+                    # If it's US, try to re-fetch country info one more time (maybe misdetected)
+                    if self.dm.get_country() == 'US':
+                        threading.Thread(target=self.dm.fetch_country, daemon=True).start()
+
+                    # Dedup Check: Using a time-based cooldown (e.g. 5 seconds) for same URL
+                    last_sent_time = self.sent_history.get(url, 0)
+                    if time.time() - last_sent_time < 5:
+                        self.status_msg = "⚠️  Already Shared Recently!"
+                    else:
+                        try:
+                            # Send to Pusher
+                            payload = {
+                                "title": title,
+                                "url": url,
+                                "duration": target_item.get('duration', '--:--'),
+                                "country": self.dm.get_country(),
+                                "timestamp": time.time()
+                            }
+                            if self.pusher:
+                                self.pusher.trigger('mytunes-global', 'share-track', payload)
+                                self.sent_history[url] = time.time()
+                                safe_title = self.truncate(title, 50)
+                                self.status_msg = f"🚀 Shared: {safe_title}..."
+                            else:
+                                self.status_msg = "❌ Pusher Error"
+                        except Exception as e:
+                            self.status_msg = f"❌ Share Failed: {str(e)}"
+
             
         # Add to Favorites: A, ㅁ, 5
         elif k_char in ['a', 'A', 'ㅁ', '5']:
@@ -627,6 +728,46 @@ class MyTunesApp:
                 if "url" in target_item:
                     is_added = self.dm.toggle_favorite(target_item)
                     self.status_msg = self.t("fav_added") if is_added else self.t("fav_removed")
+
+        # Open in Browser (YouTube): F7
+        elif key == curses.KEY_F7:
+            if current_list and 0 <= self.selection_idx < len(current_list):
+                target_item = current_list[self.selection_idx]
+                url = target_item.get('url')
+                if url:
+                    if self.is_remote():
+                        self.show_copy_dialog("YouTube", url)
+                    else:
+                        webbrowser.open(url)
+                        self.status_msg = "🌐 Opening YouTube in Browser..."
+
+        # Open Live Station: F8
+        elif key == curses.KEY_F8:
+            # Replace localhost with production URL if needed, or keep as project landing page
+            live_url = "https://mytunes.postgresql.co.kr/live" # Production Live URL
+            
+            if self.is_remote():
+                self.show_copy_dialog("Live Station", live_url)
+            else:
+                # Try to launch in "App Mode" (Popup) if on macOS with Chrome/Brave
+                launched = False
+                if sys.platform == 'darwin':
+                    browsers = [
+                        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+                        "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+                    ]
+                    for b_path in browsers:
+                        if os.path.exists(b_path):
+                            try:
+                                subprocess.Popen([b_path, f"--app={live_url}", "--window-size=600,800"])
+                                self.status_msg = "📡 Opening Live Popup..."
+                                launched = True
+                                break
+                            except: pass
+                
+                if not launched:
+                    webbrowser.open(live_url)
+                    self.status_msg = "📡 Opening Live Station..."
 
     def ask_resume(self, saved_time, track_title):
         self.stdscr.nodelay(False) # Blocking input for dialog
@@ -685,6 +826,56 @@ class MyTunesApp:
         self.stdscr.touchwin()
         self.stdscr.refresh()
         return res
+
+    def is_remote(self):
+        """Check if running in a remote SSH session (excluding WSL)."""
+        # WSL is technically "local" enough to open browsers
+        if 'WSL_DISTRO_NAME' in os.environ or 'WSL_INTEROP' in os.environ:
+            return False
+        return os.environ.get('SSH_CLIENT') or os.environ.get('SSH_TTY')
+
+    def show_copy_dialog(self, title, url):
+        """Show a dialog with the URL for manual copying in remote sessions."""
+        self.stdscr.nodelay(False)
+        h, w = self.stdscr.getmaxyx()
+        box_h, box_w = 8, min(80, w - 4)
+        box_y, box_x = (h - box_h) // 2, (w - box_w) // 2
+        
+        try:
+            win = curses.newwin(box_h, box_w, box_y, box_x)
+            win.keypad(True)
+            try: win.bkgd(' ', curses.color_pair(1))
+            except: pass
+            
+            win.attron(curses.color_pair(1)); win.box()
+            
+            # Title
+            header = " Remote Link " if self.lang == 'en' else " 원격 링크 "
+            win.addstr(0, 2, header, curses.A_BOLD | curses.color_pair(3))
+            
+            # Content
+            lbl = "Open this URL in your local browser:" if self.lang == 'en' else "아래 주소를 로컬 브라우저에서여세요:"
+            win.addstr(2, 3, lbl, curses.color_pair(1))
+            
+            # URL (Truncate if needed but try to show mostly)
+            disp_url = self.truncate(url, box_w - 6)
+            win.addstr(3, 3, disp_url, curses.color_pair(5) | curses.A_BOLD)
+            
+            # Exit instruction
+            exit_msg = "[Enter/ESC] Close" if self.lang == 'en' else "[Enter/ESC] 닫기"
+            win.addstr(6, box_w - len(exit_msg) - 2, exit_msg, curses.color_pair(1))
+            
+            win.refresh()
+            curses.flushinp()
+            
+            # Wait for key
+            while True:
+                k = win.getch()
+                if k in [10, 13, curses.KEY_ENTER, 27, ord(' ')]: 
+                    break
+        except: pass
+        finally:
+            self.stdscr.timeout(200) # Restore non-blocking
 
     def activate_selection(self, items):
         if not items: return
@@ -994,14 +1185,23 @@ class MyTunesApp:
             self.stdscr.addstr(0, 0, "Window too small!")
             return
 
-        # Header (3 lines)
-        self.draw_box(self.stdscr, 0, 0, 3, w, APP_NAME)
+        # Header (4 lines)
+        self.draw_box(self.stdscr, 0, 0, 4, w, APP_NAME)
         title = self.t("title", APP_VERSION)
-        help_txt = self.t("header_help")
-        gap = w - 4 - self.get_display_width(title) - self.get_display_width(help_txt)
-        if gap < 2: gap = 2
-        hdr_txt = f"{title}{' '*gap}{help_txt}"
-        self.stdscr.addstr(1, 2, self.truncate(hdr_txt, w-4), curses.color_pair(1) | curses.A_BOLD)
+        
+        # Row 1: Nav
+        r1 = self.t("header_r1")
+        gap1 = w - 4 - self.get_display_width(title) - self.get_display_width(r1)
+        if gap1 < 2: gap1 = 2
+        line1 = f"{title}{' '*gap1}{r1}"
+        self.stdscr.addstr(1, 2, self.truncate(line1, w-4), curses.color_pair(1) | curses.A_BOLD)
+
+        # Row 2: Actions
+        r2 = self.t("header_r2")
+        gap2 = w - 4 - self.get_display_width(r2)
+        if gap2 < 2: gap2 = 2
+        line2 = f"{' '*gap2}{r2}"
+        self.stdscr.addstr(2, 2, self.truncate(line2, w-4), curses.color_pair(1) | curses.A_BOLD)
 
         # Footer (5 lines)
         footer_h = 5
@@ -1046,7 +1246,7 @@ class MyTunesApp:
                 self.stdscr.addstr(h - 2, 2, f"📢 {msg}", attr)
 
         # List Area (Remaining Middle)
-        list_top = 3
+        list_top = 4
         list_h = h - footer_h - list_top
         self.draw_box(self.stdscr, list_top, 0, list_h, w)
         
