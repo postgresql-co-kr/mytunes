@@ -35,7 +35,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.7.5"
+APP_VERSION = "1.7.6"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -821,14 +821,30 @@ class MyTunesApp:
             
             # 3. WSL (Run Windows Chrome via cmd.exe)
             elif self.is_wsl():
-                # In WSL, we use cmd.exe to start the browser. Window size flags work best when passed directly.
-                # Note: user-data-dir is skipped in WSL for now as Windows can't see /tmp safely without complex path translation.
-                wsl_flags = f"--app={live_url} --window-size=712,800 --window-position=100,100 --new-window --no-first-run --disable-extensions"
                 try:
-                    subprocess.Popen(["cmd.exe", "/c", f"start chrome {wsl_flags}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    # Get Windows TEMP path to use for isolated profile
+                    win_temp = subprocess.check_output(["cmd.exe", "/c", "echo %TEMP%"], text=True).strip()
+                    # Ensure path is Windows-style and has our unique folder
+                    w_profile = os.path.join(win_temp, f"mytunes_v176_{int(time.time() / 10)}")
+                    
+                    # Construct wsl_flags: order matters, --app and --window-size first
+                    # Using double quotes for Windows and carefully escaping for cmd.exe
+                    wsl_args = [
+                        f'--app="{live_url}"',
+                        '--window-size=712,800',
+                        '--window-position=100,100',
+                        f'--user-data-dir="{w_profile}"',
+                        '--new-window',
+                        '--no-first-run',
+                        '--disable-extensions'
+                    ]
+                    
+                    # Use cmd.exe /c start chrome ...
+                    cmd = f"start chrome {' '.join(wsl_args)}"
+                    subprocess.Popen(["cmd.exe", "/c", cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     launched = True
                 except:
-                    # Fallback to general start if chrome command fails
+                    # Fallback to general start if chrome command or temp resolution fails
                     try:
                         subprocess.Popen(["cmd.exe", "/c", "start", live_url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         launched = True
