@@ -35,7 +35,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.7.4"
+APP_VERSION = "1.7.5"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -749,6 +749,9 @@ class MyTunesApp:
                                 subprocess.Popen(["open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                             elif sys.platform == 'win32':
                                 os.startfile(url)
+                            elif self.is_wsl():
+                                # In WSL, call the Windows shell to open the URL in Windows browser
+                                subprocess.Popen(["cmd.exe", "/c", "start", url.replace("&", "^&")], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                             else:
                                 webbrowser.open(url)
                             self.status_msg = "🌐 Opening YouTube in Browser..."
@@ -796,7 +799,7 @@ class MyTunesApp:
                             launched = True; break
                         except: pass
             
-            # 2. Windows
+            # 2. Windows Native
             elif sys.platform == 'win32':
                 win_paths = [
                     os.path.join(os.environ.get('PROGRAMFILES', 'C:\\Program Files'), 'Google\\Chrome\\Application\\chrome.exe'),
@@ -807,7 +810,7 @@ class MyTunesApp:
                     os.path.join(os.environ.get('PROGRAMFILES', 'C:\\Program Files'), 'Microsoft\\Edge\\Application\\msedge.exe'),
                 ]
                 # Windows specific order: --app MUST be early for some Chrome versions to ignore toolbars
-                win_flags = flags + ["--new-window"] # Add back new-window at the end for Windows specifically if needed
+                win_flags = flags + ["--new-window"]
                 for p in win_paths:
                     if os.path.exists(p):
                         try:
@@ -816,7 +819,22 @@ class MyTunesApp:
                             launched = True; break
                         except: pass
             
-            # 3. Linux (shutil.which)
+            # 3. WSL (Run Windows Chrome via cmd.exe)
+            elif self.is_wsl():
+                # In WSL, we use cmd.exe to start the browser. Window size flags work best when passed directly.
+                # Note: user-data-dir is skipped in WSL for now as Windows can't see /tmp safely without complex path translation.
+                wsl_flags = f"--app={live_url} --window-size=712,800 --window-position=100,100 --new-window --no-first-run --disable-extensions"
+                try:
+                    subprocess.Popen(["cmd.exe", "/c", f"start chrome {wsl_flags}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    launched = True
+                except:
+                    # Fallback to general start if chrome command fails
+                    try:
+                        subprocess.Popen(["cmd.exe", "/c", "start", live_url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        launched = True
+                    except: pass
+
+            # 4. Native Linux
             else:
                 for b in ['google-chrome', 'google-chrome-stable', 'brave-browser', 'chromium-browser', 'chromium']:
                     p = shutil.which(b)
@@ -890,11 +908,16 @@ class MyTunesApp:
         return res
 
     def is_remote(self):
-        """Check if running in a remote SSH session (excluding WSL)."""
-        # WSL is technically "local" enough to open browsers
-        if 'WSL_DISTRO_NAME' in os.environ or 'WSL_INTEROP' in os.environ:
+        return 'SSH_CONNECTION' in os.environ or 'SSH_CLIENT' in os.environ
+
+    def is_wsl(self):
+        try:
+            if sys.platform != 'linux': return False
+            if os.path.exists('/proc/version'):
+                with open('/proc/version', 'r') as f:
+                    return 'microsoft' in f.read().lower()
             return False
-        return os.environ.get('SSH_CLIENT') or os.environ.get('SSH_TTY')
+        except: return False
 
     def show_copy_dialog(self, title, url):
         """Show a dialog with the URL for manual copying in remote sessions."""
