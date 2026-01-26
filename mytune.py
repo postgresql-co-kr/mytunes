@@ -30,7 +30,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.9.7"
+APP_VERSION = "1.9.8"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -744,7 +744,7 @@ class MyTunesApp:
         # Open Live Station: F8
         elif key == curses.KEY_F8:
             # Replace localhost with production URL if needed, or keep as project landing page
-            live_url = "https://mytunes.postgresql.co.kr/live" # Production Live URL
+            live_url = "https://mytunes-pro.com/live" # Production Live URL
             
             if self.is_remote():
                 self.show_copy_dialog("Live Station", live_url)

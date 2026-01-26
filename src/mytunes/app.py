@@ -36,7 +36,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.9.7"
+APP_VERSION = "1.9.8"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -761,7 +761,7 @@ class MyTunesApp:
 
         # Open Live Station (F8): App Mode with Optimized Flags (v1.8.6)
         elif key == curses.KEY_F8:
-            live_url = "https://mytunes.postgresql.co.kr/live/"
+            live_url = "https://mytunes-pro.com/live/"
             if self.is_remote():
                 self.show_copy_dialog("Live Station", live_url)
                 return
@@ -780,7 +780,7 @@ class MyTunesApp:
             # Optimized Flag Set (Context7 Research)
             flags = [
                 f"--app={live_url}", 
-                "--window-size=712,800", 
+                "--window-size=620,900", 
                 "--window-position=100,100",
                 f"--user-data-dir={temp_user_data}",
                 "--no-first-run",
