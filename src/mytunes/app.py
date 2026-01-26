@@ -35,7 +35,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.8.5"
+APP_VERSION = "1.8.6"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -758,20 +758,31 @@ class MyTunesApp:
                         self.status_msg = "🌐 Opening YouTube in Browser..."
                         threading.Thread(target=webbrowser.open, args=(url,), daemon=True).start()
 
-        # Open Live Station: F8
+        # Open Live Station (F8): App Mode with Optimized Flags (v1.8.6)
         elif key == curses.KEY_F8:
             live_url = "https://mytunes.postgresql.co.kr/live/"
             if self.is_remote():
                 self.show_copy_dialog("Live Station", live_url)
                 return
 
-            # App Mode Flags
+            # v1.8.6 - Force window size/position by isolating profile
+            temp_user_data = os.path.join(tempfile.gettempdir(), f"mytunes_v186_{int(time.time() / 10)}")
+            
+            # Optimized Flag Set (Context7 Research)
             flags = [
                 f"--app={live_url}", 
                 "--window-size=712,800", 
                 "--window-position=100,100",
-                "--new-window",
+                f"--user-data-dir={temp_user_data}",
                 "--no-first-run",
+                "--no-default-browser-check",
+                "--disable-default-apps",
+                "--disable-infobars",
+                "--disable-translate",
+                "--disable-features=Translation",
+                "--disable-save-password-bubble",
+                "--autoplay-policy=no-user-gesture-required",
+                "--new-window",
                 "--disable-extensions"
             ]
             
@@ -783,6 +794,7 @@ class MyTunesApp:
                 for b_path in browsers:
                     if os.path.exists(b_path):
                         try:
+                            # Use -na to open a fresh instance
                             subprocess.Popen(["open", "-na", b_path, "--args"] + flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                             launched = True; break
                         except: pass
@@ -819,8 +831,8 @@ class MyTunesApp:
                 
                 if not launched:
                     try:
-                        # Fallback for WSL to CMD
-                        subprocess.Popen(["cmd.exe", "/c", f"start chrome --app={live_url}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                        # Fallback for WSL to CMD (Keep flags for consistency)
+                        subprocess.Popen(["cmd.exe", "/c", f"start chrome --app={live_url} --user-data-dir={temp_user_data}"], stdout=subprocess.DEVNULL, stderr=stderr=subprocess.DEVNULL, start_new_session=True)
                         launched = True
                     except: pass
 
