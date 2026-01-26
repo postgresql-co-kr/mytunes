@@ -1,6 +1,6 @@
 # 🎵 MyTunes Pro (Korean)
 
-**현대적인 CLI 유튜브 뮤직 플레이어 (v1.8.9)**  
+**현대적인 CLI 유튜브 뮤직 플레이어 (v1.9.0)**  
 터미널 환경에서 **YouTube 음악을 검색하여 듣는** 가볍고 빠른 키보드 중심의 플레이어입니다.  
 한국어 입력 환경에서도 **숫자 키(1~5)**를 통해 지연 없는 쾌적한 조작이 가능합니다.
 
@@ -189,7 +189,7 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 
 # 🎵 MyTunes Pro (English)
 
-**Modern CLI YouTube Music Player (v1.8.9)**  
+**Modern CLI YouTube Music Player (v1.9.0)**  
 A lightweight, keyboard-centric terminal player for streaming YouTube music.  
 
 ---
@@ -277,7 +277,11 @@ sudo apt install mpv python3 python3-pip pipx python3-venv -y
 
 ## 🔄 Changelog
 
-### v1.8.9 (Latest)
+### v1.9.0 (Latest)
+
+- **Fix WSL Profile Error**: Switched to using the **native Windows TEMP directory** (e.g., `C:\Users\...\AppData\Local\Temp`) for the browser profile in WSL. This prevents file locking issues caused by Chrome treating `\\wsl$\` paths as network drives.
+
+### v1.8.9
 
 - **Robust WSL Path Fix**: Resolved an issue where direct browser launching (non-fallback) in WSL was still using Linux paths for the profile, causing "User Data Directory" creation errors. Path conversion is now applied globally before launch.
 

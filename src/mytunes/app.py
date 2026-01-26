@@ -35,7 +35,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.8.9"
+APP_VERSION = "1.9.0"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -765,17 +765,19 @@ class MyTunesApp:
                 self.show_copy_dialog("Live Station", live_url)
                 return
 
-            # v1.8.6 - Force window size/position by isolating profile
-            temp_user_data = os.path.join(tempfile.gettempdir(), f"mytunes_v186_{int(time.time() / 10)}")
-
-            # v1.8.9 - Critical Fix for WSL: Convert Linux path to Windows path upstream
-            # This ensures both Direct Launch and Fallback methods receive the correct path.
+            # v1.9.0 - Critical WSL Fix: Use Windows Native Temp Path
+            # Chrome on Windows cannot reliably lock files in \\wsl$\ paths (Linux /tmp).
+            # We must use the actual Windows %TEMP% directory (e.g., C:\Users\...\Temp).
             if self.is_wsl():
                 try:
-                    win_path = subprocess.check_output(['wslpath', '-w', temp_user_data], text=True).strip()
-                    temp_user_data = win_path
-                except: pass
-            
+                    win_temp = subprocess.check_output(["cmd.exe", "/c", "echo %TEMP%"], text=True).strip()
+                    temp_user_data = f"{win_temp}\\mytunes_v190_{int(time.time() / 10)}"
+                except:
+                    # Fallback to local temp if retrieval fails (unlikely)
+                    temp_user_data = os.path.join(tempfile.gettempdir(), f"mytunes_v190_{int(time.time() / 10)}")
+            else:
+                temp_user_data = os.path.join(tempfile.gettempdir(), f"mytunes_v190_{int(time.time() / 10)}")
+
             # Optimized Flag Set (Context7 Research)
             flags = [
                 f"--app={live_url}", 
