@@ -738,8 +738,13 @@ class MyTunesApp:
                     if self.is_remote():
                         self.show_copy_dialog("YouTube", url)
                     else:
-                        webbrowser.open(url)
-                        self.status_msg = "🌐 Opening YouTube in Browser..."
+                        try:
+                            # Silence output to prevent curses corruption
+                            subprocess.Popen(["open", url] if sys.platform == 'darwin' else [url], shell=(sys.platform != 'darwin'), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            self.status_msg = "🌐 Opening YouTube in Browser..."
+                        except:
+                            webbrowser.open(url)
+                            self.status_msg = "🌐 Opening YouTube..."
 
         # Open Live Station: F8
         elif key == curses.KEY_F8:
@@ -762,10 +767,11 @@ class MyTunesApp:
                 for b_name, b_path in browsers:
                     if os.path.exists(b_path):
                         try:
-                            subprocess.Popen(["open", "-na", b_path, "--args"] + flags)
+                            # Redirect all output to DEVNULL to keep terminal clean
+                            subprocess.Popen(["open", "-na", b_path, "--args"] + flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                             # AppleScript absolute bounds reinforcement
                             script = f'delay 0.8\ntell application "System Events"\n    tell process "{b_name}"\n        set bounds of window 1 to {{100, 100, 812, 900}}\n    end tell\nend tell'
-                            subprocess.Popen(["osascript", "-e", script])
+                            subprocess.Popen(["osascript", "-e", script], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                             launched = True; break
                         except: pass
             
@@ -780,7 +786,7 @@ class MyTunesApp:
                 for p in win_paths:
                     if os.path.exists(p):
                         try:
-                            subprocess.Popen([p] + flags); launched = True; break
+                            subprocess.Popen([p] + flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); launched = True; break
                         except: pass
             
             # 3. Linux (shutil.which)
@@ -789,7 +795,7 @@ class MyTunesApp:
                     p = shutil.which(b)
                     if p:
                         try:
-                            subprocess.Popen([p] + flags); launched = True; break
+                            subprocess.Popen([p] + flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); launched = True; break
                         except: pass
 
             if launched:
