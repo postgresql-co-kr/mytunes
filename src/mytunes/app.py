@@ -16,9 +16,14 @@ import unicodedata
 import socket
 import locale
 import signal
+import warnings
+# Suppress urllib3 warning about LibreSSL compatibility
+warnings.filterwarnings("ignore", message=".*urllib3 v2 only supports OpenSSL 1.1.1+.*")
 import webbrowser
 import tempfile
 import shutil
+import pusher
+import requests
 
 
 # Ensure Unicode support
