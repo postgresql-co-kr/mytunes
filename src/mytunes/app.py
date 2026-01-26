@@ -35,7 +35,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.7.9"
+APP_VERSION = "1.8.0"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -809,37 +809,39 @@ class MyTunesApp:
                     os.path.join(os.environ.get('PROGRAMFILES(X86)', 'C:\\Program Files (x86)'), 'Microsoft\\Edge\\Application\\msedge.exe'),
                     os.path.join(os.environ.get('PROGRAMFILES', 'C:\\Program Files'), 'Microsoft\\Edge\\Application\\msedge.exe'),
                 ]
-                # Windows specific order: --app MUST be early for some Chrome versions to ignore toolbars
-                win_flags = flags + ["--new-window"]
+                # In native Windows, we remove user-data-dir to avoid permission/expansion errors
+                # app mode + new-window + window-size is sufficient.
+                win_flags = [
+                    f'--app="{live_url}"',
+                    '--window-size=712,800',
+                    '--window-position=100,100',
+                    '--new-window',
+                    '--no-first-run',
+                    '--disable-extensions'
+                ]
                 for p in win_paths:
                     if os.path.exists(p):
                         try:
-                            # Use shell=False (default) for list-based Popen on Windows
+                            # Use list-based Popen for native Windows
                             subprocess.Popen([p] + win_flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                             launched = True; break
                         except: pass
             
-            # 3. WSL (Run Windows Chrome via cmd.exe for reliable %LOCALAPPDATA% expansion)
+            # 3. WSL (Run Windows Chrome via cmd.exe)
             elif self.is_wsl():
                 try:
-                    # Switching to cmd.exe as requested. cmd expand variables like %LOCALAPPDATA% natively.
-                    # 1. Create directory in standard Windows local app data
-                    # 2. Launch chrome with explicit window flags
-                    p_dir = "%LOCALAPPDATA%\\MyTunesApp\\v179"
-                    
+                    # Pure CMD start without user-data-dir to avoid expansion/path issues.
+                    # Window sizing works reliably with just these flags.
                     c_args = [
                         f'--app=\"{live_url}\"',
                         '--window-size=712,800',
                         '--window-position=100,100',
-                        f'--user-data-dir=\"{p_dir}\"',
                         '--new-window',
                         '--no-first-run',
                         '--disable-extensions'
                     ]
-                    
-                    # Chain commands: mkdir (ignore error if exists) then start chrome
-                    full_cmd = f'mkdir "{p_dir}" 2>nul & start chrome {" ".join(c_args)}'
-                    
+                    # Direct call to chrome via cmd start
+                    full_cmd = f'start chrome {" ".join(c_args)}'
                     subprocess.Popen(["cmd.exe", "/c", full_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     launched = True
                 except:
