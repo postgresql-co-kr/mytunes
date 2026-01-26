@@ -1,6 +1,6 @@
 # 🎵 MyTunes Pro (Korean)
 
-**현대적인 CLI 유튜브 뮤직 플레이어 (v1.8.1)**  
+**현대적인 CLI 유튜브 뮤직 플레이어 (v1.8.3)**  
 터미널 환경에서 **YouTube 음악을 검색하여 듣는** 가볍고 빠른 키보드 중심의 플레이어입니다.  
 한국어 입력 환경에서도 **숫자 키(1~5)**를 통해 지연 없는 쾌적한 조작이 가능합니다.
 
@@ -189,7 +189,7 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 
 # 🎵 MyTunes Pro (English)
 
-**Modern CLI YouTube Music Player (v1.8.1)**  
+**Modern CLI YouTube Music Player (v1.8.3)**  
 A lightweight, keyboard-centric terminal player for streaming YouTube music.  
 
 ---
@@ -277,7 +277,13 @@ sudo apt install mpv python3 python3-pip pipx python3-venv -y
 
 ## 🔄 Changelog
 
-### v1.8.1 (Latest)
+### v1.8.3 (Latest)
+
+- **Direct Binary Execution (WSL)**: Resolved shell parsing issues by bypassing `cmd.exe` and directly executing Windows browser binaries via `/mnt/c/` paths.
+- **App Mode Reliability**: Guaranteed 712x800 popup mode by ensuring flags are delivered directly to the browser process without intermediate shell mangling.
+- **Fixed URL Resolution**: Eliminated the "Empty URL" bug by standardizing argument passing between WSL and Windows.
+
+### v1.8.1
 
 - **Fixed App Mode (WSL/Win)**: Guaranteed the browser opens in a clean "App Mode" popup by fixing shell quoting issues in the launch command.
 - **URL Resolution Fix**: Resolved the "Empty URL" bug on WSL/Windows by ensuring the `--app` flag is correctly parsed by the native Windows shell.

@@ -35,7 +35,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.8.1"
+APP_VERSION = "1.8.3"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -809,7 +809,7 @@ class MyTunesApp:
                     os.path.join(os.environ.get('PROGRAMFILES(X86)', 'C:\\Program Files (x86)'), 'Microsoft\\Edge\\Application\\msedge.exe'),
                     os.path.join(os.environ.get('PROGRAMFILES', 'C:\\Program Files'), 'Microsoft\\Edge\\Application\\msedge.exe'),
                 ]
-                # v1.8.1 - Precise: No internal quotes around URL to avoid misparsing as literal parts of URI
+                # v1.8.2 - Maximum precision: --app flag MUST be exact and first for reliable popup mode
                 win_flags = [
                     f'--app={live_url}',
                     '--window-size=712,800',
@@ -826,31 +826,47 @@ class MyTunesApp:
                             launched = True; break
                         except: pass
             
-            # 3. WSL (Run Windows Chrome via cmd.exe)
+            # 3. WSL (Run Windows Chrome directly if possible, fallback to cmd.exe)
             elif self.is_wsl():
-                try:
-                    # v1.8.1 - Pure and Precise for WSL->CMD
-                    # 1. No internal quotes for the URL (prevents "Empty URL" / navigation failure)
-                    # 2. Use start "" chrome (Prevents 'start' from hijacking the first flag as a title)
-                    # 3. Combined flags for maximum compatibility
-                    c_args = [
-                        f'--app={live_url}',
-                        '--window-size=712,800',
-                        '--window-position=100,100',
-                        '--new-window',
-                        '--no-first-run',
-                        '--disable-extensions'
-                    ]
-                    # Direct call to chrome via cmd start
-                    full_cmd = f'start "" chrome {" ".join(c_args)}'
-                    subprocess.Popen(["cmd.exe", "/c", full_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                    launched = True
-                except:
-                    # Fallback to general start
+                # v1.8.3 - Direct binary execution for maximum precision (Avoids cmd.exe shell splitting)
+                # We try standard Windows installation paths via /mnt/c/
+                wsl_win_paths = [
+                    "/mnt/c/Program Files/Google/Chrome/Application/chrome.exe",
+                    "/mnt/c/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+                    "/mnt/c/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe",
+                    "/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+                    "/mnt/c/Program Files/Microsoft/Edge/Application/msedge.exe",
+                ]
+                # Same precise flags for App Mode
+                wsl_win_flags = [
+                    f'--app={live_url}',
+                    '--window-size=712,800',
+                    '--window-position=100,100',
+                    '--new-window',
+                    '--no-first-run',
+                    '--disable-extensions'
+                ]
+                
+                launched_direct = False
+                for p in wsl_win_paths:
+                    if os.path.exists(p):
+                        try:
+                            # Direct execution from WSL to Windows binary is extremely stable
+                            subprocess.Popen([p] + wsl_win_flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            launched = True; launched_direct = True; break
+                        except: pass
+                
+                if not launched_direct:
                     try:
-                        subprocess.Popen(["cmd.exe", "/c", "start", live_url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        # Final fallback: cmd.exe start (Literal strings, no title)
+                        cmd_fallback = f'start chrome --app={live_url} --window-size=712,800 --new-window'
+                        subprocess.Popen(["cmd.exe", "/c", cmd_fallback], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         launched = True
-                    except: pass
+                    except:
+                        try:
+                            subprocess.Popen(["cmd.exe", "/c", "start", live_url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            launched = True
+                        except: pass
 
             # 4. Native Linux
             else:
