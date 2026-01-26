@@ -755,23 +755,29 @@ class MyTunesApp:
 
             # Robust Cross-Platform Browser Launch
             temp_user_data = os.path.join(tempfile.gettempdir(), "mytunes_live_session")
-            flags = [f"--app={live_url}", f"--window-size=712,800", f"--user-data-dir={temp_user_data}", "--no-first-run"]
+            # Added UI polish: disable translation and unnecessary toolbars
+            flags = [
+                f"--app={live_url}", 
+                "--window-size=712,800", 
+                f"--user-data-dir={temp_user_data}", 
+                "--no-first-run",
+                "--disable-features=Translation",
+                "--disable-save-password-bubble",
+                "--disable-translate"
+            ]
             
             launched = False
-            # 1. macOS
+            # 1. macOS (Avoid AppleScript to prevent permission prompts)
             if sys.platform == 'darwin':
                 browsers = [
-                    ("Google Chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
-                    ("Brave Browser", "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser")
+                    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+                    "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
                 ]
-                for b_name, b_path in browsers:
+                for b_path in browsers:
                     if os.path.exists(b_path):
                         try:
-                            # Redirect all output to DEVNULL to keep terminal clean
+                            # Use 'open -na' but without AppleScript to stay 'standard' and avoid prompts
                             subprocess.Popen(["open", "-na", b_path, "--args"] + flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                            # AppleScript absolute bounds reinforcement
-                            script = f'delay 0.8\ntell application "System Events"\n    tell process "{b_name}"\n        set bounds of window 1 to {{100, 100, 812, 900}}\n    end tell\nend tell'
-                            subprocess.Popen(["osascript", "-e", script], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                             launched = True; break
                         except: pass
             
