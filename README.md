@@ -1,6 +1,6 @@
 # 🎵 MyTunes Pro (Korean)
 
-**현대적인 CLI 유튜브 뮤직 플레이어 (v1.7.9)**  
+**현대적인 CLI 유튜브 뮤직 플레이어 (v1.8.0)**  
 터미널 환경에서 **YouTube 음악을 검색하여 듣는** 가볍고 빠른 키보드 중심의 플레이어입니다.  
 한국어 입력 환경에서도 **숫자 키(1~5)**를 통해 지연 없는 쾌적한 조작이 가능합니다.
 
@@ -189,7 +189,7 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 
 # 🎵 MyTunes Pro (English)
 
-**Modern CLI YouTube Music Player (v1.7.9)**  
+**Modern CLI YouTube Music Player (v1.8.0)**  
 A lightweight, keyboard-centric terminal player for streaming YouTube music.  
 
 ---
@@ -277,7 +277,12 @@ sudo apt install mpv python3 python3-pip pipx python3-venv -y
 
 ## 🔄 Changelog
 
-### v1.7.9 (Latest)
+### v1.8.0 (Latest)
+
+- **Stabilized Browser Launch (Windows/WSL)**: Completely removed the `--user-data-dir` flag for all Windows-based environments. This permanently resolves the "cannot read or write" directory errors while maintaining reliable 712x800 window sizing through pure app-mode flags.
+- **Clean CMD Execution**: Simplified the WSL-to-Windows transition by using standard `cmd.exe` calls without complex path or variable expansion, ensuring consistent behavior across all systems.
+
+### v1.7.9
 
 - **Pure CMD-based Launch (WSL/Win)**: Final fix for WSL-to-Windows browser launch using `cmd.exe /c` with native `%LOCALAPPDATA%` expansion.
 - **Directory Reliability**: Ensured Chrome data directory creation and access by using native Windows shell commands, eliminating the "cannot read or write" errors seen in v1.7.8.
