@@ -780,7 +780,7 @@ class MyTunesApp:
             # Optimized Flag Set (Context7 Research)
             flags = [
                 f"--app={live_url}", 
-                "--window-size=620,900", 
+                "--window-size=600,900", 
                 "--window-position=100,100",
                 f"--user-data-dir={temp_user_data}",
                 "--no-first-run",
