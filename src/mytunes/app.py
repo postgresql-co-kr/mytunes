@@ -35,7 +35,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.8.6"
+APP_VERSION = "1.8.7"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -832,7 +832,7 @@ class MyTunesApp:
                 if not launched:
                     try:
                         # Fallback for WSL to CMD (Keep flags for consistency)
-                        subprocess.Popen(["cmd.exe", "/c", f"start chrome --app={live_url} --user-data-dir={temp_user_data}"], stdout=subprocess.DEVNULL, stderr=stderr=subprocess.DEVNULL, start_new_session=True)
+                        subprocess.Popen(["cmd.exe", "/c", f"start chrome --app={live_url} --user-data-dir={temp_user_data}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
                         launched = True
                     except: pass
 
