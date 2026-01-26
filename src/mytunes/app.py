@@ -36,7 +36,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.9.4"
+APP_VERSION = "1.9.5"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -822,28 +822,6 @@ class MyTunesApp:
                             launched = True; break
                         except: pass
             
-            # 3. WSL / Linux (Direct path with session isolation)
-            elif self.is_wsl():
-                wsl_paths = [
-                    "/mnt/c/Program Files/Google/Chrome/Application/chrome.exe",
-                    "/mnt/c/Program Files (x86)/Google/Chrome/Application/chrome.exe",
-                    "/mnt/c/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe",
-                ]
-                for p in wsl_paths:
-                    if os.path.exists(p):
-                        try:
-                            # CRITICAL: start_new_session=True isolates the browser from the TUI process group
-                            # This prevents the TUI from dying when navigating or if the browser has shell issues.
-                            subprocess.Popen([p] + flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-                            launched = True; break
-                        except: pass
-                
-                if not launched:
-                    try:
-                        # Fallback for WSL to CMD (path is already converted upstream)
-                        subprocess.Popen(["cmd.exe", "/c", f"start chrome --app={live_url} --user-data-dir={temp_user_data}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-                        launched = True
-                    except: pass
 
             # 4. Native Linux
             else:
