@@ -35,7 +35,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.9.1"
+APP_VERSION = "1.9.2"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -765,21 +765,12 @@ class MyTunesApp:
                 self.show_copy_dialog("Live Station", live_url)
                 return
 
-            # v1.9.0 - Critical WSL Fix: Use Windows Native Temp Path
-            # Chrome on Windows cannot reliably lock files in \\wsl$\ paths (Linux /tmp).
-            # We must use the actual Windows %TEMP% directory (e.g., C:\Users\...\Temp).
+            # v1.9.2 - Critical WSL Fix: Disable Profile Isolation
+            # Executing cmd.exe or managing paths in WSL has proven unstable due to environment differences.
+            # We explicitly DISABLE profile isolation in WSL, using the default Chrome profile data.
+            # This ensures stability at the cost of session isolation.
             if self.is_wsl():
-                try:
-                    # v1.9.1 - Fix CMD Output Pollution
-                    # cmd.exe often prints "UNC paths are not supported..." warnings in WSL dirs.
-                    # We run from /mnt/c to avoid this, and parse the LAST line just in case.
-                    run_dir = "/mnt/c" if os.path.exists("/mnt/c") else "/"
-                    cmd_out = subprocess.check_output(["cmd.exe", "/c", "echo %TEMP%"], cwd=run_dir, text=True).strip()
-                    win_temp = cmd_out.splitlines()[-1].strip()
-                    temp_user_data = f"{win_temp}\\mytunes_v190_{int(time.time() / 10)}"
-                except:
-                    # Fallback to local temp if retrieval fails (unlikely)
-                    temp_user_data = os.path.join(tempfile.gettempdir(), f"mytunes_v190_{int(time.time() / 10)}")
+                temp_user_data = None
             else:
                 temp_user_data = os.path.join(tempfile.gettempdir(), f"mytunes_v190_{int(time.time() / 10)}")
 
@@ -788,7 +779,21 @@ class MyTunesApp:
                 f"--app={live_url}", 
                 "--window-size=712,800", 
                 "--window-position=100,100",
-                f"--user-data-dir={temp_user_data}",
+                "--no-first-run",
+                "--no-default-browser-check",
+                "--disable-default-apps",
+                "--disable-infobars",
+                "--disable-translate",
+                "--disable-features=Translation",
+                "--disable-save-password-bubble",
+                "--autoplay-policy=no-user-gesture-required",
+                "--new-window",
+                "--disable-extensions"
+            ]
+            
+            # Only add user-data-dir if we have a valid path (Non-WSL)
+            if temp_user_data:
+                flags.append(f"--user-data-dir={temp_user_data}")
                 "--no-first-run",
                 "--no-default-browser-check",
                 "--disable-default-apps",
