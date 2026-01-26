@@ -744,7 +744,7 @@ class MyTunesApp:
         # Open Live Station: F8
         elif key == curses.KEY_F8:
             # Replace localhost with production URL if needed, or keep as project landing page
-            live_url = "https://mytunes.postgresql.co.kr/live" # Production Live URL
+            live_url = "https://mytunes.postgresql.co.kr/live/" # Production Live URL
             
             if self.is_remote():
                 self.show_copy_dialog("Live Station", live_url)
@@ -759,7 +759,7 @@ class MyTunesApp:
                     for b_path in browsers:
                         if os.path.exists(b_path):
                             try:
-                                subprocess.Popen([b_path, f"--app={live_url}", "--window-size=600,800"])
+                                subprocess.Popen([b_path, f"--app={live_url}", "--window-size=712,800"])
                                 self.status_msg = "📡 Opening Live Popup..."
                                 launched = True
                                 break
