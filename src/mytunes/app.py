@@ -753,15 +753,20 @@ class MyTunesApp:
                 launched = False
                 if sys.platform == 'darwin':
                     browsers = [
-                        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-                        "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+                        ("Google Chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
+                        ("Brave Browser", "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser")
                     ]
-                    for b_path in browsers:
+                    for b_name, b_path in browsers:
                         if os.path.exists(b_path):
                             try:
-                                # Use 'open -na' to force a new instance, which ensures window-size is respected
-                                subprocess.Popen(["open", "-na", b_path, "--args", f"--app={live_url}", "--window-size=712,800"])
-                                self.status_msg = "📡 Opening Live Popup..."
+                                # Use 'open -na' + aggressive flags
+                                subprocess.Popen(["open", "-na", b_path, "--args", f"--app={live_url}", "--window-size=712,800", "--window-position=100,100"])
+                                
+                                # AppleScript Fallback: Force resize via System Events
+                                script = f'delay 0.8\ntell application "System Events"\n    tell process "{b_name}"\n        set size of window 1 to {{712, 800}}\n    end tell\ntell'
+                                subprocess.Popen(["osascript", "-e", script])
+                                
+                                self.status_msg = "📡 Opening Live Popup (Forced Size)..."
                                 launched = True
                                 break
                             except: pass
