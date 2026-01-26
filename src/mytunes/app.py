@@ -35,7 +35,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.7.1"
+APP_VERSION = "1.7.2"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -764,6 +764,7 @@ class MyTunesApp:
             flags = [
                 f"--app={live_url}", 
                 "--window-size=712,800", 
+                "--new-window",
                 f"--user-data-dir={temp_user_data}", 
                 "--no-first-run",
                 "--disable-features=Translation",
@@ -792,12 +793,18 @@ class MyTunesApp:
                     os.path.join(os.environ.get('PROGRAMFILES', 'C:\\Program Files'), 'Google\\Chrome\\Application\\chrome.exe'),
                     os.path.join(os.environ.get('PROGRAMFILES(X86)', 'C:\\Program Files (x86)'), 'Google\\Chrome\\Application\\chrome.exe'),
                     os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Google\\Chrome\\Application\\chrome.exe'),
-                    os.path.join(os.environ.get('PROGRAMFILES', 'C:\\Program Files'), 'BraveSoftware\\Brave-Browser\\Application\\brave.exe')
+                    os.path.join(os.environ.get('PROGRAMFILES', 'C:\\Program Files'), 'BraveSoftware\\Brave-Browser\\Application\\brave.exe'),
+                    os.path.join(os.environ.get('PROGRAMFILES(X86)', 'C:\\Program Files (x86)'), 'Microsoft\\Edge\\Application\\msedge.exe'),
+                    os.path.join(os.environ.get('PROGRAMFILES', 'C:\\Program Files'), 'Microsoft\\Edge\\Application\\msedge.exe'),
                 ]
+                # Reorder flags for Windows: size first can sometimes help with initialization
+                win_flags = ["--window-size=712,800"] + [f for f in flags if "--window-size" not in f]
                 for p in win_paths:
                     if os.path.exists(p):
                         try:
-                            subprocess.Popen([p] + flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); launched = True; break
+                            # Use shell=False (default) for list-based Popen on Windows
+                            subprocess.Popen([p] + win_flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            launched = True; break
                         except: pass
             
             # 3. Linux (shutil.which)

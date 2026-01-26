@@ -1,6 +1,6 @@
 # 🎵 MyTunes Pro (Korean)
 
-**현대적인 CLI 유튜브 뮤직 플레이어 (v1.7.1)**  
+**현대적인 CLI 유튜브 뮤직 플레이어 (v1.7.2)**  
 터미널 환경에서 **YouTube 음악을 검색하여 듣는** 가볍고 빠른 키보드 중심의 플레이어입니다.  
 한국어 입력 환경에서도 **숫자 키(1~5)**를 통해 지연 없는 쾌적한 조작이 가능합니다.
 
@@ -189,7 +189,7 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 
 # 🎵 MyTunes Pro (English)
 
-**Modern CLI YouTube Music Player (v1.7.1)**  
+**Modern CLI YouTube Music Player (v1.7.2)**  
 A lightweight, keyboard-centric terminal player for streaming YouTube music.  
 
 ---
@@ -277,7 +277,13 @@ sudo apt install mpv python3 python3-pip pipx python3-venv -y
 
 ## 🔄 Changelog
 
-### v1.7.1 (Latest)
+### v1.7.2 (Latest)
+
+- **Windows Optimization**: Fixed an issue where the Live Station (F8) window size was not correctly applied on Windows.
+- **Improved Browser Support**: Added Microsoft Edge to the automatic browser detection list.
+- **Robust Launch Logic**: Enhanced browser internal flags for a better initial window experience.
+
+### v1.7.1
 
 - **Performance & Logic Optimization**: Standardized browser launch logic for Live Station (F8) across Mac, Windows, and Linux.
 - **UI Polish**: Silenced browser launch warnings in the terminal and added professional UI flags (disable translation/bubble) for a cleaner experience.
