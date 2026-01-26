@@ -35,7 +35,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.8.0"
+APP_VERSION = "1.8.1"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -809,10 +809,9 @@ class MyTunesApp:
                     os.path.join(os.environ.get('PROGRAMFILES(X86)', 'C:\\Program Files (x86)'), 'Microsoft\\Edge\\Application\\msedge.exe'),
                     os.path.join(os.environ.get('PROGRAMFILES', 'C:\\Program Files'), 'Microsoft\\Edge\\Application\\msedge.exe'),
                 ]
-                # In native Windows, we remove user-data-dir to avoid permission/expansion errors
-                # app mode + new-window + window-size is sufficient.
+                # v1.8.1 - Precise: No internal quotes around URL to avoid misparsing as literal parts of URI
                 win_flags = [
-                    f'--app="{live_url}"',
+                    f'--app={live_url}',
                     '--window-size=712,800',
                     '--window-position=100,100',
                     '--new-window',
@@ -830,10 +829,12 @@ class MyTunesApp:
             # 3. WSL (Run Windows Chrome via cmd.exe)
             elif self.is_wsl():
                 try:
-                    # Pure CMD start without user-data-dir to avoid expansion/path issues.
-                    # Window sizing works reliably with just these flags.
+                    # v1.8.1 - Pure and Precise for WSL->CMD
+                    # 1. No internal quotes for the URL (prevents "Empty URL" / navigation failure)
+                    # 2. Use start "" chrome (Prevents 'start' from hijacking the first flag as a title)
+                    # 3. Combined flags for maximum compatibility
                     c_args = [
-                        f'--app=\"{live_url}\"',
+                        f'--app={live_url}',
                         '--window-size=712,800',
                         '--window-position=100,100',
                         '--new-window',
@@ -841,7 +842,7 @@ class MyTunesApp:
                         '--disable-extensions'
                     ]
                     # Direct call to chrome via cmd start
-                    full_cmd = f'start chrome {" ".join(c_args)}'
+                    full_cmd = f'start "" chrome {" ".join(c_args)}'
                     subprocess.Popen(["cmd.exe", "/c", full_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     launched = True
                 except:
