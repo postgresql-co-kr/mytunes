@@ -35,7 +35,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.8.3"
+APP_VERSION = "1.8.4"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -245,10 +245,12 @@ class Player:
         # self.cleanup_orphaned_mpv() # Moved to play() per user request
         
     def cleanup_orphaned_mpv(self):
-        # User requested revert to aggressive pkill for reliability
-        # This ensures any previous background instances are killed
+        # Precise pkill to avoid matching the main TUI process
+        # Matches 'mpv ' (with space) or 'mpv' as exact process name
         try:
-            subprocess.run(["pkill", "-f", "mpv"], stderr=subprocess.DEVNULL)
+            subprocess.run(["pkill", "-x", "mpv"], stderr=subprocess.DEVNULL)
+            # Second pass for variants or sub-arguments if needed
+            subprocess.run(["pkill", "-f", "mpv --video=no"], stderr=subprocess.DEVNULL)
         except: pass
         
     def play(self, url, start_pos=0):
@@ -330,7 +332,6 @@ class Player:
         if self.current_proc:
             try:
                 self.current_proc.terminate()
-                self.current_proc.wait(timeout=1)
                 self.current_proc.wait(timeout=1)
             except:
                 # If terminate fails, try socket quit
@@ -743,21 +744,9 @@ class MyTunesApp:
                     if self.is_remote():
                         self.show_copy_dialog("YouTube", url)
                     else:
-                        try:
-                            # Robust multi-platform open
-                            if sys.platform == 'darwin':
-                                subprocess.Popen(["open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                            elif sys.platform == 'win32':
-                                os.startfile(url)
-                            elif self.is_wsl():
-                                # In WSL, call the Windows shell to open the URL in Windows browser
-                                subprocess.Popen(["cmd.exe", "/c", "start", url.replace("&", "^&")], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                            else:
-                                webbrowser.open(url)
-                            self.status_msg = "🌐 Opening YouTube in Browser..."
-                        except:
-                            webbrowser.open(url)
-                            self.status_msg = "🌐 Opening YouTube..."
+                        # v1.8.4 - Use standard webbrowser library for maximum stability on F7
+                        self.status_msg = "🌐 Opening YouTube in Browser..."
+                        threading.Thread(target=webbrowser.open, args=(url,), daemon=True).start()
 
         # Open Live Station: F8
         elif key == curses.KEY_F8:
@@ -766,35 +755,24 @@ class MyTunesApp:
                 self.show_copy_dialog("Live Station", live_url)
                 return
 
-            # Add timestamp to user-data-dir to force size/position flags to be respected (prevents "remembering")
-            # Using int(time.time() / 3600) to keep it stable within the same hour but fresh enough for new versions
-            temp_user_data = os.path.join(tempfile.gettempdir(), f"mytunes_v174_{int(time.time() / 10)}")
-            
-            # Universal flags
+            # App Mode Flags
             flags = [
                 f"--app={live_url}", 
                 "--window-size=712,800", 
                 "--window-position=100,100",
-                f"--user-data-dir={temp_user_data}", 
+                "--new-window",
                 "--no-first-run",
-                "--disable-extensions",
-                "--disable-default-apps",
-                "--disable-features=Translation",
-                "--disable-save-password-bubble",
-                "--disable-translate"
+                "--disable-extensions"
             ]
             
             launched = False
-            # 1. macOS (Avoid AppleScript to prevent permission prompts)
+            # v1.8.4 - Subprocess Isolation (start_new_session) to prevent crashes on WSL/Linux
+            # 1. macOS
             if sys.platform == 'darwin':
-                browsers = [
-                    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-                    "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
-                ]
+                browsers = ["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"]
                 for b_path in browsers:
                     if os.path.exists(b_path):
                         try:
-                            # Use 'open -na' but without AppleScript to stay 'standard' and avoid prompts
                             subprocess.Popen(["open", "-na", b_path, "--args"] + flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                             launched = True; break
                         except: pass
@@ -802,71 +780,39 @@ class MyTunesApp:
             # 2. Windows Native
             elif sys.platform == 'win32':
                 win_paths = [
-                    os.path.join(os.environ.get('PROGRAMFILES', 'C:\\Program Files'), 'Google\\Chrome\\Application\\chrome.exe'),
-                    os.path.join(os.environ.get('PROGRAMFILES(X86)', 'C:\\Program Files (x86)'), 'Google\\Chrome\\Application\\chrome.exe'),
+                    os.path.join(os.environ.get('PROGRAMFILES', ''), 'Google\\Chrome\\Application\\chrome.exe'),
+                    os.path.join(os.environ.get('PROGRAMFILES(X86)', ''), 'Google\\Chrome\\Application\\chrome.exe'),
                     os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Google\\Chrome\\Application\\chrome.exe'),
-                    os.path.join(os.environ.get('PROGRAMFILES', 'C:\\Program Files'), 'BraveSoftware\\Brave-Browser\\Application\\brave.exe'),
-                    os.path.join(os.environ.get('PROGRAMFILES(X86)', 'C:\\Program Files (x86)'), 'Microsoft\\Edge\\Application\\msedge.exe'),
-                    os.path.join(os.environ.get('PROGRAMFILES', 'C:\\Program Files'), 'Microsoft\\Edge\\Application\\msedge.exe'),
-                ]
-                # v1.8.2 - Maximum precision: --app flag MUST be exact and first for reliable popup mode
-                win_flags = [
-                    f'--app={live_url}',
-                    '--window-size=712,800',
-                    '--window-position=100,100',
-                    '--new-window',
-                    '--no-first-run',
-                    '--disable-extensions'
                 ]
                 for p in win_paths:
-                    if os.path.exists(p):
+                    if p and os.path.exists(p):
                         try:
-                            # Use list-based Popen for native Windows
-                            subprocess.Popen([p] + win_flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            subprocess.Popen([p] + flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                             launched = True; break
                         except: pass
             
-            # 3. WSL (Run Windows Chrome directly if possible, fallback to cmd.exe)
+            # 3. WSL / Linux (Direct path with session isolation)
             elif self.is_wsl():
-                # v1.8.3 - Direct binary execution for maximum precision (Avoids cmd.exe shell splitting)
-                # We try standard Windows installation paths via /mnt/c/
-                wsl_win_paths = [
+                wsl_paths = [
                     "/mnt/c/Program Files/Google/Chrome/Application/chrome.exe",
                     "/mnt/c/Program Files (x86)/Google/Chrome/Application/chrome.exe",
                     "/mnt/c/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe",
-                    "/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
-                    "/mnt/c/Program Files/Microsoft/Edge/Application/msedge.exe",
                 ]
-                # Same precise flags for App Mode
-                wsl_win_flags = [
-                    f'--app={live_url}',
-                    '--window-size=712,800',
-                    '--window-position=100,100',
-                    '--new-window',
-                    '--no-first-run',
-                    '--disable-extensions'
-                ]
-                
-                launched_direct = False
-                for p in wsl_win_paths:
+                for p in wsl_paths:
                     if os.path.exists(p):
                         try:
-                            # Direct execution from WSL to Windows binary is extremely stable
-                            subprocess.Popen([p] + wsl_win_flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                            launched = True; launched_direct = True; break
+                            # CRITICAL: start_new_session=True isolates the browser from the TUI process group
+                            # This prevents the TUI from dying when navigating or if the browser has shell issues.
+                            subprocess.Popen([p] + flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                            launched = True; break
                         except: pass
                 
-                if not launched_direct:
+                if not launched:
                     try:
-                        # Final fallback: cmd.exe start (Literal strings, no title)
-                        cmd_fallback = f'start chrome --app={live_url} --window-size=712,800 --new-window'
-                        subprocess.Popen(["cmd.exe", "/c", cmd_fallback], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        # Fallback for WSL to CMD
+                        subprocess.Popen(["cmd.exe", "/c", f"start chrome --app={live_url}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
                         launched = True
-                    except:
-                        try:
-                            subprocess.Popen(["cmd.exe", "/c", "start", live_url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                            launched = True
-                        except: pass
+                    except: pass
 
             # 4. Native Linux
             else:
@@ -1470,11 +1416,20 @@ class MyTunesApp:
 
     def run(self):
         while self.running:
-            self.loop_count = (self.loop_count + 1) % 1000
-            self.update_playback_state()
-            self.check_autoplay()
-            self.draw()
-            self.handle_input()
+            try:
+                self.loop_count = (self.loop_count + 1) % 1000
+                self.update_playback_state()
+                self.check_autoplay()
+                self.draw()
+                self.handle_input()
+            except Exception as e:
+                # v1.8.4 - Global resilience: Catch and log loop errors instead of crashing
+                try: 
+                    with open("/tmp/mytunes_error.log", "a") as f:
+                        f.write(f"[{time.ctime()}] Loop Error: {str(e)}\n")
+                except: pass
+                # Small sleep to prevent infinite tight loop on persistent error
+                time.sleep(0.1)
         
         if self.stop_on_exit:
             self.player.stop()
