@@ -743,37 +743,60 @@ class MyTunesApp:
 
         # Open Live Station: F8
         elif key == curses.KEY_F8:
-            # Replace localhost with production URL if needed, or keep as project landing page
-            live_url = "https://mytunes.postgresql.co.kr/live/" # Production Live URL
-            
+            live_url = "https://mytunes.postgresql.co.kr/live/"
             if self.is_remote():
                 self.show_copy_dialog("Live Station", live_url)
+                return
+
+            # Robust Cross-Platform Browser Launch
+            temp_user_data = os.path.join(tempfile.gettempdir(), "mytunes_live_state")
+            flags = [f"--app={live_url}", "--window-size=712,800", f"--user-data-dir={temp_user_data}", "--no-first-run"]
+            
+            launched = False
+            # 1. macOS
+            if sys.platform == 'darwin':
+                browsers = [
+                    ("Google Chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
+                    ("Brave Browser", "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser")
+                ]
+                for b_name, b_path in browsers:
+                    if os.path.exists(b_path):
+                        try:
+                            subprocess.Popen(["open", "-na", b_path, "--args"] + flags)
+                            # AppleScript absolute bounds reinforcement
+                            script = f'delay 0.8\ntell application "System Events"\n    tell process "{b_name}"\n        set bounds of window 1 to {{100, 100, 812, 900}}\n    end tell\nend tell'
+                            subprocess.Popen(["osascript", "-e", script])
+                            launched = True; break
+                        except: pass
+            
+            # 2. Windows
+            elif sys.platform == 'win32':
+                win_paths = [
+                    os.path.join(os.environ.get('PROGRAMFILES', 'C:\\Program Files'), 'Google\\Chrome\\Application\\chrome.exe'),
+                    os.path.join(os.environ.get('PROGRAMFILES(X86)', 'C:\\Program Files (x86)'), 'Google\\Chrome\\Application\\chrome.exe'),
+                    os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Google\\Chrome\\Application\\chrome.exe'),
+                    os.path.join(os.environ.get('PROGRAMFILES', 'C:\\Program Files'), 'BraveSoftware\\Brave-Browser\\Application\\brave.exe')
+                ]
+                for p in win_paths:
+                    if os.path.exists(p):
+                        try:
+                            subprocess.Popen([p] + flags); launched = True; break
+                        except: pass
+            
+            # 3. Linux (shutil.which)
             else:
-                # Try to launch in "App Mode" (Popup) if on macOS with Chrome/Brave
-                launched = False
-                if sys.platform == 'darwin':
-                    browsers = [
-                        ("Google Chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
-                        ("Brave Browser", "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser")
-                    ]
-                    for b_name, b_path in browsers:
-                        if os.path.exists(b_path):
-                            try:
-                                # Use 'open -na' + aggressive flags
-                                subprocess.Popen(["open", "-na", b_path, "--args", f"--app={live_url}", "--window-size=712,800", "--window-position=100,100"])
-                                
-                                # AppleScript Fallback: Force resize via System Events
-                                script = f'delay 0.8\ntell application "System Events"\n    tell process "{b_name}"\n        set size of window 1 to {{712, 800}}\n    end tell\nend tell'
-                                subprocess.Popen(["osascript", "-e", script])
-                                
-                                self.status_msg = "📡 Opening Live Popup (Forced Size)..."
-                                launched = True
-                                break
-                            except: pass
-                
-                if not launched:
-                    webbrowser.open(live_url)
-                    self.status_msg = "📡 Opening Live Station..."
+                for b in ['google-chrome', 'google-chrome-stable', 'brave-browser', 'chromium-browser', 'chromium']:
+                    p = shutil.which(b)
+                    if p:
+                        try:
+                            subprocess.Popen([p] + flags); launched = True; break
+                        except: pass
+
+            if launched:
+                self.status_msg = "📡 Opening Live Popup (712x800)..."
+            else:
+                webbrowser.open(live_url)
+                self.status_msg = "📡 Opening Live Station (Browser)..."
 
     def ask_resume(self, saved_time, track_title):
         self.stdscr.nodelay(False) # Blocking input for dialog
