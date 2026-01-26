@@ -30,7 +30,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.9.8"
+APP_VERSION = "1.9.9"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -435,6 +435,10 @@ class MyTunesApp:
             signal.signal(signal.SIGHUP, self.handle_disconnect)
         except: pass
 
+        # Enable Mouse Support
+        curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
+        print("\033[?1003h") # Enable mouse tracking
+
         # Pusher Client
         try:
             self.pusher = pusher.Pusher(
@@ -581,6 +585,34 @@ class MyTunesApp:
             self.running = False
             return
 
+        # Handle Mouse Click
+        if key == curses.KEY_MOUSE:
+            try:
+                _, mx, my, _, bstate = curses.getmouse()
+                if bstate & curses.BUTTON1_CLICKED or bstate & curses.BUTTON1_RELEASED:
+                    h, w = self.stdscr.getmaxyx()
+                    branding = "mytunes-pro.com/postgresql.co.kr"
+                    branding_len = len(branding)
+                    branding_x = w - 2 - branding_len
+                    
+                    if my == h - 2 and branding_x <= mx < w - 2:
+                        # Check which part was clicked
+                        # mytunes-pro.com (first 15 chars)
+                        # / (1 char)
+                        # postgresql.co.kr (last 16 chars)
+                        rel_x = mx - branding_x
+                        if rel_x < 15:
+                            url = "https://mytunes-pro.com"
+                            self.status_msg = f"🌐 Opening {url}..."
+                            threading.Thread(target=webbrowser.open, args=(url,), daemon=True).start()
+                        elif rel_x > 15:
+                            url = "https://postgresql.co.kr"
+                            self.status_msg = f"🌐 Opening {url}..."
+                            threading.Thread(target=webbrowser.open, args=(url,), daemon=True).start()
+            except:
+                pass
+            return
+
         # Helper to normalize input for checking
         k_char = str(key).lower() if isinstance(key, str) else ""
         
@@ -710,7 +742,7 @@ class MyTunesApp:
                                 "timestamp": time.time()
                             }
                             if self.pusher:
-                                self.pusher.trigger('mytunes-global', 'share-track', payload)
+                                self.pusher.trigger('mytunes-pro', 'share-track', payload)
                                 self.sent_history[url] = time.time()
                                 safe_title = self.truncate(title, 50)
                                 self.status_msg = f"🚀 Shared: {safe_title}..."
@@ -1228,7 +1260,7 @@ class MyTunesApp:
              self.stdscr.addstr(h - 3, 2, self.t("stopped"), curses.color_pair(1))
 
         # Footer Line 3: System Message & Branding
-        branding = "postgresql.co.kr/debate300.com"
+        branding = "mytunes-pro.com/postgresql.co.kr"
         branding_x = w - 2 - len(branding)
         
         # Draw Branding always - Bright/Bold White
