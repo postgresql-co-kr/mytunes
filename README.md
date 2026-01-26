@@ -1,6 +1,6 @@
 # 🎵 MyTunes Pro (Korean)
 
-**현대적인 CLI 유튜브 뮤직 플레이어 (v1.8.4)**  
+**현대적인 CLI 유튜브 뮤직 플레이어 (v1.8.5)**  
 터미널 환경에서 **YouTube 음악을 검색하여 듣는** 가볍고 빠른 키보드 중심의 플레이어입니다.  
 한국어 입력 환경에서도 **숫자 키(1~5)**를 통해 지연 없는 쾌적한 조작이 가능합니다.
 
@@ -277,7 +277,12 @@ sudo apt install mpv python3 python3-pip pipx python3-venv -y
 
 ## 🔄 Changelog
 
-### v1.8.4 (Latest)
+### v1.8.5 (Latest)
+
+- **Looping Navigation (Menu Wrapping)**: Pressing UP at the first item now wraps to the last item, and pressing DOWN at the last item wraps to the first.
+- **Improved UI Flow**: Enhanced keyboard navigation experience across all list views (Main, Search, Favorites, History).
+
+### v1.8.4
 
 - **Python Crash Fix (WSL)**: Eliminated premature termination by implementing `start_new_session=True` for browser launches, isolating them from the TUI process group.
 - **Hybrid Browser Strategy**: Switched to the standard `webbrowser` library for F7 (YouTube links) for maximum internal stability.

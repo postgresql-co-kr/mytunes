@@ -35,7 +35,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.8.4"
+APP_VERSION = "1.8.5"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -620,14 +620,24 @@ class MyTunesApp:
             if self.selection_idx > 0:
                 self.selection_idx -= 1
                 if self.selection_idx < self.scroll_offset: self.scroll_offset = self.selection_idx
+            elif current_list:
+                # v1.8.5 - Wrapping: Top to Bottom
+                self.selection_idx = len(current_list) - 1
+                h, _ = self.stdscr.getmaxyx()
+                # Maintain scroll consistency (h - 10 matches draw() layout)
+                list_area_height = h - 10
+                self.scroll_offset = max(0, self.selection_idx - list_area_height + 1)
         elif key == curses.KEY_DOWN or k_char in ['j', 'ㅓ']:
             if self.selection_idx < len(current_list) - 1:
                 self.selection_idx += 1
                 h, _ = self.stdscr.getmaxyx()
-                # Use h - 10 to match inner_h in draw() (h - footer_h(5) - header_top(3) - borders(2))
                 list_area_height = h - 10
                 if self.selection_idx >= self.scroll_offset + list_area_height:
                     self.scroll_offset = self.selection_idx - list_area_height + 1
+            elif current_list:
+                # v1.8.5 - Wrapping: Bottom to Top
+                self.selection_idx = 0
+                self.scroll_offset = 0
 
         # Enter / Select: Enter Only (L moved to Forward)
         elif key == '\n' or key == 10 or key == 13:
