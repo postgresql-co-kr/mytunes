@@ -35,7 +35,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.9.0"
+APP_VERSION = "1.9.1"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -770,7 +770,12 @@ class MyTunesApp:
             # We must use the actual Windows %TEMP% directory (e.g., C:\Users\...\Temp).
             if self.is_wsl():
                 try:
-                    win_temp = subprocess.check_output(["cmd.exe", "/c", "echo %TEMP%"], text=True).strip()
+                    # v1.9.1 - Fix CMD Output Pollution
+                    # cmd.exe often prints "UNC paths are not supported..." warnings in WSL dirs.
+                    # We run from /mnt/c to avoid this, and parse the LAST line just in case.
+                    run_dir = "/mnt/c" if os.path.exists("/mnt/c") else "/"
+                    cmd_out = subprocess.check_output(["cmd.exe", "/c", "echo %TEMP%"], cwd=run_dir, text=True).strip()
+                    win_temp = cmd_out.splitlines()[-1].strip()
                     temp_user_data = f"{win_temp}\\mytunes_v190_{int(time.time() / 10)}"
                 except:
                     # Fallback to local temp if retrieval fails (unlikely)
