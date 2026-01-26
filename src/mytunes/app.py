@@ -35,7 +35,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "1.7.2"
+APP_VERSION = "1.7.3"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -744,8 +744,13 @@ class MyTunesApp:
                         self.show_copy_dialog("YouTube", url)
                     else:
                         try:
-                            # Silence output to prevent curses corruption
-                            subprocess.Popen(["open", url] if sys.platform == 'darwin' else [url], shell=(sys.platform != 'darwin'), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            # Robust multi-platform open
+                            if sys.platform == 'darwin':
+                                subprocess.Popen(["open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            elif sys.platform == 'win32':
+                                os.startfile(url)
+                            else:
+                                webbrowser.open(url)
                             self.status_msg = "🌐 Opening YouTube in Browser..."
                         except:
                             webbrowser.open(url)
@@ -759,11 +764,13 @@ class MyTunesApp:
                 return
 
             # Robust Cross-Platform Browser Launch
-            temp_user_data = os.path.join(tempfile.gettempdir(), "mytunes_live_session")
-            # Added UI polish: disable translation and unnecessary toolbars
+            # Add timestamp to user-data-dir to force size/position flags to be respected (prevents "remembering")
+            temp_user_data = os.path.join(tempfile.gettempdir(), f"mytunes_live_{int(time.time())}")
+            
             flags = [
                 f"--app={live_url}", 
                 "--window-size=712,800", 
+                "--window-position=100,100",
                 "--new-window",
                 f"--user-data-dir={temp_user_data}", 
                 "--no-first-run",
