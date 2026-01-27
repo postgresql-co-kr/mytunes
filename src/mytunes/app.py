@@ -32,7 +32,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "2.0.2"
+APP_VERSION = "2.0.3"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -585,332 +585,219 @@ class MyTunesApp:
         m, s = divmod(int(seconds), 60)
         return f"{m:02d}:{s:02d}"
 
-    def handle_input(self):
+    def get_next_event(self):
+        """Unified input collection and normalization (Unicode, special keys, macros)."""
         try:
-            # Use get_wch for Unicode support (captures Korean shortcuts)
             key = self.stdscr.get_wch()
-        except curses.error:
-            return
-        except:
-            return
+        except curses.error: return None
+        except: return None
 
-        if key == -1: return
-
-        # Reset Idle Timer
+        if key == -1: return None
         self.last_input_time = time.time()
 
-
-        # Handle formatting: invalid key might be int -1
-        
-        # Resize Info
+        # 1. Resize handling
         if key == curses.KEY_RESIZE:
             self.stdscr.clear()
             self.stdscr.refresh()
-            return
+            return "RESIZE"
 
-        # GLOBAL ESC: Background Play (Exit but keep music)
-        # get_wch returns int 27 or str '\x1b' depending on system/lib
-        # v2.0.1 MAC FIX: Check for Option+Backspace (ESC then 127) for Deletion
+        # 2. ESC / Combined sequences (Option+Backspace macro)
         if key == 27 or key == '\x1b':
-            # Peek for next key with very short timeout
-            self.stdscr.timeout(50)
+            self.stdscr.timeout(50) # Tiny peek timeout
             try:
-                next_key = self.stdscr.getch()
-                if next_key == 127: # Backspace
-                     # This is Option+Backspace -> Treat as DELETE
-                     key = curses.KEY_DC # Transform to Delete Key
-                else:
-                     # If valid key but not 127, put it back or handle? 
-                     # For simplicity, if it's not the sequence we want, we treat ESC as ESC
-                     # and if we consumed a key, well, generic ESC logic applies. 
-                     # Ideally ungetch if possible, but for now fallback to ESC behavior.
-                     # But if we consumed a legitimate key user typed fast, that's bad.
-                     # However, 50ms is very fast.
-                     if next_key != -1:
-                        curses.ungetch(next_key)
-                     
-                     # Proceed with standard ESC behavior
-                     self.stop_on_exit = False
-                     self.running = False
-                     return
-            except:
-                # Timeout / Error -> Just ESC
-                self.stop_on_exit = False
-                self.running = False
-                return
-            finally:
-                # Restore timeout
-                self.stdscr.timeout(1000 if (time.time() - getattr(self, 'last_input_time', 0) > 60 and self.is_paused) else 200)
+                nk = self.stdscr.getch()
+                if nk == 127: return "DELETE" # Option+Backspace as DELETE
+                if nk != -1: curses.ungetch(nk)
+            except: pass
+            finally: self.stdscr.timeout(200) # Reset to standard
+            return "EXIT_BKG" # Standard ESC
 
-        # Handle Mouse Click
+        # 3. Mouse Click
         if key == curses.KEY_MOUSE:
             try:
                 _, mx, my, _, bstate = curses.getmouse()
-                if bstate & curses.BUTTON1_CLICKED or bstate & curses.BUTTON1_RELEASED:
+                if bstate & (curses.BUTTON1_CLICKED | curses.BUTTON1_RELEASED):
                     h, w = self.stdscr.getmaxyx()
                     branding = "mytunes-pro.com/postgresql.co.kr"
-                    branding_len = len(branding)
-                    branding_x = w - 2 - branding_len
-                    
+                    branding_x = w - 2 - len(branding)
                     if my == h - 2 and branding_x <= mx < w - 2:
-                        # Check which part was clicked
-                        # mytunes-pro.com (first 15 chars)
-                        # / (1 char)
-                        # postgresql.co.kr (last 16 chars)
                         rel_x = mx - branding_x
-                        if rel_x < 15:
-                            url = "https://mytunes-pro.com"
-                            self.open_browser(url)
-                        elif rel_x > 15:
-                            url = "https://postgresql.co.kr"
-                            self.open_browser(url)
-            except:
-                pass
-            return
+                        if rel_x < 15: return "OPEN_HOME"
+                        if rel_x > 15: return "OPEN_PARTNER"
+            except: pass
+            return "MOUSE_CLICK"
 
-        # Helper to normalize input for checking
-        k_char = str(key).lower() if isinstance(key, str) else ""
-        
+        # 4. Standard Keys Mapping
+        k_char = str(key).lower() if isinstance(key, str) else str(key)
+        mapping = {
+            str(curses.KEY_LEFT): "NAV_BACK", str(curses.KEY_BACKSPACE): "NAV_BACK", "127": "NAV_BACK",
+            "q": "NAV_BACK", "6": "NAV_BACK", "h": "NAV_BACK",
+            str(curses.KEY_RIGHT): "NAV_FORWARD", "l": "NAV_FORWARD",
+            str(curses.KEY_UP): "MOVE_UP", "k": "MOVE_UP",
+            str(curses.KEY_DOWN): "MOVE_DOWN", "j": "MOVE_DOWN",
+            "\n": "ACTIVATE", "\r": "ACTIVATE", "10": "ACTIVATE", "13": "ACTIVATE", str(curses.KEY_ENTER): "ACTIVATE",
+            "s": "SEARCH", "1": "SEARCH", "/": "SEARCH",
+            "f": "FAVORITES", "2": "FAVORITES",
+            "r": "HISTORY", "3": "HISTORY",
+            "m": "MAIN_MENU", "4": "MAIN_MENU",
+            " ": "TOGGLE_PAUSE",
+            "-": "VOL_DOWN", "_": "VOL_DOWN",
+            "+": "VOL_UP", "=": "VOL_UP",
+            ",": "SEEK_BACK_10", ".": "SEEK_FWD_10",
+            "<": "SEEK_BACK_30", ">": "SEEK_FWD_30",
+            "a": "TOGGLE_FAV", "5": "TOGGLE_FAV",
+            str(curses.KEY_F7): "OPEN_BROWSER",
+            str(curses.KEY_F8): "OPEN_HOME_APP",
+            str(curses.KEY_F9): "SHARE",
+            str(curses.KEY_DC): "DELETE", "d": "DELETE"
+        }
+        return mapping.get(k_char)
+
+    def handle_input(self):
+        """Clean dispatcher: Get normalized command and execute it."""
+        cmd = self.get_next_event()
+        if not cmd: return
+
         current_list = self.get_current_list()
 
-        # Navigation logic
-        # Back: Q, Left Arrow, Backspace, h, 6
-        # Fix: Removed Korean mappings ('ㅂ', 'ㅗ') to prevent IME ghost keys per user request
-        if key == curses.KEY_LEFT or key == curses.KEY_BACKSPACE or key == 127 or \
-           k_char in ['q', '6', 'h']:
+        # 1. Functional Commands (Require Logic)
+        if cmd == "NAV_BACK":
             if len(self.view_stack) > 1:
-                # Pop current view and push to forward stack
-                current_view = self.view_stack.pop()
-                self.forward_stack.append(current_view)
-                
-                self.selection_idx = 0; self.scroll_offset = 0
-                self.status_msg = "" 
-            # Else: Do nothing (Prevent Quit on Q)
-            return
-
-        # Forward: L, Right Arrow (Browser Style)
-        # Re-visit the view we just popped from
-        # Fix: Removed Korean mappings ('ㅣ') to prevent IME ghost keys
-        if k_char in ['l', 'L'] or key == curses.KEY_RIGHT:
+                self.forward_stack.append(self.view_stack.pop())
+                self.selection_idx = 0; self.scroll_offset = 0; self.status_msg = ""
+        
+        elif cmd == "NAV_FORWARD":
             if self.forward_stack:
-                next_view = self.forward_stack.pop()
-                self.view_stack.append(next_view)
-                self.selection_idx = 0; self.scroll_offset = 0
-                self.status_msg = ""
-            return
+                self.view_stack.append(self.forward_stack.pop())
+                self.selection_idx = 0; self.scroll_offset = 0; self.status_msg = ""
 
-            return
-
-        # Fix: Removed Korean mappings ('ㅏ', 'ㅓ') for stability
-        if key == curses.KEY_UP or k_char in ['k']:
+        elif cmd == "MOVE_UP":
             if self.selection_idx > 0:
                 self.selection_idx -= 1
                 if self.selection_idx < self.scroll_offset: self.scroll_offset = self.selection_idx
             elif current_list:
-                # v1.8.5 - Wrapping: Top to Bottom
                 self.selection_idx = len(current_list) - 1
                 h, _ = self.stdscr.getmaxyx()
-                # Maintain scroll consistency (h - 10 matches draw() layout)
-                list_area_height = h - 10
-                self.scroll_offset = max(0, self.selection_idx - list_area_height + 1)
-        elif key == curses.KEY_DOWN or k_char in ['j']:
+                self.scroll_offset = max(0, self.selection_idx - (h - 11))
+
+        elif cmd == "MOVE_DOWN":
             if self.selection_idx < len(current_list) - 1:
                 self.selection_idx += 1
                 h, _ = self.stdscr.getmaxyx()
-                list_area_height = h - 10
-                if self.selection_idx >= self.scroll_offset + list_area_height:
-                    self.scroll_offset = self.selection_idx - list_area_height + 1
+                if self.selection_idx >= self.scroll_offset + (h - 10):
+                    self.scroll_offset = self.selection_idx - (h - 10) + 1
             elif current_list:
-                # v1.8.5 - Wrapping: Bottom to Top
-                self.selection_idx = 0
-                self.scroll_offset = 0
+                self.selection_idx = 0; self.scroll_offset = 0
 
-        # Enter / Select Logic
-        elif key in ['\n', '\r', 10, 13, curses.KEY_ENTER]:
-             # v2.0.3 Stability: Debounce Enter to prevent double-firing
-             if time.time() - getattr(self, 'last_enter_time', 0) > 0.3:
-                 self.last_enter_time = time.time()
-                 self.activate_selection(current_list)
-        
-        # Shortcuts: Number keys & English letters (Strict Mode)
-        # Search: S, 1, /
-        elif k_char in ['s', 'S', '1', '/'] and (not isinstance(key, str) or key.isprintable()): 
-            self.forward_stack = [] # Clear forward history on new navigation
-            self.prompt_search()
-        
-        # Favorites: F, 2
-        elif k_char in ['f', 'F', '2']:
+        elif cmd == "ACTIVATE":
+            if time.time() - getattr(self, 'last_enter_time', 0) > 0.3:
+                self.last_enter_time = time.time()
+                self.activate_selection(current_list)
+
+        elif cmd == "SEARCH":
+            self.forward_stack = []; self.prompt_search()
+
+        elif cmd == "FAVORITES":
             if self.view_stack[-1] != "favorites":
-                self.forward_stack = [] 
-                self.view_stack.append("favorites")
-                self.selection_idx = 0
+                self.forward_stack = []; self.view_stack.append("favorites"); self.selection_idx = 0
             self.status_msg = self.t("favorites_info", DATA_FILE)
-            
-        # History: R, 3 (Changed from H to avoid Back conflict)
-        elif k_char in ['r', 'R', '3']:
+
+        elif cmd == "HISTORY":
             if self.view_stack[-1] != "history":
-                self.forward_stack = []
-                self.cached_history = list(self.dm.data['history']) # Snapshot
-                self.view_stack.append("history")
-                self.selection_idx = 0
+                self.forward_stack = []; self.cached_history = list(self.dm.data['history'])
+                self.view_stack.append("history"); self.selection_idx = 0
             self.status_msg = self.t("hist_info")
-            
-        # Main Menu: M, 4
-        elif k_char in ['m', 'M', '4']:
-            self.forward_stack = [] # Clear forward history
-            self.view_stack = ["main"]; self.selection_idx = 0; self.scroll_offset = 0; self.status_msg = ""
-            
-        # Play/Pause: Space
-        elif k_char == ' ': 
-            self.player.toggle_pause()
 
-        # Volume: 9/0 or [/] or -/+
-        elif k_char in ['-','_']:
-            self.player.change_volume(-5)
-            self.status_msg = "Volume -5"
-        elif k_char in ['+','=']:
-            self.player.change_volume(5)
-            self.status_msg = "Volume +5"
+        elif cmd == "MAIN_MENU":
+            self.forward_stack = []; self.view_stack = ["main"]; self.selection_idx = 0; self.scroll_offset = 0; self.status_msg = ""
 
-        # Seek: ,/. (10s), </> (30s)
-        elif k_char == ',':
-            self.player.seek(-10)
-        elif k_char == '.':
-            self.player.seek(10)
-        elif k_char == '<':
-            self.player.seek(-30)
-            self.status_msg = "Rewind 30s"
-        elif k_char == '>':
-            self.player.seek(30)
-            self.status_msg = "Forward 30s"
-            
-        elif key == 27:
-            self.stop_on_exit = False
-            self.running = False
-            
-        # Share Track (F9): Real-time Publish
-        elif key == curses.KEY_F9:
+        elif cmd == "TOGGLE_PAUSE": self.player.toggle_pause()
+        elif cmd == "VOL_DOWN": self.player.change_volume(-5); self.status_msg = "Volume -5"
+        elif cmd == "VOL_UP": self.player.change_volume(5); self.status_msg = "Volume +5"
+        elif cmd == "SEEK_BACK_10": self.player.seek(-10)
+        elif cmd == "SEEK_FWD_10": self.player.seek(10)
+        elif cmd == "SEEK_BACK_30": self.player.seek(-30); self.status_msg = "Rewind 30s"
+        elif cmd == "SEEK_FWD_30": self.player.seek(30); self.status_msg = "Forward 30s"
+        
+        elif cmd == "TOGGLE_FAV":
             if current_list and 0 <= self.selection_idx < len(current_list):
-                target_item = current_list[self.selection_idx]
-                url = target_item.get('url')
-                title = target_item.get('title', 'Unknown Title')
-                
-                if url:
-                    # If it's US, try to re-fetch country info one more time (maybe misdetected)
-                    if self.dm.get_country() == 'US':
-                        threading.Thread(target=self.dm.fetch_country, daemon=True).start()
-
-                    # Dedup Check: Using a time-based cooldown (e.g. 5 seconds) for same URL
-                    last_sent_time = self.sent_history.get(url, 0)
-                    if time.time() - last_sent_time < 5:
-                        self.status_msg = "⚠️  Already Shared Recently!"
-                    else:
-                        try:
-                            # Send to Serverless Proxy (Secure)
-                            payload = {
-                                "title": title,
-                                "url": url,
-                                "duration": target_item.get('duration', '--:--'),
-                                "country": self.dm.get_country(),
-                                "timestamp": time.time()
-                            }
-                            
-                            # v1.9.9 Security Update: Use centralized API with Auth Header
-                            # v2.0.0 Threading for Smoothness
-                            def send_share_async(payload, headers, url_to_share, title_to_share):
-                                try:
-                                    resp = requests.post(
-                                        self.share_api_url, 
-                                        json=payload, 
-                                        headers=headers, 
-                                        timeout=3
-                                    )
-                                    if resp.status_code == 200:
-                                        self.sent_history[url_to_share] = time.time()
-                                        safe_t = self.truncate(title_to_share, 50)
-                                        self.status_msg = f"🚀 Shared: {safe_t}..."
-                                    else:
-                                        self.status_msg = f"❌ Share Error: {resp.status_code}"
-                                except:
-                                    self.status_msg = "❌ Network Error (API)"
-
-                            headers = {
-                                "Content-Type": "application/json",
-                                "x-mytunes-secret": "mytunes-v1-secret-8822"
-                            }
-                            threading.Thread(target=send_share_async, args=(payload, headers, url, title), daemon=True).start()
-                                
-                        except Exception as e:
-                            self.status_msg = f"❌ Share Failed: {str(e)}"
-
-            
-        # Add to Favorites: A, 5
-        elif k_char in ['a', 'A', '5']:
-            if current_list and 0 <= self.selection_idx < len(current_list):
-                target_item = current_list[self.selection_idx]
-                # Ensure it's a valid track item (has url)
-                if "url" in target_item:
-                    is_added = self.dm.toggle_favorite(target_item)
+                target = current_list[self.selection_idx]
+                if "url" in target:
+                    is_added = self.dm.toggle_favorite(target)
                     self.status_msg = self.t("fav_added") if is_added else self.t("fav_removed")
 
-        # Open in Browser (YouTube): F7
-        elif key == curses.KEY_F7:
+        elif cmd == "DELETE":
+            self.handle_deletion(current_list)
+
+        elif cmd == "OPEN_BROWSER":
             if current_list and 0 <= self.selection_idx < len(current_list):
-                target_item = current_list[self.selection_idx]
-                url = target_item.get('url')
-                if url:
-                    if self.is_remote():
-                        self.show_copy_dialog("YouTube", url)
-                    else:
-                        self.open_browser(url)
+                url = current_list[self.selection_idx].get('url')
+                if url: (self.show_copy_dialog("YouTube", url) if self.is_remote() else self.open_browser(url))
 
-        # Open Live Station: F8
-        elif key == curses.KEY_F8:
-            homepage_url = "https://mytunes-pro.com"
-            if self.is_remote():
-                self.show_copy_dialog("MyTunes Home", homepage_url)
-                return
+        elif cmd in ["OPEN_HOME_APP", "OPEN_HOME"]:
+            url = "https://mytunes-pro.com"
+            if self.is_remote(): self.show_copy_dialog("MyTunes Home", url)
+            else: self.open_browser(url, app_mode=False)
 
-            self.open_browser(homepage_url, app_mode=True)
+        elif cmd == "OPEN_PARTNER":
+            self.open_browser("https://postgresql.co.kr")
 
-        # Delete Item: DEL, d
-        elif key == curses.KEY_DC or k_char in ['d']:
-             if current_list and 0 <= self.selection_idx < len(current_list):
-                 view = self.view_stack[-1]
-                 success = False
-                 
-                 if view == "favorites":
-                     success = self.dm.remove_favorite_by_index(self.selection_idx)
-                     if success: self.status_msg = "🗑️ Deleted from Favorites"
-                     
-                 elif view == "history":
-                     success = self.dm.remove_history_by_index(self.selection_idx)
-                     if success: 
-                         self.cached_history = list(self.dm.data['history']) # Refresh view 
-                         self.status_msg = "🗑️ Deleted from History"
-                 
-                 elif view == "search":
-                     # If current_search_query is None, we are viewing Search History
-                     if self.current_search_query is None:
-                         success = self.dm.remove_search_history_by_index(self.selection_idx)
-                         if success:
-                             self.search_results = self.dm.get_search_history() # Refresh
-                             self.status_msg = "🗑️ Deleted from Search History"
-                     else:
-                         # Ephemeral removal from result list
-                         try:
-                             self.search_results.pop(self.selection_idx)
-                             self.status_msg = "Start new search"
-                             success = True
-                         except: pass
+        elif cmd == "SHARE":
+            self.handle_share(current_list)
 
-                 if success:
-                     # Adjust selection index if out of bounds
-                     # If list became empty, idx will be 0 but len is 0.
-                     # We just need to ensure we don't crash next draw.
-                     # The draw logic (get_current_list) handles empty lists safely.
-                     if self.selection_idx >= len(self.get_current_list()):
-                         self.selection_idx = max(0, len(self.get_current_list()) - 1)
+        elif cmd == "RESIZE":
+            self.stdscr.clear()
+            self.stdscr.refresh()
+
+        elif cmd == "EXIT_BKG":
+            self.stop_on_exit = False; self.running = False
+
+    def handle_deletion(self, current_list):
+        """Sub-logic for DELETE command to keep dispatcher clean."""
+        if not current_list or not (0 <= self.selection_idx < len(current_list)): return
+        
+        view = self.view_stack[-1]
+        success = False
+        if view == "favorites":
+            success = self.dm.remove_favorite_by_index(self.selection_idx)
+            if success: self.status_msg = "🗑️ Deleted from Favorites"
+        elif view == "history":
+            success = self.dm.remove_history_by_index(self.selection_idx)
+            if success: self.cached_history = list(self.dm.data['history']); self.status_msg = "🗑️ Deleted from History"
+        elif view == "search":
+            if self.current_search_query is None:
+                success = self.dm.remove_search_history_by_index(self.selection_idx)
+                if success: self.search_results = self.dm.get_search_history(); self.status_msg = "🗑️ Deleted from Search History"
+            else:
+                try: self.search_results.pop(self.selection_idx); success = True; self.status_msg = "Removed from list"
+                except: pass
+        if success:
+             self.selection_idx = max(0, min(self.selection_idx, len(self.get_current_list()) - 1))
+
+    def handle_share(self, current_list):
+        """Sub-logic for SHARE command."""
+        if not current_list or not (0 <= self.selection_idx < len(current_list)): return
+        target_item = current_list[self.selection_idx]
+        url = target_item.get('url')
+        title = target_item.get('title', 'Unknown Title')
+        
+        if not url: return
+        if time.time() - self.sent_history.get(url, 0) < 5:
+            self.status_msg = "⚠️ Already Shared Recently!"; return
+
+        def send_share_async(payload, headers, url_to_share, title_to_share):
+            try:
+                resp = requests.post(self.share_api_url, json=payload, headers=headers, timeout=3)
+                if resp.status_code == 200:
+                    self.sent_history[url_to_share] = time.time()
+                    self.status_msg = f"🚀 Shared: {self.truncate(title_to_share, 40)}..."
+                else: self.status_msg = f"❌ Share Error: {resp.status_code}"
+            except: self.status_msg = "❌ Network Error (API)"
+
+        payload = {"title": title, "url": url, "duration": target_item.get('duration', '--:--'),
+                   "country": self.dm.get_country(), "timestamp": time.time()}
+        headers = {"Content-Type": "application/json", "x-mytunes-secret": "mytunes-v1-secret-8822"}
+        threading.Thread(target=send_share_async, args=(payload, headers, url, title), daemon=True).start()
 
 
 
@@ -947,20 +834,26 @@ class MyTunesApp:
             curses.flushinp()
             
             while True:
-                k = win.getch()
-                if k == -1: continue
+                try:
+                    k = win.get_wch()
+                except curses.error:
+                    continue
                 
                 # ESC -> Background Play (Exit app)
-                if k == 27:
+                if k == 27 or k == '\x1b':
                     self.stop_on_exit = False
                     self.running = False
-                    res = False # Or irrelevant since we quit
+                    res = False
                     break
                 
-                if k in [10, 13, curses.KEY_ENTER, ord(' ')]: 
+                # Enter / Space -> Resume
+                if k in [10, 13, curses.KEY_ENTER, '\n', '\r', ' ']: 
                     res = True
                     break
-                if k in [ord('0'), ord('r'), ord('R')]: 
+                
+                # 0 / R -> Restart
+                k_char = str(k).lower() if isinstance(k, str) else ""
+                if k_char in ['0', 'r']: 
                     res = False
                     break
                     
@@ -1022,6 +915,12 @@ class MyTunesApp:
                 else:
                     # Linux or others
                     subprocess.Popen(['xdg-open', url], **popen_kwargs)
+                
+                # Feedback logic: Success message then auto-clear
+                self.status_msg = "✅ Browser Launched! (Check Browser)"
+                time.sleep(2.5)
+                if "Launched!" in self.status_msg:
+                    self.status_msg = ""
             except Exception as e:
                 # Log error silently to TUI status
                 self.status_msg = f"❌ Browser Error: {str(e)[:20]}"
@@ -1075,8 +974,12 @@ class MyTunesApp:
             
             # Wait for key
             while True:
-                k = win.getch()
-                if k in [10, 13, curses.KEY_ENTER, 27, ord(' ')]: 
+                try:
+                    k = win.get_wch()
+                except curses.error:
+                    continue
+
+                if k in [10, 13, curses.KEY_ENTER, 27, '\n', '\r', '\x1b', ' ']: 
                     break
         except: pass
         finally:

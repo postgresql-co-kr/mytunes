@@ -30,7 +30,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "2.0.2"
+APP_VERSION = "2.0.3"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -761,24 +761,189 @@ class MyTunesApp:
                     is_added = self.dm.toggle_favorite(target_item)
                     self.status_msg = self.t("fav_added") if is_added else self.t("fav_removed")
 
-        # Open in Browser (YouTube): F7
-        elif key == curses.KEY_F7:
-            if current_list and 0 <= self.selection_idx < len(current_list):
-                target_item = current_list[self.selection_idx]
-                url = target_item.get('url')
-                if url:
-                    if self.is_remote():
-                        self.show_copy_dialog("YouTube", url)
-                    else:
-                        self.open_browser(url)
+    def get_next_event(self):
+        """Unified input collection and normalization."""
+        try:
+            key = self.stdscr.get_wch()
+        except curses.error: return None
+        except: return None
 
-        # Open Live Station: F8
-        elif key == curses.KEY_F8:
-            live_url = "https://mytunes-pro.com" 
-            if self.is_remote():
-                self.show_copy_dialog("Live Station", live_url)
+        if key == -1: return None
+        self.last_input_time = time.time()
+
+        if key == curses.KEY_RESIZE:
+            self.stdscr.clear(); self.stdscr.refresh(); return "RESIZE"
+
+        if key == 27 or key == '\x1b':
+            self.stdscr.timeout(50)
+            try:
+                nk = self.stdscr.getch()
+                if nk == 127: return "DELETE"
+                if nk != -1: curses.ungetch(nk)
+            except: pass
+            finally: self.stdscr.timeout(200)
+            return "EXIT_BKG"
+
+        k_char = str(key).lower() if isinstance(key, str) else str(key)
+        
+        mapping = {
+            str(curses.KEY_LEFT): "NAV_BACK", str(curses.KEY_BACKSPACE): "NAV_BACK", "127": "NAV_BACK",
+            "q": "NAV_BACK", "6": "NAV_BACK", "h": "NAV_BACK",
+            str(curses.KEY_RIGHT): "NAV_FORWARD", "l": "NAV_FORWARD",
+            str(curses.KEY_UP): "MOVE_UP", "k": "MOVE_UP",
+            str(curses.KEY_DOWN): "MOVE_DOWN", "j": "MOVE_DOWN",
+            "\n": "ACTIVATE", "\r": "ACTIVATE", "10": "ACTIVATE", "13": "ACTIVATE", str(curses.KEY_ENTER): "ACTIVATE",
+            "s": "SEARCH", "1": "SEARCH", "/": "SEARCH",
+            "f": "FAVORITES", "2": "FAVORITES",
+            "r": "HISTORY", "3": "HISTORY",
+            "m": "MAIN_MENU", "4": "MAIN_MENU",
+            " ": "TOGGLE_PAUSE",
+            "-": "VOL_DOWN", "_": "VOL_DOWN",
+            "+": "VOL_UP", "=": "VOL_UP",
+            ",": "SEEK_BACK_10", ".": "SEEK_FWD_10",
+            "<": "SEEK_BACK_30", ">": "SEEK_FWD_30",
+            "a": "TOGGLE_FAV", "5": "TOGGLE_FAV",
+            str(curses.KEY_F7): "OPEN_BROWSER",
+            str(curses.KEY_F8): "OPEN_HOME_APP",
+            str(curses.KEY_F9): "SHARE",
+            str(curses.KEY_DC): "DELETE", "d": "DELETE"
+        }
+        return mapping.get(k_char)
+
+    def handle_input(self):
+        cmd = self.get_next_event()
+        if not cmd: return
+
+        current_list = self.get_current_list()
+
+        if cmd == "NAV_BACK":
+            if len(self.view_stack) > 1:
+                self.forward_stack.append(self.view_stack.pop())
+                self.selection_idx = 0; self.scroll_offset = 0; self.status_msg = ""
+        
+        elif cmd == "NAV_FORWARD":
+            if self.forward_stack:
+                self.view_stack.append(self.forward_stack.pop())
+                self.selection_idx = 0; self.scroll_offset = 0; self.status_msg = ""
+
+        elif cmd == "MOVE_UP":
+            if self.selection_idx > 0:
+                self.selection_idx -= 1
+                if self.selection_idx < self.scroll_offset: self.scroll_offset = self.selection_idx
+            elif current_list:
+                self.selection_idx = len(current_list) - 1
+                h, _ = self.stdscr.getmaxyx()
+                self.scroll_offset = max(0, self.selection_idx - (h - 11))
+
+        elif cmd == "MOVE_DOWN":
+            if self.selection_idx < len(current_list) - 1:
+                self.selection_idx += 1
+                h, _ = self.stdscr.getmaxyx()
+                if self.selection_idx >= self.scroll_offset + (h - 10):
+                    self.scroll_offset = self.selection_idx - (h - 10) + 1
+            elif current_list:
+                self.selection_idx = 0; self.scroll_offset = 0
+
+        elif cmd == "ACTIVATE":
+            self.activate_selection(current_list)
+
+        elif cmd == "SEARCH":
+            self.forward_stack = []; self.prompt_search()
+
+        elif cmd == "FAVORITES":
+            if self.view_stack[-1] != "favorites":
+                self.forward_stack = []; self.view_stack.append("favorites"); self.selection_idx = 0
+            self.status_msg = self.t("favorites_info", DATA_FILE)
+
+        elif cmd == "HISTORY":
+            if self.view_stack[-1] != "history":
+                self.forward_stack = []; self.cached_history = list(self.dm.data['history'])
+                self.view_stack.append("history"); self.selection_idx = 0
+            self.status_msg = self.t("hist_info")
+
+        elif cmd == "MAIN_MENU":
+            self.forward_stack = []; self.view_stack = ["main"]; self.selection_idx = 0; self.scroll_offset = 0; self.status_msg = ""
+
+        elif cmd == "TOGGLE_PAUSE": self.player.toggle_pause()
+        elif cmd == "VOL_DOWN": self.player.change_volume(-5); self.status_msg = "Volume -5"
+        elif cmd == "VOL_UP": self.player.change_volume(5); self.status_msg = "Volume +5"
+        elif cmd == "SEEK_BACK_10": self.player.seek(-10)
+        elif cmd == "SEEK_FWD_10": self.player.seek(10)
+        elif cmd == "SEEK_BACK_30": self.player.seek(-30); self.status_msg = "Rewind 30s"
+        elif cmd == "SEEK_FWD_30": self.player.seek(30); self.status_msg = "Forward 30s"
+        
+        elif cmd == "TOGGLE_FAV":
+            if current_list and 0 <= self.selection_idx < len(current_list):
+                target = current_list[self.selection_idx]
+                if "url" in target:
+                    is_added = self.dm.toggle_favorite(target)
+                    self.status_msg = self.t("fav_added") if is_added else self.t("fav_removed")
+
+        elif cmd == "DELETE":
+            self.handle_deletion(current_list)
+
+        elif cmd == "OPEN_BROWSER":
+            if current_list and 0 <= self.selection_idx < len(current_list):
+                url = current_list[self.selection_idx].get('url')
+                if url: (self.show_copy_dialog("YouTube", url) if self.is_remote() else self.open_browser(url))
+
+        elif cmd in ["OPEN_HOME_APP", "OPEN_HOME"]:
+            url = "https://mytunes-pro.com"
+            if self.is_remote(): self.show_copy_dialog("MyTunes Home", url)
+            else: self.open_browser(url, app_mode=False)
+
+        elif cmd == "OPEN_PARTNER":
+            self.open_browser("https://postgresql.co.kr")
+
+        elif cmd == "SHARE":
+            self.handle_share(current_list)
+
+        elif cmd == "EXIT_BKG":
+            self.stop_on_exit = False; self.running = False
+
+    def handle_deletion(self, current_list):
+        if not current_list or not (0 <= self.selection_idx < len(current_list)): return
+        view = self.view_stack[-1]
+        success = False
+        if view == "favorites":
+            success = self.dm.remove_favorite_by_index(self.selection_idx)
+            if success: self.status_msg = "🗑️ Deleted from Favorites"
+        elif view == "history":
+            success = self.dm.remove_history_by_index(self.selection_idx)
+            if success: self.cached_history = list(self.dm.data['history']); self.status_msg = "🗑️ Deleted from History"
+        elif view == "search":
+            if self.current_search_query is None:
+                success = self.dm.remove_search_history_by_index(self.selection_idx)
+                if success: self.search_results = self.dm.get_search_history(); self.status_msg = "🗑️ Deleted from Search History"
             else:
-                self.open_browser(live_url, app_mode=True)
+                try: self.search_results.pop(self.selection_idx); success = True; self.status_msg = "Removed from list"
+                except: pass
+        if success:
+             self.selection_idx = max(0, min(self.selection_idx, len(self.get_current_list()) - 1))
+
+    def handle_share(self, current_list):
+        if not current_list or not (0 <= self.selection_idx < len(current_list)): return
+        target_item = current_list[self.selection_idx]
+        url = target_item.get('url')
+        title = target_item.get('title', 'Unknown Title')
+        
+        if not url: return
+        if time.time() - self.sent_history.get(url, 0) < 5:
+            self.status_msg = "⚠️ Already Shared Recently!"; return
+
+        def send_share_async(payload, headers, url_to_share, title_to_share):
+            try:
+                resp = requests.post("https://postgresql.co.kr/api/mytunes/share", json=payload, headers=headers, timeout=3)
+                if resp.status_code == 200:
+                    self.sent_history[url_to_share] = time.time()
+                    self.status_msg = f"🚀 Shared: {self.truncate(title_to_share, 40)}..."
+                else: self.status_msg = f"❌ Share Error: {resp.status_code}"
+            except: self.status_msg = "❌ Network Error (API)"
+
+        payload = {"title": title, "url": url, "duration": target_item.get('duration', '--:--'),
+                   "country": self.dm.get_country(), "timestamp": time.time()}
+        headers = {"Content-Type": "application/json", "x-mytunes-secret": "mytunes-v1-secret-8822"}
+        threading.Thread(target=send_share_async, args=(payload, headers, url, title), daemon=True).start()
 
     def ask_resume(self, saved_time, track_title):
         self.stdscr.nodelay(False) # Blocking input for dialog
@@ -813,20 +978,26 @@ class MyTunesApp:
             curses.flushinp()
             
             while True:
-                k = win.getch()
-                if k == -1: continue
+                try:
+                    k = win.get_wch()
+                except curses.error:
+                    continue
                 
                 # ESC -> Background Play (Exit app)
-                if k == 27:
+                if k == 27 or k == '\x1b':
                     self.stop_on_exit = False
                     self.running = False
-                    res = False # Or irrelevant since we quit
+                    res = False
                     break
                 
-                if k in [10, 13, curses.KEY_ENTER, ord(' ')]: 
+                # Enter / Space -> Resume
+                if k in [10, 13, curses.KEY_ENTER, '\n', '\r', ' ']: 
                     res = True
                     break
-                if k in [ord('0'), ord('r'), ord('R')]: 
+                
+                # 0 / R -> Restart
+                k_char = str(k).lower() if isinstance(k, str) else ""
+                if k_char in ['0', 'r']: 
                     res = False
                     break
                     
@@ -888,6 +1059,12 @@ class MyTunesApp:
                 else:
                     # Linux or others
                     subprocess.Popen(['xdg-open', url], **popen_kwargs)
+                    
+                # Feedback logic: Success message then auto-clear
+                self.status_msg = "✅ Browser Launched! (Check Browser)"
+                time.sleep(2.5)
+                if "Launched!" in self.status_msg:
+                    self.status_msg = ""
             except Exception as e:
                 # Log error silently to TUI status
                 self.status_msg = f"❌ Browser Error: {str(e)[:20]}"
@@ -932,8 +1109,12 @@ class MyTunesApp:
             
             # Wait for key
             while True:
-                k = win.getch()
-                if k in [10, 13, curses.KEY_ENTER, 27, ord(' ')]: 
+                try:
+                    k = win.get_wch()
+                except curses.error:
+                    continue
+
+                if k in [10, 13, curses.KEY_ENTER, 27, '\n', '\r', '\x1b', ' ']: 
                     break
         except: pass
         finally:
