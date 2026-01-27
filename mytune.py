@@ -30,7 +30,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "2.0.1"
+APP_VERSION = "2.0.2"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -770,36 +770,15 @@ class MyTunesApp:
                     if self.is_remote():
                         self.show_copy_dialog("YouTube", url)
                     else:
-                        webbrowser.open(url)
-                        self.status_msg = "🌐 Opening YouTube in Browser..."
+                        self.open_browser(url)
 
         # Open Live Station: F8
         elif key == curses.KEY_F8:
-            # Replace localhost with production URL if needed, or keep as project landing page
-            live_url = "https://mytunes-pro.com/live" # Production Live URL
-            
+            live_url = "https://mytunes-pro.com" 
             if self.is_remote():
                 self.show_copy_dialog("Live Station", live_url)
             else:
-                # Try to launch in "App Mode" (Popup) if on macOS with Chrome/Brave
-                launched = False
-                if sys.platform == 'darwin':
-                    browsers = [
-                        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-                        "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
-                    ]
-                    for b_path in browsers:
-                        if os.path.exists(b_path):
-                            try:
-                                subprocess.Popen([b_path, f"--app={live_url}", "--window-size=600,800"])
-                                self.status_msg = "📡 Opening Live Popup..."
-                                launched = True
-                                break
-                            except: pass
-                
-                if not launched:
-                    webbrowser.open(live_url)
-                    self.status_msg = "📡 Opening Live Station..."
+                self.open_browser(live_url, app_mode=True)
 
     def ask_resume(self, saved_time, track_title):
         self.stdscr.nodelay(False) # Blocking input for dialog
@@ -860,11 +839,62 @@ class MyTunesApp:
         return res
 
     def is_remote(self):
-        """Check if running in a remote SSH session (excluding WSL)."""
-        # WSL is technically "local" enough to open browsers
+        """Check if running in a remote SSH session (excluding local WSL)."""
         if 'WSL_DISTRO_NAME' in os.environ or 'WSL_INTEROP' in os.environ:
             return False
-        return os.environ.get('SSH_CLIENT') or os.environ.get('SSH_TTY')
+        return 'SSH_CONNECTION' in os.environ or 'SSH_CLIENT' in os.environ or 'SSH_TTY' in os.environ
+
+    def open_browser(self, url, app_mode=False):
+        """Open browser using detached subprocess to prevent TUI freezing."""
+        self.status_msg = f"🌐 Opening Link: {url[:30]}..."
+        
+        def run_open():
+            try:
+                # Prepare DEVNULL for fire-and-forget
+                devnull = os.open(os.devnull, os.O_RDWR)
+                popen_kwargs = {
+                    'stdin': devnull,
+                    'stdout': devnull,
+                    'stderr': devnull,
+                    'close_fds': True
+                }
+                
+                # Use start_new_session for process group detachment (if possible)
+                if hasattr(os, 'setsid') or sys.platform != 'win32':
+                    popen_kwargs['start_new_session'] = True
+
+                if sys.platform == 'darwin':
+                    if app_mode:
+                        # Attempt "App Mode" for Chrome/Brave on macOS
+                        launched = False
+                        browsers = [
+                            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+                            "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+                        ]
+                        for b_path in browsers:
+                            if os.path.exists(b_path):
+                                try:
+                                    subprocess.Popen([b_path, f"--app={url}", "--window-size=600,800"], **popen_kwargs)
+                                    launched = True
+                                    break
+                                except: pass
+                        if not launched:
+                            subprocess.Popen(['open', url], **popen_kwargs)
+                    else:
+                        subprocess.Popen(['open', url], **popen_kwargs)
+                elif self.is_wsl():
+                    # For WSL, we usually use cmd.exe /c start
+                    subprocess.Popen(['cmd.exe', '/c', 'start', url], **popen_kwargs)
+                else:
+                    # Linux or others
+                    subprocess.Popen(['xdg-open', url], **popen_kwargs)
+            except Exception as e:
+                # Log error silently to TUI status
+                self.status_msg = f"❌ Browser Error: {str(e)[:20]}"
+
+        # Still execute Popen in a thread to be extra safe, 
+        # but Popen itself is now detached and redirected.
+        threading.Thread(target=run_open, daemon=True).start()
 
     def show_copy_dialog(self, title, url):
         """Show a dialog with the URL for manual copying in remote sessions."""

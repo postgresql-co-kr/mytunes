@@ -1,6 +1,6 @@
 # 🎵 MyTunes Pro (Korean)
 
-## 🚀 Professional TUI Music Player v2.0.1
+## 🚀 Professional TUI Music Player v2.0.2
 
 MyTunes Pro는 **Context7**의 심층 리서치를 기반으로 제작된 **Premium CLI Music Player**입니다.
 Python `curses` 라이브러리를 사용하여 터미널 환경에서도 **GUI급의 유려한 UX**를 제공하며,
@@ -193,7 +193,7 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 
 # 🎵 MyTunes Pro (English)
 
-**Modern CLI YouTube Music Player (v2.0.1)**  
+**Modern CLI YouTube Music Player (v2.0.2)**  
 A lightweight, keyboard-centric terminal player for streaming YouTube music.  
 
 ---
@@ -281,6 +281,12 @@ sudo apt install mpv python3 python3-pip pipx python3-venv -y
 ---
 
 ## 🔄 Changelog
+
+### v2.0.2 (Stability & Browser Optimization)
+
+- **Browser Launch**: Switched to fully decoupled `subprocess.Popen` logic for browser opening. This eliminates occasional TUI freezes when launching YouTube (F7) or Live Station (F8) by bypassing `webbrowser` library limitations.
+- **App Mode Restore**: Fixed and improved Chrome/Brave App Mode (Popup) for the Live Station on macOS.
+- **Improved Remote Detection**: Refined SSH/WSL detection to ensure local browser features are correctly enabled where possible.
 
 ### v2.0.1 (Keymap Refinement & Version Sync)
 

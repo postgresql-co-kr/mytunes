@@ -32,7 +32,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "2.0.1"
+APP_VERSION = "2.0.2"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -660,12 +660,10 @@ class MyTunesApp:
                         rel_x = mx - branding_x
                         if rel_x < 15:
                             url = "https://mytunes-pro.com"
-                            self.status_msg = f"🌐 Opening {url}..."
-                            threading.Thread(target=webbrowser.open, args=(url,), daemon=True).start()
+                            self.open_browser(url)
                         elif rel_x > 15:
                             url = "https://postgresql.co.kr"
-                            self.status_msg = f"🌐 Opening {url}..."
-                            threading.Thread(target=webbrowser.open, args=(url,), daemon=True).start()
+                            self.open_browser(url)
             except:
                 pass
             return
@@ -864,18 +862,16 @@ class MyTunesApp:
                     if self.is_remote():
                         self.show_copy_dialog("YouTube", url)
                     else:
-                        # v1.8.4 - Use standard webbrowser library for maximum stability on F7
-                        self.status_msg = "🌐 Opening YouTube in Browser..."
-                        threading.Thread(target=webbrowser.open, args=(url,), daemon=True).start()
+                        self.open_browser(url)
 
+        # Open Live Station: F8
         elif key == curses.KEY_F8:
             homepage_url = "https://mytunes-pro.com"
             if self.is_remote():
                 self.show_copy_dialog("MyTunes Home", homepage_url)
                 return
 
-            self.status_msg = "🌐 Opening MyTunes Home..."
-            threading.Thread(target=webbrowser.open, args=(homepage_url,), daemon=True).start()
+            self.open_browser(homepage_url, app_mode=True)
 
         # Delete Item: DEL, d
         elif key == curses.KEY_DC or k_char in ['d']:
@@ -977,7 +973,62 @@ class MyTunesApp:
         return res
 
     def is_remote(self):
-        return 'SSH_CONNECTION' in os.environ or 'SSH_CLIENT' in os.environ
+        """Check if running in a remote SSH session (excluding local WSL)."""
+        if 'WSL_DISTRO_NAME' in os.environ or 'WSL_INTEROP' in os.environ:
+            return False
+        return 'SSH_CONNECTION' in os.environ or 'SSH_CLIENT' in os.environ or 'SSH_TTY' in os.environ
+
+    def open_browser(self, url, app_mode=False):
+        """Open browser using detached subprocess to prevent TUI freezing."""
+        self.status_msg = f"🌐 Opening Link: {url[:30]}..."
+        
+        def run_open():
+            try:
+                # Prepare DEVNULL for fire-and-forget
+                devnull = os.open(os.devnull, os.O_RDWR)
+                popen_kwargs = {
+                    'stdin': devnull,
+                    'stdout': devnull,
+                    'stderr': devnull,
+                    'close_fds': True
+                }
+                
+                # Use start_new_session for process group detachment (if possible)
+                if hasattr(os, 'setsid') or sys.platform != 'win32':
+                    popen_kwargs['start_new_session'] = True
+
+                if sys.platform == 'darwin':
+                    if app_mode:
+                        # Attempt "App Mode" for Chrome/Brave on macOS
+                        launched = False
+                        browsers = [
+                            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+                            "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+                        ]
+                        for b_path in browsers:
+                            if os.path.exists(b_path):
+                                try:
+                                    subprocess.Popen([b_path, f"--app={url}", "--window-size=600,800"], **popen_kwargs)
+                                    launched = True
+                                    break
+                                except: pass
+                        if not launched:
+                            subprocess.Popen(['open', url], **popen_kwargs)
+                    else:
+                        subprocess.Popen(['open', url], **popen_kwargs)
+                elif self.is_wsl():
+                    # For WSL, we usually use cmd.exe /c start
+                    subprocess.Popen(['cmd.exe', '/c', 'start', url], **popen_kwargs)
+                else:
+                    # Linux or others
+                    subprocess.Popen(['xdg-open', url], **popen_kwargs)
+            except Exception as e:
+                # Log error silently to TUI status
+                self.status_msg = f"❌ Browser Error: {str(e)[:20]}"
+
+        # Still execute Popen in a thread to be extra safe, 
+        # but Popen itself is now detached and redirected.
+        threading.Thread(target=run_open, daemon=True).start()
 
     def is_wsl(self):
         try:
