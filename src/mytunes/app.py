@@ -18,12 +18,8 @@ import locale
 import signal
 import warnings
 import webbrowser
-# Suppress urllib3 warning about LibreSSL compatibility
-warnings.filterwarnings("ignore", message=".*urllib3 v2 only supports OpenSSL 1.1.1+.*")
-import webbrowser
 import tempfile
 import shutil
-
 import requests
 
 
@@ -36,7 +32,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "2.0.0"
+APP_VERSION = "2.0.1"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -56,7 +52,7 @@ STRINGS = {
         "fav_added": "★ 즐겨찾기에 추가됨",
         "fav_removed": "☆ 즐겨찾기 해제됨",
         "header_r1": "[S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [A/5]즐겨찾기추가 [Q/6]뒤로",
-        "header_r2": "[F7]유튜브 [F8]라이브 [F9]라이브공유 [SPC]Play/Stop [+/-]볼륨 [<>]빨리감기",
+        "header_r2": "[F7]유튜브 [F8]라이브 [F9]라이브공유 [SPC]Play/Stop [+/-]볼륨 [<>]빨리감기 [D/Del]삭제",
         "help_guide": "[j/k]이동 [En]선택 [h/q]뒤로 [S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [F7]유튜브 [F8]라이브 [F9]라이브공유",
         "menu_main": "☰ 메인 메뉴",
         "menu_search_results": "⌕ YouTube 음악 검색",
@@ -85,7 +81,7 @@ STRINGS = {
         "fav_added": "★ Added to Favorites",
         "fav_removed": "☆ Removed from Favorites",
         "header_r1": "[S/1]Srch [F/2]Favs [R/3]Hist [M/4]Main [A/5]AddFav [Q/6]Back",
-        "header_r2": "[F7]YT [F8]Live [F9]LiveShare [SPC]Play/Stop [+/-]Vol [<>]Seek",
+        "header_r2": "[F7]YT [F8]Live [F9]LiveShare [SPC]Play/Stop [+/-]Vol [<>]Seek [D/Del]Del",
         "help_guide": "[j/k]Move [En]Select [h/q]Back [S/1]Srch [F/2]Fav [R/3]Hist [M/4]Main [F7]YT [F8]Live [F9]Share",
         "menu_main": "☰ Main Menu",
         "menu_search_results": "⌕ Search YouTube Music",
@@ -100,11 +96,11 @@ STRINGS = {
     }
 }
 
-# === [Data Management] ===
 class DataManager:
     def __init__(self):
         self.data = self.load_data()
         self.favorites_set = {f['url'] for f in self.data.get('favorites', []) if 'url' in f}
+        self.lock = threading.Lock()
         
         # Auto-fetch country if missing
         if 'country' not in self.data:
@@ -124,8 +120,11 @@ class DataManager:
             return {"history": [], "favorites": [], "language": "ko", "resume": {}, "search_results_history": []}
 
     def save_data(self):
-        with open(DATA_FILE, "w", encoding="utf-8") as f:
-            json.dump(self.data, f, indent=2, ensure_ascii=False)
+        with self.lock:
+            try:
+                with open(DATA_FILE, "w", encoding="utf-8") as f:
+                    json.dump(self.data, f, indent=2, ensure_ascii=False)
+            except Exception: pass
 
     def get_progress(self, url):
         return self.data.get("resume", {}).get(url, 0)
@@ -230,16 +229,35 @@ class DataManager:
         self.data['search_results_history'] = unique_history[:200]
         self.save_data()
 
+    def remove_favorite_by_index(self, index):
+        if 0 <= index < len(self.data['favorites']):
+            item = self.data['favorites'].pop(index)
+            if item.get('url') in self.favorites_set:
+                self.favorites_set.remove(item['url'])
+            self.save_data()
+            return True
+        return False
+
+    def remove_history_by_index(self, index):
+        if 0 <= index < len(self.data['history']):
+            self.data['history'].pop(index)
+            self.save_data()
+            return True
+        return False
+
+    def remove_search_history_by_index(self, index):
+        if 0 <= index < len(self.data['search_results_history']):
+            self.data['search_results_history'].pop(index)
+            self.save_data()
+            return True
+        return False
+
+
 # === [Player Logic with Advanced IPC] ===
 class Player:
     def __init__(self):
         self.current_proc = None
         self.loading = False
-        
-        self.current_proc = None
-        self.loading = False
-        
-        
         self.loading_ts = 0
         
         # Cleanup pre-existing instance if any
@@ -352,7 +370,7 @@ class Player:
         """Send raw command list to MPV via JSON IPC."""
         try:
             client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            client.settimeout(0.1) # Fast timeout
+            client.settimeout(0.5) # Fast timeout (Optimization for Sleep/Wake resilience)
             client.connect(MPV_SOCKET)
             cmd_str = json.dumps({"command": command}) + "\n"
             client.send(cmd_str.encode('utf-8'))
@@ -410,10 +428,11 @@ class MyTunesApp:
         
         # Search State
         self.current_search_query = None
-        self.search_page = 1
-        self.is_loading_more = False
+        # self.search_page = 1 # Deprecated: Pagination Removed v2.0.2
+        # self.is_loading_more = False # Deprecated
         
         # Playback State
+
         self.playback_time = 0
         self.playback_duration = 0
         self.is_paused = False
@@ -436,6 +455,8 @@ class MyTunesApp:
         curses.curs_set(0)
         self.stdscr.nodelay(True)
         self.stdscr.timeout(200) # Update loop every 200ms
+        self.last_input_time = time.time() # For Idle Detection
+
         
         # Register Signal for Terminal Disconnect (Window Close)
         try:
@@ -523,6 +544,15 @@ class MyTunesApp:
                     elif self.playback_time > 10:
                         self.dm.set_progress(self.current_track['url'], self.playback_time)
 
+
+
+            # Safety: If loading takes too long (> 8s), force reset to allow error handling/skip
+            # Consolidated redundancy checks into a single clean block
+            now = time.time()
+            if self.player.loading and (now - self.player.loading_ts > 8):
+                self.player.loading = False
+                self.status_msg = "⚠️ Load timed out. Skipping..."
+
             # 2. Frequent: Pause state (Every 2 loops ~400ms)
             if self.loop_count % 2 == 0:
                 p = self.player.get_property("pause")
@@ -542,10 +572,6 @@ class MyTunesApp:
                 is_idle = self.player.get_property("idle-active")
                 if is_idle and self.player.loading: 
                     self.player.loading = False
-
-            # Timeout fallback for loading state (remains every loop logic)
-            if self.player.loading and (time.time() - getattr(self.player, 'loading_ts', 0) > 8):
-                 self.player.loading = False
             
             # Periodic Save (Throttle 10s)
             if time.time() - getattr(self, 'last_save_time', 0) > 10:
@@ -570,6 +596,10 @@ class MyTunesApp:
 
         if key == -1: return
 
+        # Reset Idle Timer
+        self.last_input_time = time.time()
+
+
         # Handle formatting: invalid key might be int -1
         
         # Resize Info
@@ -580,10 +610,37 @@ class MyTunesApp:
 
         # GLOBAL ESC: Background Play (Exit but keep music)
         # get_wch returns int 27 or str '\x1b' depending on system/lib
+        # v2.0.1 MAC FIX: Check for Option+Backspace (ESC then 127) for Deletion
         if key == 27 or key == '\x1b':
-            self.stop_on_exit = False
-            self.running = False
-            return
+            # Peek for next key with very short timeout
+            self.stdscr.timeout(50)
+            try:
+                next_key = self.stdscr.getch()
+                if next_key == 127: # Backspace
+                     # This is Option+Backspace -> Treat as DELETE
+                     key = curses.KEY_DC # Transform to Delete Key
+                else:
+                     # If valid key but not 127, put it back or handle? 
+                     # For simplicity, if it's not the sequence we want, we treat ESC as ESC
+                     # and if we consumed a key, well, generic ESC logic applies. 
+                     # Ideally ungetch if possible, but for now fallback to ESC behavior.
+                     # But if we consumed a legitimate key user typed fast, that's bad.
+                     # However, 50ms is very fast.
+                     if next_key != -1:
+                        curses.ungetch(next_key)
+                     
+                     # Proceed with standard ESC behavior
+                     self.stop_on_exit = False
+                     self.running = False
+                     return
+            except:
+                # Timeout / Error -> Just ESC
+                self.stop_on_exit = False
+                self.running = False
+                return
+            finally:
+                # Restore timeout
+                self.stdscr.timeout(1000 if (time.time() - getattr(self, 'last_input_time', 0) > 60 and self.is_paused) else 200)
 
         # Handle Mouse Click
         if key == curses.KEY_MOUSE:
@@ -619,9 +676,10 @@ class MyTunesApp:
         current_list = self.get_current_list()
 
         # Navigation logic
-        # Back: Q, Left Arrow, Backspace, Korean 'ㅂ' (q), h, 6
+        # Back: Q, Left Arrow, Backspace, h, 6
+        # Fix: Removed Korean mappings ('ㅂ', 'ㅗ') to prevent IME ghost keys per user request
         if key == curses.KEY_LEFT or key == curses.KEY_BACKSPACE or key == 127 or \
-           k_char in ['q', 'ㅂ', '6', 'h', 'ㅗ']:
+           k_char in ['q', '6', 'h']:
             if len(self.view_stack) > 1:
                 # Pop current view and push to forward stack
                 current_view = self.view_stack.pop()
@@ -634,7 +692,8 @@ class MyTunesApp:
 
         # Forward: L, Right Arrow (Browser Style)
         # Re-visit the view we just popped from
-        if k_char in ['l', 'L', 'ㅣ'] or key == curses.KEY_RIGHT:
+        # Fix: Removed Korean mappings ('ㅣ') to prevent IME ghost keys
+        if k_char in ['l', 'L'] or key == curses.KEY_RIGHT:
             if self.forward_stack:
                 next_view = self.forward_stack.pop()
                 self.view_stack.append(next_view)
@@ -642,7 +701,10 @@ class MyTunesApp:
                 self.status_msg = ""
             return
 
-        if key == curses.KEY_UP or k_char in ['k', 'ㅏ']:
+            return
+
+        # Fix: Removed Korean mappings ('ㅏ', 'ㅓ') for stability
+        if key == curses.KEY_UP or k_char in ['k']:
             if self.selection_idx > 0:
                 self.selection_idx -= 1
                 if self.selection_idx < self.scroll_offset: self.scroll_offset = self.selection_idx
@@ -653,7 +715,7 @@ class MyTunesApp:
                 # Maintain scroll consistency (h - 10 matches draw() layout)
                 list_area_height = h - 10
                 self.scroll_offset = max(0, self.selection_idx - list_area_height + 1)
-        elif key == curses.KEY_DOWN or k_char in ['j', 'ㅓ']:
+        elif key == curses.KEY_DOWN or k_char in ['j']:
             if self.selection_idx < len(current_list) - 1:
                 self.selection_idx += 1
                 h, _ = self.stdscr.getmaxyx()
@@ -665,26 +727,29 @@ class MyTunesApp:
                 self.selection_idx = 0
                 self.scroll_offset = 0
 
-        # Enter / Select: Enter Only (L moved to Forward)
-        elif key == '\n' or key == 10 or key == 13:
-            self.activate_selection(current_list)
+        # Enter / Select Logic
+        elif key in ['\n', '\r', 10, 13, curses.KEY_ENTER]:
+             # v2.0.3 Stability: Debounce Enter to prevent double-firing
+             if time.time() - getattr(self, 'last_enter_time', 0) > 0.3:
+                 self.last_enter_time = time.time()
+                 self.activate_selection(current_list)
         
-        # Shortcuts with Korean support AND Number keys (for instant reaction)
-        # Search: S, ㄴ, 1, /
-        elif k_char in ['s', 'S', 'ㄴ', '1', '/']: 
+        # Shortcuts: Number keys & English letters (Strict Mode)
+        # Search: S, 1, /
+        elif k_char in ['s', 'S', '1', '/'] and (not isinstance(key, str) or key.isprintable()): 
             self.forward_stack = [] # Clear forward history on new navigation
             self.prompt_search()
         
-        # Favorites: F, ㄹ, 2
-        elif k_char in ['f', 'F', 'ㄹ', '2']:
+        # Favorites: F, 2
+        elif k_char in ['f', 'F', '2']:
             if self.view_stack[-1] != "favorites":
                 self.forward_stack = [] 
                 self.view_stack.append("favorites")
                 self.selection_idx = 0
             self.status_msg = self.t("favorites_info", DATA_FILE)
             
-        # History: R, ㄱ, 3 (Changed from H to avoid Back conflict)
-        elif k_char in ['r', 'R', 'ㄱ', '3']:
+        # History: R, 3 (Changed from H to avoid Back conflict)
+        elif k_char in ['r', 'R', '3']:
             if self.view_stack[-1] != "history":
                 self.forward_stack = []
                 self.cached_history = list(self.dm.data['history']) # Snapshot
@@ -692,8 +757,8 @@ class MyTunesApp:
                 self.selection_idx = 0
             self.status_msg = self.t("hist_info")
             
-        # Main Menu: M, ㅡ, 4
-        elif k_char in ['m', 'M', 'ㅡ', '4']:
+        # Main Menu: M, 4
+        elif k_char in ['m', 'M', '4']:
             self.forward_stack = [] # Clear forward history
             self.view_stack = ["main"]; self.selection_idx = 0; self.scroll_offset = 0; self.status_msg = ""
             
@@ -753,32 +818,36 @@ class MyTunesApp:
                             }
                             
                             # v1.9.9 Security Update: Use centralized API with Auth Header
-                            try:
-                                headers = {
-                                    "Content-Type": "application/json",
-                                    "x-mytunes-secret": "mytunes-v1-secret-8822"
-                                }
-                                resp = requests.post(
-                                    self.share_api_url, 
-                                    json=payload, 
-                                    headers=headers, 
-                                    timeout=3
-                                )
-                                if resp.status_code == 200:
-                                    self.sent_history[url] = time.time()
-                                    safe_title = self.truncate(title, 50)
-                                    self.status_msg = f"🚀 Shared: {safe_title}..."
-                                else:
-                                    self.status_msg = f"❌ Share Error: {resp.status_code}"
-                            except:
-                                self.status_msg = "❌ Network Error (API)"
+                            # v2.0.0 Threading for Smoothness
+                            def send_share_async(payload, headers, url_to_share, title_to_share):
+                                try:
+                                    resp = requests.post(
+                                        self.share_api_url, 
+                                        json=payload, 
+                                        headers=headers, 
+                                        timeout=3
+                                    )
+                                    if resp.status_code == 200:
+                                        self.sent_history[url_to_share] = time.time()
+                                        safe_t = self.truncate(title_to_share, 50)
+                                        self.status_msg = f"🚀 Shared: {safe_t}..."
+                                    else:
+                                        self.status_msg = f"❌ Share Error: {resp.status_code}"
+                                except:
+                                    self.status_msg = "❌ Network Error (API)"
+
+                            headers = {
+                                "Content-Type": "application/json",
+                                "x-mytunes-secret": "mytunes-v1-secret-8822"
+                            }
+                            threading.Thread(target=send_share_async, args=(payload, headers, url, title), daemon=True).start()
                                 
                         except Exception as e:
                             self.status_msg = f"❌ Share Failed: {str(e)}"
 
             
-        # Add to Favorites: A, ㅁ, 5
-        elif k_char in ['a', 'A', 'ㅁ', '5']:
+        # Add to Favorites: A, 5
+        elif k_char in ['a', 'A', '5']:
             if current_list and 0 <= self.selection_idx < len(current_list):
                 target_item = current_list[self.selection_idx]
                 # Ensure it's a valid track item (has url)
@@ -799,84 +868,55 @@ class MyTunesApp:
                         self.status_msg = "🌐 Opening YouTube in Browser..."
                         threading.Thread(target=webbrowser.open, args=(url,), daemon=True).start()
 
-        # Open Live Station (F8): App Mode with Optimized Flags (v1.8.6)
         elif key == curses.KEY_F8:
-            live_url = "https://mytunes-pro.com/live/"
+            homepage_url = "https://mytunes-pro.com"
             if self.is_remote():
-                self.show_copy_dialog("Live Station", live_url)
+                self.show_copy_dialog("MyTunes Home", homepage_url)
                 return
 
-            # v1.9.4 - Ultimate WSL Fix: Use Standard Webbrowser Module
-            # Subprocess/cmd.exe based launching in WSL is unstable.
-            # We switch to the standard `webbrowser` module which handles system default browser reliably.
-            # This sacrifices window sizing but guarantees the URL opens.
-            if self.is_wsl():
-                threading.Thread(target=webbrowser.open, args=(live_url,), daemon=True).start()
-                return
+            self.status_msg = "🌐 Opening MyTunes Home..."
+            threading.Thread(target=webbrowser.open, args=(homepage_url,), daemon=True).start()
 
-            # Native (Mac/Windows/Linux) Logic Continues Below...
-            temp_user_data = os.path.join(tempfile.gettempdir(), f"mytunes_v190_{int(time.time() / 10)}")
+        # Delete Item: DEL, d
+        elif key == curses.KEY_DC or k_char in ['d']:
+             if current_list and 0 <= self.selection_idx < len(current_list):
+                 view = self.view_stack[-1]
+                 success = False
+                 
+                 if view == "favorites":
+                     success = self.dm.remove_favorite_by_index(self.selection_idx)
+                     if success: self.status_msg = "🗑️ Deleted from Favorites"
+                     
+                 elif view == "history":
+                     success = self.dm.remove_history_by_index(self.selection_idx)
+                     if success: 
+                         self.cached_history = list(self.dm.data['history']) # Refresh view 
+                         self.status_msg = "🗑️ Deleted from History"
+                 
+                 elif view == "search":
+                     # If current_search_query is None, we are viewing Search History
+                     if self.current_search_query is None:
+                         success = self.dm.remove_search_history_by_index(self.selection_idx)
+                         if success:
+                             self.search_results = self.dm.get_search_history() # Refresh
+                             self.status_msg = "🗑️ Deleted from Search History"
+                     else:
+                         # Ephemeral removal from result list
+                         try:
+                             self.search_results.pop(self.selection_idx)
+                             self.status_msg = "Start new search"
+                             success = True
+                         except: pass
 
-            # Optimized Flag Set (Context7 Research)
-            flags = [
-                f"--app={live_url}", 
-                "--window-size=600,900", 
-                "--window-position=100,100",
-                f"--user-data-dir={temp_user_data}",
-                "--no-first-run",
-                "--no-default-browser-check",
-                "--disable-default-apps",
-                "--disable-infobars",
-                "--disable-translate",
-                "--disable-features=Translation",
-                "--disable-save-password-bubble",
-                "--autoplay-policy=no-user-gesture-required",
-                "--new-window",
-                "--disable-extensions"
-            ]
-            
-            launched = False
-            # v1.8.4 - Subprocess Isolation (start_new_session) to prevent crashes on WSL/Linux
-            # 1. macOS
-            if sys.platform == 'darwin':
-                browsers = ["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"]
-                for b_path in browsers:
-                    if os.path.exists(b_path):
-                        try:
-                            # Use -na to open a fresh instance
-                            subprocess.Popen(["open", "-na", b_path, "--args"] + flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                            launched = True; break
-                        except: pass
-            
-            # 2. Windows Native
-            elif sys.platform == 'win32':
-                win_paths = [
-                    os.path.join(os.environ.get('PROGRAMFILES', ''), 'Google\\Chrome\\Application\\chrome.exe'),
-                    os.path.join(os.environ.get('PROGRAMFILES(X86)', ''), 'Google\\Chrome\\Application\\chrome.exe'),
-                    os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Google\\Chrome\\Application\\chrome.exe'),
-                ]
-                for p in win_paths:
-                    if p and os.path.exists(p):
-                        try:
-                            subprocess.Popen([p] + flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                            launched = True; break
-                        except: pass
-            
+                 if success:
+                     # Adjust selection index if out of bounds
+                     # If list became empty, idx will be 0 but len is 0.
+                     # We just need to ensure we don't crash next draw.
+                     # The draw logic (get_current_list) handles empty lists safely.
+                     if self.selection_idx >= len(self.get_current_list()):
+                         self.selection_idx = max(0, len(self.get_current_list()) - 1)
 
-            # 4. Native Linux
-            else:
-                for b in ['google-chrome', 'google-chrome-stable', 'brave-browser', 'chromium-browser', 'chromium']:
-                    p = shutil.which(b)
-                    if p:
-                        try:
-                            subprocess.Popen([p] + flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); launched = True; break
-                        except: pass
 
-            if launched:
-                self.status_msg = "📡 Opening Live Popup (712x800)..."
-            else:
-                webbrowser.open(live_url)
-                self.status_msg = "📡 Opening Live Station (Browser)..."
 
     def ask_resume(self, saved_time, track_title):
         self.stdscr.nodelay(False) # Blocking input for dialog
@@ -1017,12 +1057,8 @@ class MyTunesApp:
                 self.status_msg = "" # Clear stale messages on language switch
             elif item["id"] == "quit": self.running = False
         else:
-            # Check for Load More Button
-            if item.get("id") == "load_more_btn":
-                self.load_more_results()
-                return
-
             self.play_music(item, interactive=True)
+
 
     def play_music(self, item, interactive=True, preserve_queue=False):
         if not item.get("url"): return # Guard against dummy items
@@ -1178,7 +1214,8 @@ class MyTunesApp:
         if query:
             self.status_msg = self.t("searching")
             self.draw()
-            self.perform_search(query)
+            # v2.0.0 Refactor: Threaded Search
+            threading.Thread(target=self.perform_search, args=(query,), daemon=True).start()
         else:
             # Revert if no query and we were just previewing history
             # But requirement 2: "If Enter with no query, preserve previous search results"
@@ -1187,50 +1224,38 @@ class MyTunesApp:
             # If the user wants to CANCEL and go back to Main, they might need ESC.
             pass
 
-    def perform_search(self, query, page=1):
+    def perform_search(self, query):
         try:
-            self.is_loading_more = True
-            if page == 1:
-                self.current_search_query = query
-                self.search_page = 1
-                self.status_msg = self.t("searching")
-            else:
-                self.status_msg = "Loading next 50..."
-            self.draw() # Force redraw to show status
-
-            # Resolve yt-dlp path: checks dirname of current python (venv/bin) first
+            # v2.0.4 Fix: Don't set player.loading=True for Search. 
+            # It triggers playback timeout (skipping) logic if search is slow.
+            # self.player.loading = True 
+            
+            self.current_search_query = query
+            self.status_msg = self.t("searching")
+            
+            # Resolve yt-dlp path
             yt_dlp_cmd = "yt-dlp"
             venv_bin = os.path.dirname(sys.executable)
             venv_yt_dlp = os.path.join(venv_bin, "yt-dlp")
             if os.path.exists(venv_yt_dlp) and os.access(venv_yt_dlp, os.X_OK):
                 yt_dlp_cmd = venv_yt_dlp
 
-            # Optimize search for music/audio
-            limit = 50
-            # yt-dlp logic: ytsearchN asks for N results total.
-            # to get page 2 (51-100), we ask for 100, checking playlist-items indices?
-            # actually ytsearchN with --playlist-start START works.
-            # We ask for (page * limit) because 'ytsearch' usually returns 'up to N'.
-            # If we just ask for 50 with start 51, it might fail depending on yt-dlp version.
-            # Safest is: ytsearch(page*limit) with --playlist-start ((page-1)*limit + 1)
-            
-            total_fetch = page * limit
-            start_index = (page - 1) * limit + 1
-            
+            # v2.0.2 Optimization: 25 Items (Better space usage per user request)
+            limit = 25
             search_query = f"{query} music"
             cmd = [
                 yt_dlp_cmd, 
-                f"ytsearch{total_fetch}:{search_query}", 
-                "--dump-json", "--flat-playlist", "--no-playlist", "--skip-download",
-                "--playlist-start", str(start_index)
+                f"ytsearch{limit}:{search_query}", 
+                "--dump-json", "--flat-playlist", "--no-playlist", "--skip-download"
             ]
             
             try:
                 result = subprocess.check_output(cmd, stderr=subprocess.DEVNULL).decode('utf-8')
             except subprocess.CalledProcessError:
-                result = "" # Handle error or empty
+                result = "" 
                 
             new = []
+            seen_urls = set()
             for line in result.strip().split("\n"):
                 if line:
                     try:
@@ -1239,57 +1264,35 @@ class MyTunesApp:
                         if not url or "http" not in url: url = f"https://www.youtube.com/watch?v={d.get('id')}"
                         dur = d.get("duration", 0)
                         dur_str = f"{int(dur)//60}:{int(dur)%60:02d}" if dur else ""
-                        new.append({"title": d.get("title", "Unknown"), "url": url, "duration": dur_str})
+                        # Dedup Check
+                        if url not in seen_urls:
+                             seen_urls.add(url)
+                             new.append({"title": d.get("title", "Unknown"), "url": url, "duration": dur_str})
                     except: pass
             
+            # Enforce hard limit
+            new = new[:limit]
+            
             if new:
-                # Remove previous 'Load More' button if exists
-                if self.search_results and self.search_results[-1].get("id") == "load_more_btn":
-                    self.search_results.pop()
-                    
-                # Append Load More Button if we got full batch (likely more exists)
-                # Or just always add it if we got results.
-                # Adding it at the end of new list
-                load_more_item = {
-                    "title": "[ Next 50 Results... ]" if self.lang == 'en' else "[ 다음 50개 더 보기... ]",
-                    "id": "load_more_btn",
-                    "url": "", # Dummy
-                    "duration": ""
-                }
-                new.append(load_more_item)
-
-                if page == 1:
-                    self.search_results = new
-                    if self.view_stack[-1] != "search":
-                        self.view_stack.append("search")
-                    self.selection_idx = 0; self.scroll_offset = 0
-                    
-                    # SAVE to History (Exclude load_more_btn)
-                    items_to_save = [x for x in new if x.get('id') != 'load_more_btn']
-                    self.dm.add_search_results(items_to_save)
-                    
-                else:
-                    self.search_results.extend(new)
-                    # Also save subsequent pages to history
-                    items_to_save = [x for x in new if x.get('id') != 'load_more_btn']
-                    self.dm.add_search_results(items_to_save)
+                self.search_results = new
+                if self.view_stack[-1] != "search":
+                    self.view_stack.append("search")
+                self.selection_idx = 0; self.scroll_offset = 0
                 
-                self.search_page = page
-                self.status_msg = f"Search Done. ({len(self.search_results)-1})" # -1 for button
+                # SAVE to History
+                self.dm.add_search_results(new)
+                
+                self.status_msg = f"Search Done. ({len(new)} results)"
             else:
-                if page == 1: self.status_msg = self.t("no_results")
-                else: 
-                     self.status_msg = "No more results."
-                     # Remove button if no more
-                     if self.search_results and self.search_results[-1].get("id") == "load_more_btn":
-                        self.search_results.pop()
+                self.status_msg = self.t("no_results")
+                
         except Exception as e: self.status_msg = f"Error: {e}"
         finally:
-            self.is_loading_more = False
+            self.player.loading = False
 
-    def load_more_results(self):
-        if self.current_search_query and not self.is_loading_more:
-            self.perform_search(self.current_search_query, self.search_page + 1)
+
+
+
 
     def draw(self):
         self.stdscr.erase()
@@ -1445,18 +1448,15 @@ class MyTunesApp:
 
     def check_autoplay(self):
         # Auto-play next track from Global Queue
+        # Guard: Don't autoplay if we are currently loading a track
+        if self.player.loading: return
+
         try:
             is_idle = self.player.get_property("idle-active")
             if is_idle and self.current_track and self.queue:
                 if self.queue_idx + 1 < len(self.queue):
                      self.queue_idx += 1
                      next_item = self.queue[self.queue_idx]
-                     
-                     if next_item.get('id') == 'load_more_btn':
-                         # TODO: Auto-trigger load more? For now just stop.
-                         self.current_track = None 
-                         return
-                     
                      try: self.play_music(next_item, interactive=False, preserve_queue=True)
                      except: pass
                 else:
@@ -1471,6 +1471,14 @@ class MyTunesApp:
                 self.check_autoplay()
                 self.draw()
                 self.handle_input()
+                
+                # Idle / Sleep Check
+                # If no input for 60s and Paused, slow down loop
+                if time.time() - getattr(self, 'last_input_time', 0) > 60 and self.is_paused:
+                     self.stdscr.timeout(1000)
+                else:
+                     self.stdscr.timeout(200)
+
             except Exception as e:
                 # v1.8.4 - Global resilience: Catch and log loop errors instead of crashing
                 try: 
@@ -1480,6 +1488,10 @@ class MyTunesApp:
                 # Small sleep to prevent infinite tight loop on persistent error
                 time.sleep(0.1)
         
+        # Cleanup Mouse (Prevent terminal artifacts)
+        try: curses.mousemask(0)
+        except: pass
+
         if self.stop_on_exit:
             self.player.stop()
             self.player.cleanup_orphaned_mpv()

@@ -1,6 +1,6 @@
 # 🎵 MyTunes Pro (Korean)
 
-## 🚀 Professional TUI Music Player v2.0.0
+## 🚀 Professional TUI Music Player v2.0.1
 
 MyTunes Pro는 **Context7**의 심층 리서치를 기반으로 제작된 **Premium CLI Music Player**입니다.
 Python `curses` 라이브러리를 사용하여 터미널 환경에서도 **GUI급의 유려한 UX**를 제공하며,
@@ -165,19 +165,21 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 | **`F7`** | **유튜브 열기** | 현재 곡을 브라우저에서 보기 |
 | **`F8`** | **라이브 (Live)** | **실시간 음악 대시보드 열기** (전용 팝업창) |
 | **`F9`** | **공유 (Share)** | **현재 곡을 라이브 스테이션에 즉시 공유** |
-| **`6`** | **뒤로가기** | 이전 화면으로 이동 (단축키 `Q`, `H`와 동일) |
+| **`6`** | **뒤로가기** | 이전 화면으로 이동 (단축키 `Q`, `h`와 동일) |
+| **`L`** | **앞으로** | 이전 화면에서 앞화면으로 다시 이동 (`Right Arrow`) |
 | **`ESC`** | **배경재생** | **음악 끄지 않고 나가기** (백그라운드 재생) |
 
 ### 🧭 기본 탐색
 | 키 | 동작 |
 | :--- | :--- |
 | `↑` / `↓` / `k` / `j` | 리스트 위/아래 이동 (Vim 키 지원) |
-| `Enter` / `l` | **선택 / 재생** (한글 `ㅣ`도 지원) |
+| `Enter` / `l` | **선택 / 재생** |
 | `Space` | 재생 / 일시정지 (Play/Pause) |
 | `-` / `+` | **볼륨 조절** (- / +) |
 | `,` / `.` | 10초 뒤로 / 앞으로 감기 |
 | `<` / `>` | **30초** 뒤로 / 앞으로 감기 (Shift) |
 | `Backspace` / `h` / `q` | 뒤로 가기 / 검색어 지우기 |
+| `L` | **앞으로 가기** |
 | `/` | **검색** (Vim Style) |
 
 ---
@@ -191,7 +193,7 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 
 # 🎵 MyTunes Pro (English)
 
-**Modern CLI YouTube Music Player (v1.9.9)**  
+**Modern CLI YouTube Music Player (v2.0.1)**  
 A lightweight, keyboard-centric terminal player for streaming YouTube music.  
 
 ---
@@ -272,12 +274,20 @@ sudo apt install mpv python3 python3-pip pipx python3-venv -y
 | **`5`** | **Add/Del** | Toggle Favorite (Same as `A`) |
 | **`+`** | **Vol Up** | Volume +5% (Same as `=`) |
 | **`-`** | **Vol Down** | Volume -5% (Same as `_`) |
-| **`6`** | **Back** | Go back (Same as `Q`, `H`) |
+| **`6`** | **Back** | Go back (Same as `Q`, `h`) |
+| **`L`** | **Forward** | Go forward (`Right Arrow`) |
 | **`ESC`** | **Bg Play** | **Exit app but keep music playing** |
 
 ---
 
 ## 🔄 Changelog
+
+### v2.0.1 (Keymap Refinement & Version Sync)
+
+- **Navigation**: Added browser-style Forward navigation (`L` / `Right Arrow`).
+- **Keybinding Optimization**: Updated History mapping to `R` / `3` and refined Back/Forward logic.
+- **IME Stability**: Removed unstable Korean character mappings (`ㄴ`, `ㄹ`, `ㄱ`, 등) to prevent ghost key issues in the TUI.
+- **Global Synchronization**: Synchronized version v2.0.1 across CLI, TUI, and Web interfaces.
 
 ### v1.9.9 (Domain Migration & Realtime Sync)
 

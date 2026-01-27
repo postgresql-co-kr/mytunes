@@ -30,7 +30,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "2.0.0"
+APP_VERSION = "2.0.1"
 
 # === [Strings & Localization] ===
 STRINGS = {
