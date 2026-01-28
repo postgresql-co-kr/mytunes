@@ -2,7 +2,7 @@
 
 ## 🚀 Professional TUI Music Player v2.0.3
 
-MyTunes Pro는 **Context7**의 심층 리서치를 기반으로 제작된 **Premium CLI Music Player**입니다.
+MyTunes Pro는 개발자들 및 프리미엄 사용자들을 위한 **Premium CLI Music Player**입니다.
 Python `curses` 라이브러리를 사용하여 터미널 환경에서도 **GUI급의 유려한 UX**를 제공하며,
 `mpv` 플레이어의 강력한 IPC 제어 기능을 통해 끊김 없는 백그라운드 재생을 지원합니다.
 
