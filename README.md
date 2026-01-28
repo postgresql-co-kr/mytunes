@@ -193,8 +193,8 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 
 # 🎵 MyTunes Pro (English)
 
-**Modern CLI YouTube Music Player (v2.0.3)**  
-A lightweight, keyboard-centric terminal player for streaming YouTube music.  
+**Modern CLI YouTube Music Player (v2.0.3)**
+A lightweight, keyboard-centric terminal player for streaming YouTube music.
 
 ---
 
@@ -265,18 +265,46 @@ sudo apt install mpv python3 python3-pip pipx python3-venv -y
 
 ## ⌨️ English Controls
 
+### ⚡️ Instant Shortcuts (Number Keys)
+
+Works instantly even if IME (Input Method Editor) is active.
+
 | Key | Function | Description |
 | :--- | :--- | :--- |
-| **`1`** | **Search** | Open search bar (Same as `S`) |
+| **`1`** | **Search** | Open music search (Same as `S`) |
 | **`2`** | **Favs** | View favorites list (Same as `F`) |
-| **`3`** | **Hist** | View history (Same as `R`) |
+| **`3`** | **History** | View recent 100 tracks (Same as `R`) |
 | **`4`** | **Main** | Go to Main Menu (Same as `M`) |
 | **`5`** | **Add/Del** | Toggle Favorite (Same as `A`) |
 | **`+`** | **Vol Up** | Volume +5% (Same as `=`) |
 | **`-`** | **Vol Down** | Volume -5% (Same as `_`) |
+| **`F7`** | **YouTube** | Open current track in browser |
+| **`F8`** | **Live** | **Open Real-time Music Dashboard** (Popup) |
+| **`F9`** | **Share** | **Share current track to Live Station** |
 | **`6`** | **Back** | Go back (Same as `Q`, `h`) |
-| **`L`** | **Forward** | Go forward (`Right Arrow`) |
+| **`L`** | **Forward** | Go forward (Same as `Right Arrow`) |
 | **`ESC`** | **Bg Play** | **Exit app but keep music playing** |
+
+### 🧭 Basic Navigation
+
+| Key | Action |
+| :--- | :--- |
+| `↑` / `↓` / `k` / `j` | Move up/down in list (Vim keys) |
+| `Enter` / `l` | **Select / Play** |
+| `Space` | Play / Pause |
+| `-` / `+` | **Volume Control** (- / +) |
+| `,` / `.` | Seek backward / forward **10s** |
+| `<` / `>` | Seek backward / forward **30s** (Shift) |
+| `Backspace` / `h` / `q` | Go back / Clear search |
+| `L` | **Go forward** |
+| `/` | **Search** (Vim Style) |
+
+---
+
+## 📂 Data Storage
+
+- Favorites and history are permanently stored in `~/.pymusic_data.json` on your home directory.
+- Data persists even after the application is closed.
 
 ---
 
@@ -285,7 +313,7 @@ sudo apt install mpv python3 python3-pip pipx python3-venv -y
 ### v2.0.3 (Input Handling & Unicode Stability)
 
 - **Input Logic**: Replaced legacy `getch()` with `get_wch()` in all UI dialogs (`ask_resume`, `show_copy_dialog`) for robust wide-character and Unicode support.
-- **Architecture**: Refactored the input handling system into a modular, command-based architecture (v2.0.3). 
+- **Architecture**: Refactored the input handling system into a modular, command-based architecture (v2.0.3).
 - **Decoupling**: Separated input collection (`get_next_event`), event normalization, and command execution.
 - **Improved ESC Handling**: Enhanced detection of ESC and multi-byte sequences (including Option+Backspace) for smoother navigation.
 
