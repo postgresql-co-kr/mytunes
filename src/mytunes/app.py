@@ -52,8 +52,8 @@ STRINGS = {
         "fav_added": "★ 즐겨찾기에 추가됨",
         "fav_removed": "☆ 즐겨찾기 해제됨",
         "header_r1": "[S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [A/5]즐겨찾기추가 [Q/6]뒤로",
-        "header_r2": "[F7]유튜브 [F8]라이브 [F9]라이브공유 [SPC]Play/Stop [+/-]볼륨 [<>]빨리감기 [D/Del]삭제",
-        "help_guide": "[j/k]이동 [En]선택 [h/q]뒤로 [S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [F7]유튜브 [F8]라이브 [F9]라이브공유",
+        "header_r2": "[F7]유튜브 [F8]라이브 [SPC]Play/Stop [+/-]볼륨 [<>]빨리감기 [D/Del]삭제",
+        "help_guide": "[j/k]이동 [En]선택 [h/q]뒤로 [S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [F7]유튜브 [F8]라이브",
         "menu_main": "☰ 메인 메뉴",
         "menu_search_results": "⌕ YouTube 음악 검색",
         "menu_favorites": "★ 나의 즐겨찾기",
@@ -81,8 +81,8 @@ STRINGS = {
         "fav_added": "★ Added to Favorites",
         "fav_removed": "☆ Removed from Favorites",
         "header_r1": "[S/1]Srch [F/2]Favs [R/3]Hist [M/4]Main [A/5]AddFav [Q/6]Back",
-        "header_r2": "[F7]YT [F8]Live [F9]LiveShare [SPC]Play/Stop [+/-]Vol [<>]Seek [D/Del]Del",
-        "help_guide": "[j/k]Move [En]Select [h/q]Back [S/1]Srch [F/2]Fav [R/3]Hist [M/4]Main [F7]YT [F8]Live [F9]Share",
+        "header_r2": "[F7]YT [F8]Live [SPC]Play/Stop [+/-]Vol [<>]Seek [D/Del]Del",
+        "help_guide": "[j/k]Move [En]Select [h/q]Back [S/1]Srch [F/2]Fav [R/3]Hist [M/4]Main [F7]YT [F8]Live",
         "menu_main": "☰ Main Menu",
         "menu_search_results": "⌕ Search YouTube Music",
         "menu_favorites": "★ My Favorites",
@@ -467,9 +467,6 @@ class MyTunesApp:
         curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
         print("\033[?1003h") # Enable mouse tracking
 
-        # Sharing Client (Serverless Proxy)
-        self.pusher = None # Deprecated: Direct Pusher client removed for security
-        self.share_api_url = "https://postgresql.co.kr/api/pusher/mytunes"
         self.sent_history = {}
 
 
@@ -648,7 +645,6 @@ class MyTunesApp:
             "a": "TOGGLE_FAV", "5": "TOGGLE_FAV",
             str(curses.KEY_F7): "OPEN_BROWSER",
             str(curses.KEY_F8): "OPEN_HOME_APP",
-            str(curses.KEY_F9): "SHARE",
             str(curses.KEY_DC): "DELETE", "d": "DELETE"
         }
         return mapping.get(k_char)
@@ -742,8 +738,6 @@ class MyTunesApp:
         elif cmd == "OPEN_PARTNER":
             self.open_browser("https://postgresql.co.kr")
 
-        elif cmd == "SHARE":
-            self.handle_share(current_list)
 
         elif cmd == "RESIZE":
             self.stdscr.clear()
@@ -774,30 +768,6 @@ class MyTunesApp:
         if success:
              self.selection_idx = max(0, min(self.selection_idx, len(self.get_current_list()) - 1))
 
-    def handle_share(self, current_list):
-        """Sub-logic for SHARE command."""
-        if not current_list or not (0 <= self.selection_idx < len(current_list)): return
-        target_item = current_list[self.selection_idx]
-        url = target_item.get('url')
-        title = target_item.get('title', 'Unknown Title')
-        
-        if not url: return
-        if time.time() - self.sent_history.get(url, 0) < 5:
-            self.status_msg = "⚠️ Already Shared Recently!"; return
-
-        def send_share_async(payload, headers, url_to_share, title_to_share):
-            try:
-                resp = requests.post(self.share_api_url, json=payload, headers=headers, timeout=3)
-                if resp.status_code == 200:
-                    self.sent_history[url_to_share] = time.time()
-                    self.status_msg = f"🚀 Shared: {self.truncate(title_to_share, 40)}..."
-                else: self.status_msg = f"❌ Share Error: {resp.status_code}"
-            except: self.status_msg = "❌ Network Error (API)"
-
-        payload = {"title": title, "url": url, "duration": target_item.get('duration', '--:--'),
-                   "country": self.dm.get_country(), "timestamp": time.time()}
-        headers = {"Content-Type": "application/json", "x-mytunes-secret": "mytunes-v1-secret-8822"}
-        threading.Thread(target=send_share_async, args=(payload, headers, url, title), daemon=True).start()
 
 
 

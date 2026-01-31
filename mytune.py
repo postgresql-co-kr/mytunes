@@ -16,7 +16,6 @@ import unicodedata
 import socket
 import locale
 import signal
-import pusher
 import requests
 import webbrowser
 
@@ -50,8 +49,8 @@ STRINGS = {
         "fav_added": "★ 즐겨찾기에 추가됨",
         "fav_removed": "☆ 즐겨찾기 해제됨",
         "header_r1": "[S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [A/5]즐겨찾기추가 [Q/6]뒤로",
-        "header_r2": "[F7]유튜브 [F8]라이브 [F9]라이브공유 [SPC]Play/Stop [+/-]볼륨 [<>]빨리감기",
-        "help_guide": "[j/k]이동 [En]선택 [h/q]뒤로 [S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [F7]유튜브 [F8]라이브 [F9]라이브공유",
+        "header_r2": "[F7]유튜브 [F8]라이브 [SPC]Play/Stop [+/-]볼륨 [<>]빨리감기",
+        "help_guide": "[j/k]이동 [En]선택 [h/q]뒤로 [S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [F7]유튜브 [F8]라이브",
         "menu_main": "☰ 메인 메뉴",
         "menu_search_results": "⌕ YouTube 음악 검색",
         "menu_favorites": "★ 나의 즐겨찾기",
@@ -79,8 +78,8 @@ STRINGS = {
         "fav_added": "★ Added to Favorites",
         "fav_removed": "☆ Removed from Favorites",
         "header_r1": "[S/1]Srch [F/2]Favs [R/3]Hist [M/4]Main [A/5]AddFav [Q/6]Back",
-        "header_r2": "[F7]YT [F8]Live [F9]LiveShare [SPC]Play/Stop [+/-]Vol [<>]Seek",
-        "help_guide": "[j/k]Move [En]Select [h/q]Back [S/1]Srch [F/2]Fav [R/3]Hist [M/4]Main [F7]YT [F8]Live [F9]Share",
+        "header_r2": "[F7]YT [F8]Live [SPC]Play/Stop [+/-]Vol [<>]Seek",
+        "help_guide": "[j/k]Move [En]Select [h/q]Back [S/1]Srch [F/2]Fav [R/3]Hist [M/4]Main [F7]YT [F8]Live",
         "menu_main": "☰ Main Menu",
         "menu_search_results": "⌕ Search YouTube Music",
         "menu_favorites": "★ My Favorites",
@@ -439,16 +438,6 @@ class MyTunesApp:
         curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
         print("\033[?1003h") # Enable mouse tracking
 
-        # Pusher Client
-        try:
-            self.pusher = pusher.Pusher(
-                app_id='2106370',
-                key='44e3d7e4957944c867ec',
-                secret='0be8e65a287bbccc7369',
-                cluster='ap3',
-                ssl=True
-            )
-        except: self.pusher = None
         self.sent_history = {}
 
 
@@ -715,41 +704,6 @@ class MyTunesApp:
             self.stop_on_exit = False
             self.running = False
             
-        # Share Track (F9): Real-time Publish
-        elif key == curses.KEY_F9:
-            if current_list and 0 <= self.selection_idx < len(current_list):
-                target_item = current_list[self.selection_idx]
-                url = target_item.get('url')
-                title = target_item.get('title', 'Unknown Title')
-                
-                if url:
-                    # If it's US, try to re-fetch country info one more time (maybe misdetected)
-                    if self.dm.get_country() == 'US':
-                        threading.Thread(target=self.dm.fetch_country, daemon=True).start()
-
-                    # Dedup Check: Using a time-based cooldown (e.g. 5 seconds) for same URL
-                    last_sent_time = self.sent_history.get(url, 0)
-                    if time.time() - last_sent_time < 5:
-                        self.status_msg = "⚠️  Already Shared Recently!"
-                    else:
-                        try:
-                            # Send to Pusher
-                            payload = {
-                                "title": title,
-                                "url": url,
-                                "duration": target_item.get('duration', '--:--'),
-                                "country": self.dm.get_country(),
-                                "timestamp": time.time()
-                            }
-                            if self.pusher:
-                                self.pusher.trigger('mytunes-pro', 'share-track', payload)
-                                self.sent_history[url] = time.time()
-                                safe_title = self.truncate(title, 50)
-                                self.status_msg = f"🚀 Shared: {safe_title}..."
-                            else:
-                                self.status_msg = "❌ Pusher Error"
-                        except Exception as e:
-                            self.status_msg = f"❌ Share Failed: {str(e)}"
 
             
         # Add to Favorites: A, ㅁ, 5

@@ -166,7 +166,6 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 | **`-`** | **볼륨 DOWN** | 볼륨 -5% (단축키 `_`와 동일) |
 | **`F7`** | **유튜브 열기** | 현재 곡을 브라우저에서 보기 |
 | **`F8`** | **라이브 (Live)** | **실시간 음악 대시보드 열기** (전용 팝업창) |
-| **`F9`** | **공유 (Share)** | **현재 곡을 라이브 스테이션에 즉시 공유** |
 | **`6`** | **뒤로가기** | 이전 화면으로 이동 (단축키 `Q`, `h`와 동일) |
 | **`L`** | **앞으로** | 이전 화면에서 앞화면으로 다시 이동 (`Right Arrow`) |
 | **`ESC`** | **배경재생** | **음악 끄지 않고 나가기** (백그라운드 재생) |
@@ -243,7 +242,6 @@ Python `curses` 라이브러리를 통해 터미널 환경에서 미디어 URL�
 
 - **Domain Migration**: Updated all branding and internal links to support `mytunes-pro.com`.
 - **Realtime Stability**: Fixed critical state-management bugs in the live dashboard that caused list clearing and duplicated track entries.
-- **Pusher Channel Synchronization**: Unified communication across the transition to ensure zero-latency sharing on the new `mytunes-pro` channel.
 - **Improved Empty State**: Redesigned the "SIGNAL LOST" screen into a more descriptive "READY TO RECEIVE" interface for better UX.
 
 ### v1.9.8 (Realtime Stabilization)
@@ -388,7 +386,6 @@ Python `curses` 라이브러리를 통해 터미널 환경에서 미디어 URL�
 ### v1.6.0
 
 - **Global Version Synchronization**: Synchronized version 1.6.0 across CLI, README, and Web interface.
-- **Dependency Fix**: Ensured `pusher` dependency is correctly included for real-time features.
 
 ### v1.5.6
 
