@@ -226,7 +226,7 @@ Python `curses` 라이브러리를 통해 터미널 환경에서 미디어 URL�
 
 ### v2.0.2 (Stability & Browser Optimization)
 
-- **Browser Launch**: Switched to fully decoupled `subprocess.Popen` logic for browser opening. This eliminates occasional TUI freezes when launching YouTube (F7) or Live Station (F8) by bypassing `webbrowser` library limitations.
+- **Browser Launch**: Switched to fully decoupled `subprocess.Popen` logic for browser opening. This eliminates occasional TUI freezes when launching Media Links (F7) or Dashboard (F8) by bypassing `webbrowser` library limitations.
 - **App Mode Restore**: Fixed and improved Chrome/Brave App Mode (Popup) for the Live Station on macOS.
 - **Improved Remote Detection**: Refined SSH/WSL detection to ensure local browser features are correctly enabled where possible.
 
@@ -248,7 +248,7 @@ Python `curses` 라이브러리를 통해 터미널 환경에서 미디어 URL�
 - **UI Refinement**: Implemented in-list "Now Playing" sticky behavior with auto-scroll synchronization for a seamless browsing experience.
 - **Queue System Optimization**: Capped incoming track queue at 200 items with a "200+" notification indicator for high-traffic stability.
 - **Popup UI Consistency**: Unified Live Station popup dimensions to 620x900 across Web and TUI.
-- **Improved YouTube Playback**: Optimized the YouTube player hook to resolve initialization race conditions and syntax edge cases.
+- **Improved Media Playback**: Optimized the media player hook to resolve initialization race conditions and syntax edge cases.
 
 ### v1.9.7 (Analytics)
 
@@ -308,7 +308,7 @@ Python `curses` 라이브러리를 통해 터미널 환경에서 미디어 URL�
 ### v1.8.4
 
 - **Python Crash Fix (WSL)**: Eliminated premature termination by implementing `start_new_session=True` for browser launches, isolating them from the TUI process group.
-- **Hybrid Browser Strategy**: Switched to the standard `webbrowser` library for F7 (YouTube links) for maximum internal stability.
+- **Hybrid Browser Strategy**: Switched to the standard `webbrowser` library for F7 (Media links) for maximum internal stability.
 - **Global Error Protection**: Wrapped the main application loop in an exception guard to catch and log transient OS errors without crashing the entire app.
 - **Refined Process Cleanup**: Specialized the `pkill` logic to prevent accidental self-termination while maintaining reliable MPV management.
 
@@ -355,7 +355,7 @@ Python `curses` 라이브러리를 통해 터미널 환경에서 미디어 URL�
 ### v1.7.5
 
 - **WSL Integration**: Fully optimized browser launch from WSL by utilizing `cmd.exe` to trigger native Windows browsers.
-- **F7 Windows Resolve**: Fixed an issue where YouTube (F7) wouldn't open in WSL environments.
+- **F7 Windows Resolve**: Fixed an issue where Media links (F7) wouldn't open in WSL environments.
 - **F8 App Mode (WSL/Win)**: Enhanced flags to ensure "App Mode" (no address bar) works consistently even when launched from WSL.
 
 ### v1.7.4
@@ -365,7 +365,7 @@ Python `curses` 라이브러리를 통해 터미널 환경에서 미디어 URL�
 
 ### v1.7.3
 
-- **Windows Fixes**: Resolved issue where F7 (YouTube) failed to open browsers on Windows by implementing `os.startfile` logic.
+- **Windows Fixes**: Resolved issue where F7 (Media) failed to open browsers on Windows by implementing `os.startfile` logic.
 - **F8 Initialization**: Improved Live Station (F8) window sizing on Windows by forcing a clean session state.
 - **Robustness**: Enhanced cross-platform browser redirection logic to ensure consistent behavior.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 MyTunes Pro - Professional TUI Edition v1.0
-Premium CLI Music Player with Curses Interface
+# Premium CLI Media Workflow Experiment with Curses Interface
 Enhanced with Context7-researched MPV IPC & Resize Handling
 """
 import curses
@@ -52,7 +52,7 @@ STRINGS = {
         "header_r2": "[F7]유튜브 [SPC]Play/Stop [+/-]볼륨 [<>]빨리감기",
         "help_guide": "[j/k]이동 [En]선택 [h/q]뒤로 [S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [F7]유튜브",
         "menu_main": "☰ 메인 메뉴",
-        "menu_search_results": "⌕ YouTube 음악 검색",
+        "menu_search_results": "⌕ 미디어 콘텐츠 검색",
         "menu_favorites": "★ 나의 즐겨찾기",
         "menu_history": "◷ 재생 기록",
         "menu_bg_play": "⧉ 백그라운드 재생 (나가기)",
@@ -81,7 +81,7 @@ STRINGS = {
         "header_r2": "[F7]YT [SPC]Play/Stop [+/-]Vol [<>]Seek",
         "help_guide": "[j/k]Move [En]Select [h/q]Back [S/1]Srch [F/2]Fav [R/3]Hist [M/4]Main [F7]YT",
         "menu_main": "☰ Main Menu",
-        "menu_search_results": "⌕ Search YouTube Music",
+        "menu_search_results": "⌕ Search Media Content",
         "menu_favorites": "★ My Favorites",
         "menu_history": "◷ History",
         "menu_bg_play": "⧉ Background Play (Leave)",
@@ -284,7 +284,7 @@ class Player:
             # 'accessory' hides Dock but allows system resources
             cmd.append("--macos-app-activation-policy=accessory")
             
-        # C. YouTube 403 Forbidden Bypass (Cross-platform robustness)
+        # C. Media Source 403 Forbidden Bypass (Cross-platform robustness)
         # This uses the Android player client which is currently the most stable
         # and avoids HLS segment blocks on both Linux and macOS.
         cmd.extend([
@@ -839,7 +839,7 @@ class MyTunesApp:
         elif cmd == "OPEN_BROWSER":
             if current_list and 0 <= self.selection_idx < len(current_list):
                 url = current_list[self.selection_idx].get('url')
-                if url: (self.show_copy_dialog("YouTube", url) if self.is_remote() else self.open_browser(url))
+                if url: (self.show_copy_dialog("Media", url) if self.is_remote() else self.open_browser(url))
 
         elif cmd in ["OPEN_HOME_APP", "OPEN_HOME"]:
             url = "https://mytunes-pro.com"
