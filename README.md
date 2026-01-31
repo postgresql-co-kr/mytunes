@@ -1,6 +1,6 @@
-# 🎵 MyTunes Pro (Experimental Media Tool)
+# 🎵 MyTunes Pro - Professional TUI Edition v2.0.4
 
-## 🚀 Terminal-based Media Workflow Experiment v2.0.3
+## 🚀 Terminal-based Media Workflow Experiment v2.0.4
 
 > [!IMPORTANT]
 > **Legal Disclaimer:** This project is a personal, non-commercial research experiment for developer education. 
@@ -216,6 +216,12 @@ Python `curses` 라이브러리를 통해 터미널 환경에서 미디어 URL�
 ---
 
 ## 🔄 Changelog
+
+### v2.0.4 (2026-02-01)
+- **Legal Polish**: Comprehensive scrubbing of brand identifiers and service-oriented terminology across the ecosystem.
+- **Localization**: Fully localized Korean landing page and technical experiment descriptions.
+- **Educational Focus**: Added explicit project disclaimers to all web footers.
+- **Project Scope**: Solidified positioning as a "Media Handling Experiment" rather than a music player.
 
 ### v2.0.3 (Input Handling & Unicode Stability)
 
