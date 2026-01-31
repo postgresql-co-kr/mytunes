@@ -52,8 +52,8 @@ STRINGS = {
         "fav_added": "★ 즐겨찾기에 추가됨",
         "fav_removed": "☆ 즐겨찾기 해제됨",
         "header_r1": "[S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [A/5]즐겨찾기추가 [Q/6]뒤로",
-        "header_r2": "[F7]유튜브 [F8]라이브 [SPC]Play/Stop [+/-]볼륨 [<>]빨리감기 [D/Del]삭제",
-        "help_guide": "[j/k]이동 [En]선택 [h/q]뒤로 [S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [F7]유튜브 [F8]라이브",
+        "header_r2": "[F7]유튜브 [SPC]Play/Stop [+/-]볼륨 [<>]빨리감기 [D/Del]삭제",
+        "help_guide": "[j/k]이동 [En]선택 [h/q]뒤로 [S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [F7]유튜브",
         "menu_main": "☰ 메인 메뉴",
         "menu_search_results": "⌕ YouTube 음악 검색",
         "menu_favorites": "★ 나의 즐겨찾기",
@@ -81,8 +81,8 @@ STRINGS = {
         "fav_added": "★ Added to Favorites",
         "fav_removed": "☆ Removed from Favorites",
         "header_r1": "[S/1]Srch [F/2]Favs [R/3]Hist [M/4]Main [A/5]AddFav [Q/6]Back",
-        "header_r2": "[F7]YT [F8]Live [SPC]Play/Stop [+/-]Vol [<>]Seek [D/Del]Del",
-        "help_guide": "[j/k]Move [En]Select [h/q]Back [S/1]Srch [F/2]Fav [R/3]Hist [M/4]Main [F7]YT [F8]Live",
+        "header_r2": "[F7]YT [SPC]Play/Stop [+/-]Vol [<>]Seek [D/Del]Del",
+        "help_guide": "[j/k]Move [En]Select [h/q]Back [S/1]Srch [F/2]Fav [R/3]Hist [M/4]Main [F7]YT",
         "menu_main": "☰ Main Menu",
         "menu_search_results": "⌕ Search YouTube Music",
         "menu_favorites": "★ My Favorites",
@@ -644,7 +644,6 @@ class MyTunesApp:
             "<": "SEEK_BACK_30", ">": "SEEK_FWD_30",
             "a": "TOGGLE_FAV", "5": "TOGGLE_FAV",
             str(curses.KEY_F7): "OPEN_BROWSER",
-            str(curses.KEY_F8): "OPEN_HOME_APP",
             str(curses.KEY_DC): "DELETE", "d": "DELETE"
         }
         return mapping.get(k_char)
@@ -730,7 +729,7 @@ class MyTunesApp:
                 url = current_list[self.selection_idx].get('url')
                 if url: (self.show_copy_dialog("YouTube", url) if self.is_remote() else self.open_browser(url))
 
-        elif cmd in ["OPEN_HOME_APP", "OPEN_HOME"]:
+        elif cmd in ["OPEN_HOME"]:
             url = "https://mytunes-pro.com"
             if self.is_remote(): self.show_copy_dialog("MyTunes Home", url)
             else: self.open_browser(url, app_mode=False)
