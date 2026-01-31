@@ -1,15 +1,20 @@
-# 🎵 MyTunes Pro (Korean)
+# 🎵 MyTunes Pro (Experimental Media Tool)
 
-## 🚀 Professional TUI Music Player v2.0.3
+## 🚀 Terminal-based Media Workflow Experiment v2.0.3
 
-MyTunes Pro는 개발자들 및 프리미엄 사용자들을 위한 **Premium CLI Music Player**입니다.
-Python `curses` 라이브러리를 사용하여 터미널 환경에서도 **GUI급의 유려한 UX**를 제공하며,
-`mpv` 플레이어의 강력한 IPC 제어 기능을 통해 끊김 없는 백그라운드 재생을 지원합니다.
+> [!IMPORTANT]
+> **Legal Disclaimer:** This project is a personal, non-commercial research experiment for developer education. 
+> It does not host, provide, or distribute any media content. 
+> All media sources are independently accessed and configured by the user. 
+> Users are solely responsible for ensuring that their usage complies with the terms of service of any third-party platforms accessed via this tool.
 
-> **💡 개발 배경**  
-> 이 프로그램은 하루 종일 터미널을 보는 개발자들이 **작업 흐름을 끊지 않고** 편하게 음악을 듣기 위해 만들어졌습니다.  
-> 특히 **모니터가 없는(Headless) 미니 PC (Debian Server)**를 거실이나 책상의 '뮤직 스테이션'으로 활용하고자 했던 개인적인 필요에서 시작되었습니다.  
-> 복잡한 설정 없이, 터미널 하나만 있으면 어디서든 당신만의 오디오 플레이어가 됩니다.
+MyTunes Pro is a developer-focused **CLI Media Tool** for experimenting with terminal-based media workflows.
+It utilizes the Python `curses` library to provide a structured TUI (Terminal User Interface) for handling media URLs, 
+leveraging the `mpv` engine for local media processing and playback.
+
+> **💡 Project Note**  
+> This tool was designed for personal research into how terminal users can interact with media sources without interrupting their developer workflow. 
+> It explores the integration between local CLI environments (like Headless Debian Servers) and external media handling utilities.
 
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
@@ -22,27 +27,24 @@ Python `curses` 라이브러리를 사용하여 터미널 환경에서도 **GUI�
 
 ---
 
-## ✨ 주요 기능
+## ✨ Core Features
 
-- **강력한 검색**: `yt-dlp` 엔진을 사용하여 광고 없는 고음질 오디오 스트리밍.
-- **쾌적한 조작**: `curses` 기반 TUI로 빠르고 직관적인 인터페이스.
-- **연속 재생**: 한 곡이 끝나면 **리스트의 다음 곡을 자동으로 재생**합니다.
-- **이어듣기**: 중단된 위치부터 **이어서 재생**할지 선택할 수 있습니다.
-- **한글 최적화**: 한글 자소 조합 대기 시간 없이 즉시 반응하는 **숫자 단축키** 지원.
-- **스마트 기능**: 즐겨찾기, 재생 기록(최대 100곡), 자동 음악 필터링 검색.
-- **라이브 (F8)**: 전 세계 유저들과 함께 듣는 **실시간 음악 대시보드** (전용 팝업).
-- **공유 (F9)**: 내가 듣는 곡을 **라이브 스테이션에 즉시 송출**하여 함께 즐깁니다.
-- **비주얼**: 현대적인 심볼 아이콘(⌕, ★, ◷)과 깔끔한 디자인.
+- **Media Handling**: Support for loading and processing media URLs using external extraction tools.
+- **TUI Workflow**: Efficient, low-latency interface built on the `curses` library.
+- **Workflow Persistence**: Handles sequential media loading and state restoration.
+- **Terminal Optimization**: Performance-focused design that prioritizes keyboard-driven interactions.
+- **Smart Management**: Optional user-configured collections, interaction history, and metadata handling.
+- **External Integration**: Capabilities to load media links into external viewer/player environments.
 
 ---
 
-## 💻 구동 환경 안내
+## 💻 Environment & Integration
 
-**MyTunes Pro**는 터미널(CLI) 기반 애플리케이션입니다. 각 운영체제에서 고음질 오디오를 재생하기 위해 **`mpv`**라는 엔진을 사용합니다.
+**MyTunes Pro** is a CLI-based tool. It can integrate with externally installed media processing tools.
 
-- **macOS**: 터미널(iTerm2, Warp 추천) 지원. Python 3.9 이상 필요.
-- **Linux**: 우분투, 데비안 등 모든 리눅스 배포판 지원.
-- **Windows**: **WSL(Windows Subsystem for Linux)** 환경이 필요합니다. (아래 가이드를 참고하세요.)
+- **External Tools**: This project can interface with user-installed utilities like `mpv` and media extraction tools. No third-party tools are bundled with this software.
+- **macOS/Linux**: Native terminal support.
+- **Windows**: Recommended to use with **WSL (Windows Subsystem for Linux)**.
 
 ---
 
@@ -191,120 +193,27 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 ---
 ---
 
-# 🎵 MyTunes Pro (English)
-
-**Modern CLI YouTube Music Player (v2.0.3)**
-A lightweight, keyboard-centric terminal player for streaming YouTube music.
-
 ---
 
-## 💻 Environment Support
+# 🎵 MyTunes Pro (Experimental Media Tool - KR)
 
-**MyTunes Pro** is a Terminal-native application.
+## 🚀 터미널 기반 미디어 워크플로우 실험 v2.0.3
 
-- **macOS**: Native Terminal support. Python 3.9+ required.
-- **Linux**: Supports all distributions (Ubuntu, Debian, etc.).
-- **Windows**: Requires **WSL (Windows Subsystem for Linux)**.
+> [!IMPORTANT]
+> **법적 면책 고지:** 본 프로젝트는 개발자 교육 및 연구를 목적으로 하는 개인적, 비상업적 실험입니다. 
+> 본 소프트웨어는 어떠한 미디어 콘텐츠도 직접 호스팅하거나 배포하지 않습니다. 
+> 모든 미디어 소스는 사용자의 로컬 환경에서 직접 구성되고 접근되며, 사용자는 외부 플랫폼의 이용 약관을 준수할 책임이 있습니다.
 
----
+MyTunes Pro는 개발자를 위해 설계된 **CLI 미디어 실험 도구**입니다.
+Python `curses` 라이브러리를 통해 터미널 환경에서 미디어 URL을 로드하고 관리하며, 
+사용자가 설치한 `mpv` 등의 외부 도구와 연동하여 미디어 워크플로우를 테스트할 수 있습니다.
 
-## 🚀 Quick Start
+## ✨ 주요 특징
 
-On modern macOS/Linux systems (PEP 668), using **`pipx`** is highly recommended.
-
-### 1. Recommended (pipx)
-```bash
-pipx install mytunes-pro
-pipx ensurepath
-source ~/.zshrc  # or source ~/.bashrc to apply changes immediately
-```
-
-### 2. Standard pip
-```bash
-pip install mytunes-pro --break-system-packages
-```
-
-Run simply by typing **`mp`** in your terminal!
-
----
-
-## 🛠 Prerequisites
-
-### macOS (Homebrew)
-```bash
-brew install mpv python3 pipx
-```
-
-### Linux (Ubuntu/Debian)
-```bash
-sudo apt update
-sudo apt install mpv python3 python3-pip pipx python3-venv -y
-```
-
-### Windows (Beginner's WSL Guide)
-
-1. **Install WSL**:
-   ```powershell
-   wsl --install -d Debian
-   ```
-   **Restart your computer** after installation.
-
-2. **Install Core Tools**:
-   ```bash
-   sudo apt update && sudo apt install mpv python3-pip pipx -y
-   ```
-
-4. **Install MyTunes**:
-   ```bash
-   pipx install mytunes-pro
-   pipx ensurepath
-   source ~/.bashrc
-   ```
-
----
-
-## ⌨️ English Controls
-
-### ⚡️ Instant Shortcuts (Number Keys)
-
-Works instantly even if IME (Input Method Editor) is active.
-
-| Key | Function | Description |
-| :--- | :--- | :--- |
-| **`1`** | **Search** | Open music search (Same as `S`) |
-| **`2`** | **Favs** | View favorites list (Same as `F`) |
-| **`3`** | **History** | View recent 100 tracks (Same as `R`) |
-| **`4`** | **Main** | Go to Main Menu (Same as `M`) |
-| **`5`** | **Add/Del** | Toggle Favorite (Same as `A`) |
-| **`+`** | **Vol Up** | Volume +5% (Same as `=`) |
-| **`-`** | **Vol Down** | Volume -5% (Same as `_`) |
-| **`F7`** | **YouTube** | Open current track in browser |
-| **`F8`** | **Live** | **Open Real-time Music Dashboard** (Popup) |
-| **`F9`** | **Share** | **Share current track to Live Station** |
-| **`6`** | **Back** | Go back (Same as `Q`, `h`) |
-| **`L`** | **Forward** | Go forward (Same as `Right Arrow`) |
-| **`ESC`** | **Bg Play** | **Exit app but keep music playing** |
-
-### 🧭 Basic Navigation
-
-| Key | Action |
-| :--- | :--- |
-| `↑` / `↓` / `k` / `j` | Move up/down in list (Vim keys) |
-| `Enter` / `l` | **Select / Play** |
-| `Space` | Play / Pause |
-| `-` / `+` | **Volume Control** (- / +) |
-| `,` / `.` | Seek backward / forward **10s** |
-| `<` / `>` | Seek backward / forward **30s** (Shift) |
-| `Backspace` / `h` / `q` | Go back / Clear search |
-| `L` | **Go forward** |
-| `/` | **Search** (Vim Style) |
-
----
-
-## 📂 Data Storage
-
-- Favorites and history are permanently stored in `~/.pymusic_data.json` on your home directory.
-- Data persists even after the application is closed.
+- **미디어 핸들링**: 외부 추출 도구를 사용한 미디어 URL 로드 및 처리 지원.
+- **TUI 워크플로우**: `curses` 라이브러리 기반의 효율적인 터미널 인터페이스.
+- **작업 유지**: 순차적 미디어 로딩 및 마지막 작업 상태 복원 기능.
+- **환경 연동**: 사용자에 의해 구성된 외부 미디어 도구와의 연동 지원. (본 소프트웨어는 외부 도구를 포함하여 배포하지 않습니다.)
 
 ---
 
