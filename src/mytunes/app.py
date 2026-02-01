@@ -1313,8 +1313,8 @@ class MyTunesApp:
                  self.status_blink = False
              
              if self.status_msg:
-                 # Software Blink Fallback (toggle every 0.5s)
-                 blink_on = not self.status_blink or (int(time.time() * 2) % 2 == 0)
+                 # Software Blink (toggle every 1s)
+                 blink_on = not self.status_blink or (int(time.time()) % 2 == 0)
                  
                  if blink_on:
                      avail_w = branding_x - 4
