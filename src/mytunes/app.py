@@ -63,7 +63,9 @@ STRINGS = {
         "favorites_info": "즐겨찾기 저장 위치: {}",
         "hist_info": "최근 재생 기록 (최대 100곡)",
         "time_fmt": "{}/{}",
-        "vol_fmt": "볼륨: {}%"
+        "vol_fmt": "볼륨: {}%",
+        "ime_warning": "영문 모드로 전환 후 단축키를 눌러주세요.",
+        "invalid_key": "잘못된 키 입력: '{}'"
     },
     "en": {
         "title": "MyTunes Pro v{}",
@@ -92,7 +94,9 @@ STRINGS = {
         "favorites_info": "Favorites stored at: {}",
         "hist_info": "Recent Playback History (Max 100)",
         "time_fmt": "{}/{}",
-        "vol_fmt": "Vol: {}%"
+        "vol_fmt": "Vol: {}%",
+        "ime_warning": "Switch to English for shortcuts.",
+        "invalid_key": "Invalid key: '{}'"
     }
 }
 
@@ -646,12 +650,17 @@ class MyTunesApp:
             str(curses.KEY_F7): "OPEN_BROWSER",
             str(curses.KEY_DC): "DELETE", "d": "DELETE"
         }
-        return mapping.get(k_char)
+        cmd = mapping.get(k_char)
+        if cmd: return cmd
+        return ("UNKNOWN", key)
 
     def handle_input(self):
         """Clean dispatcher: Get normalized command and execute it."""
         cmd = self.get_next_event()
         if not cmd: return
+
+        # Reset blink for general commands; unknown handlers will set it back if needed
+        self.status_blink = False
 
         current_list = self.get_current_list()
 
@@ -744,6 +753,15 @@ class MyTunesApp:
 
         elif cmd == "EXIT_BKG":
             self.stop_on_exit = False; self.running = False
+
+        elif isinstance(cmd, tuple) and cmd[0] == "UNKNOWN":
+            key = cmd[1]
+            if isinstance(key, str) and ord(key[0]) > 127:
+                self.status_msg = self.t("ime_warning")
+                self.status_blink = True
+            elif isinstance(key, str) and key.isprintable():
+                self.status_msg = self.t("invalid_key", key)
+                self.status_blink = False
 
     def handle_deletion(self, current_list):
         """Sub-logic for DELETE command to keep dispatcher clean."""
