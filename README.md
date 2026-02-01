@@ -21,28 +21,6 @@ leveraging the `mpv` engine for local media processing and playback.
 
 ---
 
-# 🎵 MyTunes Pro (Experimental Media Tool - KR)
-
-## 🚀 터미널 기반 미디어 워크플로우 실험 v2.0.5
-
-> [!IMPORTANT]
-> **법적 면책 고지:** 본 프로젝트는 개발자 교육 및 연구를 목적으로 하는 개인적, 비상업적 실험입니다. 
-> 본 소프트웨어는 어떠한 미디어 콘텐츠도 직접 호스팅하거나 배포하지 않습니다. 
-> 모든 미디어 소스는 사용자의 로컬 환경에서 직접 구성되고 접근되며, 사용자는 외부 플랫폼의 이용 약관을 준수할 책임이 있습니다.
-
-MyTunes Pro는 개발자를 위해 설계된 **CLI 미디어 실험 도구**입니다.
-Python `curses` 라이브러리를 통해 터미널 환경에서 미디어 URL을 로드하고 관리하며, 
-사용자가 설치한 `mpv` 등의 외부 도구와 연동하여 미디어 워크플로우를 테스트할 수 있습니다.
-
-## ✨ 주요 특징
-
-- **미디어 핸들링**: 외부 추출 도구를 사용한 미디어 URL 로드 및 처리 지원.
-- **TUI 워크플로우**: `curses` 라이브러리 기반의 효율적인 터미널 인터페이스.
-- **작업 유지**: 순차적 미디어 로딩 및 마지막 작업 상태 복원 기능.
-- **환경 연동**: 사용자에 의해 구성된 외부 미디어 도구와의 연동 지원. (본 소프트웨어는 외부 도구를 포함하여 배포하지 않습니다.)
-
----
-
 ## 📸 Screenshots
 | | |
 | :---: | :---: |
@@ -69,6 +47,179 @@ Python `curses` 라이브러리를 통해 터미널 환경에서 미디어 URL�
 - **External Tools**: This project can interface with user-installed utilities like `mpv` and media extraction tools. No third-party tools are bundled with this software.
 - **macOS/Linux**: Native terminal support.
 - **Windows**: Recommended to use with **WSL (Windows Subsystem for Linux)**.
+
+---
+
+## 🚀 Quick Install
+
+We strongly recommend using **`pipx`** on modern macOS/Linux systems (PEP 668).
+
+### 1. Recommended Method (pipx)
+Automatically creates an isolated environment and registers the command.
+
+```bash
+# Ensure ensuredpath is run to register the command after pipx install!
+pipx install mytunes-pro
+pipx ensurepath
+source ~/.zshrc  # or source ~/.bashrc (apply immediately to current terminal)
+```
+
+### 2. Standard pip Method
+If you encounter the `externally-managed-environment` error, add the following flag:
+
+```bash
+pip install mytunes-pro --break-system-packages
+```
+
+After installation, type **`mp`** anywhere in the terminal to run!
+
+### 🔄 Update
+If already installed, simply use the command below to update to the latest features:
+
+```bash
+pipx upgrade mytunes-pro
+```
+
+---
+
+## 🛠 Prerequisites
+
+Please install the necessary tools for your operating system before running.
+
+### macOS (Using Homebrew)
+```bash
+brew install mpv python3 pipx
+```
+
+### Linux (Ubuntu/Debian)
+```bash
+sudo apt update
+sudo apt install mpv python3 python3-pip pipx python3-venv -y
+```
+
+### Windows (WSL Guide)
+
+Guide for Windows users where Korean search might not work or installation is difficult.
+
+> **❓ What is WSL?**  
+> It allows you to run Linux environments directly on Windows. MyTunes works perfectly in this environment.
+
+1. **Install WSL**:
+   - Right-click `Start` -> Run `Terminal (Admin)`.
+   - Enter the command below and **Reboot**:
+     ```powershell
+     wsl --install -d Debian
+     ```
+
+2. **Install Essentials**:
+   ```bash
+   sudo apt update && sudo apt install mpv python3-pip pipx -y
+   ```
+
+3. **Install MyTunes**:
+   ```bash
+   pipx install mytunes-pro
+   pipx ensurepath
+   source ~/.bashrc  # Apply settings immediately
+   ```
+
+---
+
+## 🧑‍💻 Manual Installation (For Developers)
+
+Follow these steps to modify source code or use the development version.
+
+1. **Clone Repository**:
+   ```bash
+   git clone https://github.com/postgresql-co-kr/mytunes.git
+   cd mytunes
+   ```
+
+2. **Setup Virtual Environment**:
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # macOS/Linux
+   pip install -r requirements.txt
+   ```
+
+3. **Run**:
+   ```bash
+   python3 mytune.py
+   ```
+
+---
+
+## ⌨️ Controls
+
+**MyTunes Pro** is controlled entirely by keyboard.  
+We recommend using **Number Keys** for lag-free operation even in multi-language input modes.
+
+### ⚡️ Instant Hotkeys (Number Keys)
+Executes immediately without worrying about input language status.
+
+| Key | Function | Description |
+| :--- | :--- | :--- |
+| **`1`** | **Search** | Open music search (Same as `S`) |
+| **`2`** | **Favorites** | View favorites list (Same as `F`) |
+| **`3`** | **History** | View recently played 100 tracks (Same as `R`) |
+| **`4`** | **Main** | Return to main screen (Same as `M`) |
+| **`5`** | **Add/Del** | Toggle favorite for selected track (Same as `A`) |
+| **`+`** | **Vol UP** | Volume +5% (Same as `=`) |
+| **`-`** | **Vol DOWN** | Volume -5% (Same as `_`) |
+| **`F7`** | **Open YouTube** | View current track in browser |
+| **`6`** | **Back** | Go to previous screen (Same as `Q`, `h`) |
+| **`L`** | **Forward** | Go forward to previous screen (`Right Arrow`) |
+| **`ESC`** | **Background** | **Exit without stopping music** (Background Play) |
+
+### 🧭 Basic Navigation
+| Key | Action |
+| :--- | :--- |
+| `↑` / `↓` / `k` / `j` | Move selection Up/Down (Vim keys supported) |
+| `Enter` / `l` | **Select / Play** |
+| `Space` | Play / Pause |
+| `-` / `+` | **Volume Control** |
+| `,` / `.` | Rewind / Forward 10s |
+| `<` / `>` | Rewind / Forward 30s (Shift) |
+| `Backspace` / `h` / `q` | Go Back / Clear Search |
+| `L` | **Go Forward** |
+| `/` | **Search** (Vim Style) |
+
+---
+
+## 📂 Data Storage
+- Favorites and playback history are permanently saved in `~/.pymusic_data.json` in your home directory.
+- Data is preserved even after restarting the program.
+
+---
+---
+
+# 🎵 MyTunes Pro (Experimental Media Tool - KR)
+
+## 🚀 터미널 기반 미디어 워크플로우 실험 v2.0.5
+
+> [!IMPORTANT]
+> **법적 면책 고지:** 본 프로젝트는 개발자 교육 및 연구를 목적으로 하는 개인적, 비상업적 실험입니다. 
+> 본 소프트웨어는 어떠한 미디어 콘텐츠도 직접 호스팅하거나 배포하지 않습니다. 
+> 모든 미디어 소스는 사용자의 로컬 환경에서 직접 구성되고 접근되며, 사용자는 외부 플랫폼의 이용 약관을 준수할 책임이 있습니다.
+
+MyTunes Pro는 개발자를 위해 설계된 **CLI 미디어 실험 도구**입니다.
+Python `curses` 라이브러리를 통해 터미널 환경에서 미디어 URL을 로드하고 관리하며, 
+사용자가 설치한 `mpv` 등의 외부 도구와 연동하여 미디어 워크플로우를 테스트할 수 있습니다.
+
+## ✨ 주요 특징
+
+- **미디어 핸들링**: 외부 추출 도구를 사용한 미디어 URL 로드 및 처리 지원.
+- **TUI 워크플로우**: `curses` 라이브러리 기반의 효율적인 터미널 인터페이스.
+- **작업 유지**: 순차적 미디어 로딩 및 마지막 작업 상태 복원 기능.
+- **환경 연동**: 사용자에 의해 구성된 외부 미디어 도구와의 연동 지원. (본 소프트웨어는 외부 도구를 포함하여 배포하지 않습니다.)
+
+---
+
+## 📸 스크린샷 (Screenshots)
+| | |
+| :---: | :---: |
+| ![Main](https://raw.githubusercontent.com/postgresql-co-kr/mytunes/master/screenshots/screenshot_1.webp) | ![Search](https://raw.githubusercontent.com/postgresql-co-kr/mytunes/master/screenshots/screenshot_2.webp) |
+| ![Play](https://raw.githubusercontent.com/postgresql-co-kr/mytunes/master/screenshots/screenshot_3.webp) | ![List](https://raw.githubusercontent.com/postgresql-co-kr/mytunes/master/screenshots/screenshot_4.webp) |
 
 ---
 
@@ -133,12 +284,12 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
      wsl --install -d Debian
      ```
 
-3. **필수 도구 설치**:
+2. **필수 도구 설치**:
    ```bash
    sudo apt update && sudo apt install mpv python3-pip pipx -y
    ```
 
-4. **MyTunes 설치**:
+3. **MyTunes 설치**:
    ```bash
    pipx install mytunes-pro
    pipx ensurepath
@@ -212,6 +363,7 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 - 즐겨찾기와 재생 기록은 홈 디렉토리의 `~/.pymusic_data.json` 파일에 영구 저장됩니다.
 - 프로그램 종료 후 다시 실행해도 데이터가 유지됩니다.
 
+---
 ---
 
 ## 🔄 Changelog
