@@ -453,7 +453,6 @@ class MyTunesApp:
         self.playback_duration = 0
         self.is_paused = False
         self.last_save_time = time.time()
-        self.status_blink = False
         self.status_set_time = 0
         
         # Throttling Counters
@@ -673,9 +672,9 @@ class MyTunesApp:
         if not cmd: return
 
         # Reset transient state for valid commands
-        if self.status_blink:
+        is_transient = any(kw in self.status_msg for kw in ["Invalid key", "잘못된 키", "영문", "English"])
+        if is_transient:
             self.status_msg = ""
-            self.status_blink = False
 
         current_list = self.get_current_list()
 
@@ -773,12 +772,10 @@ class MyTunesApp:
             key = cmd[1]
             if isinstance(key, str) and ord(key[0]) > 127:
                 self.status_msg = self.t("ime_warning")
-                self.status_blink = True
                 self.status_set_time = time.time()
                 self.draw() # Internal redraw for instant feedback
             elif isinstance(key, str) and key.isprintable():
                 self.status_msg = self.t("invalid_key", key)
-                self.status_blink = False
                 self.status_set_time = time.time()
                 self.draw() # Internal redraw for instant feedback
 
@@ -1316,23 +1313,17 @@ class MyTunesApp:
             self.stdscr.addstr(h - 2, 2, f"⏳ Loading...", curses.color_pair(6) | curses.A_BLINK)
         elif self.status_msg:
              # Auto-clear transient warnings after 5 seconds
-             if time.time() - self.status_set_time > 5 and (self.status_blink or "Invalid key" in self.status_msg or "잘못된 키" in self.status_msg):
+             is_transient = "Invalid key" in self.status_msg or "잘못된 키" in self.status_msg or "영문" in self.status_msg or "English" in self.status_msg
+             if time.time() - self.status_set_time > 5 and is_transient:
                  self.status_msg = ""
-                 self.status_blink = False
              
              if self.status_msg:
-                 # Software Blink (toggle every 1.5s)
-                 # Use elapsed time since setting to ensure it starts as "on"
-                 elapsed = time.time() - self.status_set_time
-                 blink_on = not self.status_blink or (int(elapsed / 1.5) % 2 == 0)
-                 
-                 if blink_on:
-                     avail_w = branding_x - 4
-                     if avail_w > 5:
-                        msg = self.truncate(self.status_msg, avail_w)
-                        attr = curses.color_pair(6)
-                        if self.status_blink: attr |= curses.A_BOLD
-                        self.stdscr.addstr(h - 2, 2, f"📢 {msg}", attr)
+                 avail_w = branding_x - 4
+                 if avail_w > 5:
+                    msg = self.truncate(self.status_msg, avail_w)
+                    # Use Bold Yellow (Pair 3) for premium static warning
+                    attr = curses.color_pair(3) | curses.A_BOLD
+                    self.stdscr.addstr(h - 2, 2, f"📢 {msg}", attr)
 
         # List Area (Remaining Middle)
         list_top = 4
