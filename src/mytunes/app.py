@@ -659,8 +659,10 @@ class MyTunesApp:
         cmd = self.get_next_event()
         if not cmd: return
 
-        # Reset blink for general commands; unknown handlers will set it back if needed
-        self.status_blink = False
+        # Reset transient state for valid commands
+        if self.status_blink:
+            self.status_msg = ""
+            self.status_blink = False
 
         current_list = self.get_current_list()
 
@@ -759,9 +761,11 @@ class MyTunesApp:
             if isinstance(key, str) and ord(key[0]) > 127:
                 self.status_msg = self.t("ime_warning")
                 self.status_blink = True
+                self.status_set_time = time.time()
             elif isinstance(key, str) and key.isprintable():
                 self.status_msg = self.t("invalid_key", key)
-                self.status_blink = False
+                self.status_blink = False # General invalid key doesn't blink, but is transient
+                self.status_set_time = time.time()
 
     def handle_deletion(self, current_list):
         """Sub-logic for DELETE command to keep dispatcher clean."""
@@ -1296,12 +1300,22 @@ class MyTunesApp:
         if self.player.loading:
             self.stdscr.addstr(h - 2, 2, f"⏳ Loading...", curses.color_pair(6) | curses.A_BLINK)
         elif self.status_msg:
-             avail_w = branding_x - 4
-             if avail_w > 5:
-                msg = self.truncate(self.status_msg, avail_w)
-                attr = curses.color_pair(6)
-                if self.status_blink: attr |= curses.A_BLINK | curses.A_BOLD
-                self.stdscr.addstr(h - 2, 2, f"📢 {msg}", attr)
+             # Auto-clear transient warnings after 3 seconds
+             if time.time() - self.status_set_time > 3 and (self.status_blink or "Invalid key" in self.status_msg or "잘못된 키" in self.status_msg):
+                 self.status_msg = ""
+                 self.status_blink = False
+             
+             if self.status_msg:
+                 # Software Blink Fallback (toggle every 0.5s)
+                 blink_on = not self.status_blink or (int(time.time() * 2) % 2 == 0)
+                 
+                 if blink_on:
+                     avail_w = branding_x - 4
+                     if avail_w > 5:
+                        msg = self.truncate(self.status_msg, avail_w)
+                        attr = curses.color_pair(6)
+                        if self.status_blink: attr |= curses.A_BLINK | curses.A_BOLD
+                        self.stdscr.addstr(h - 2, 2, f"📢 {msg}", attr)
 
         # List Area (Remaining Middle)
         list_top = 4
