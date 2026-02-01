@@ -1312,14 +1312,14 @@ class MyTunesApp:
         if self.player.loading:
             self.stdscr.addstr(h - 2, 2, f"⏳ Loading...", curses.color_pair(6) | curses.A_BLINK)
         elif self.status_msg:
-             # Auto-clear transient warnings after 3 seconds
-             if time.time() - self.status_set_time > 3 and (self.status_blink or "Invalid key" in self.status_msg or "잘못된 키" in self.status_msg):
+             # Auto-clear transient warnings after 5 seconds
+             if time.time() - self.status_set_time > 5 and (self.status_blink or "Invalid key" in self.status_msg or "잘못된 키" in self.status_msg):
                  self.status_msg = ""
                  self.status_blink = False
              
              if self.status_msg:
-                 # Software Blink (toggle every 1s)
-                 blink_on = not self.status_blink or (int(time.time()) % 2 == 0)
+                 # Software Blink (toggle every 1.5s)
+                 blink_on = not self.status_blink or (int(time.time() / 1.5) % 2 == 0)
                  
                  if blink_on:
                      avail_w = branding_x - 4
