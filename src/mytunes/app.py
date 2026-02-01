@@ -1331,7 +1331,7 @@ class MyTunesApp:
                      if avail_w > 5:
                         msg = self.truncate(self.status_msg, avail_w)
                         attr = curses.color_pair(6)
-                        if self.status_blink: attr |= curses.A_BLINK | curses.A_BOLD
+                        if self.status_blink: attr |= curses.A_BOLD
                         self.stdscr.addstr(h - 2, 2, f"📢 {msg}", attr)
 
         # List Area (Remaining Middle)
