@@ -454,6 +454,7 @@ class MyTunesApp:
         self.is_paused = False
         self.last_save_time = time.time()
         self.status_blink = False
+        self.status_set_time = 0
         
         # Throttling Counters
         self.loop_count = 0
