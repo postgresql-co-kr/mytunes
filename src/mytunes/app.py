@@ -4,6 +4,16 @@ MyTunes Pro - Professional TUI Edition v1.0
 # Premium CLI Media Workflow Experiment with Curses Interface
 Enhanced with Context7-researched MPV IPC & Resize Handling
 """
+import warnings
+# Suppress urllib3 NotOpenSSLWarning (LibreSSL compatibility)
+# Must be done before importing requests
+try:
+    import urllib3
+    from urllib3.exceptions import NotOpenSSLWarning
+    warnings.filterwarnings("ignore", category=NotOpenSSLWarning)
+except ImportError:
+    pass
+
 import curses
 import curses.textpad
 import json
@@ -21,13 +31,6 @@ import webbrowser
 import tempfile
 import shutil
 import requests
-
-# Suppress urllib3 NotOpenSSLWarning (LibreSSL compatibility)
-try:
-    from urllib3.exceptions import NotOpenSSLWarning
-    warnings.filterwarnings("ignore", category=NotOpenSSLWarning)
-except ImportError:
-    pass
 
 
 # Ensure Unicode support
