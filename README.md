@@ -1,6 +1,6 @@
-# 🎵 MyTunes Pro - Professional TUI Edition v2.0.4
+# 🎵 MyTunes Pro - Professional TUI Edition v2.0.5
 
-## 🚀 Terminal-based Media Workflow Experiment v2.0.4
+## 🚀 Terminal-based Media Workflow Experiment v2.0.5
 
 > [!IMPORTANT]
 > **Legal Disclaimer:** This project is a personal, non-commercial research experiment for developer education. 
@@ -195,7 +195,7 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 
 # 🎵 MyTunes Pro (Experimental Media Tool - KR)
 
-## 🚀 터미널 기반 미디어 워크플로우 실험 v2.0.3
+## 🚀 터미널 기반 미디어 워크플로우 실험 v2.0.5
 
 > [!IMPORTANT]
 > **법적 면책 고지:** 본 프로젝트는 개발자 교육 및 연구를 목적으로 하는 개인적, 비상업적 실험입니다. 
@@ -216,6 +216,13 @@ Python `curses` 라이브러리를 통해 터미널 환경에서 미디어 URL�
 ---
 
 ## 🔄 Changelog
+
+### v2.0.5 (2026-02-01)
+- **Input Feedback Refinement**: Transitioned from blinking warnings to a static Bold Yellow status message for better accessibility and premium feel.
+- **Auto-clear Optimization**: Implemented a 5-second auto-clear timer for all transient status messages.
+- **Zero Latency Feedback**: Added instant redraw mechanisms to ensure input warnings appear immediately upon key press.
+- **Stability Fixes**: Resolved a critical attribute error that caused crashes when selecting menu items.
+- **SSL Compatibility**: Improved `urllib3` compatibility for macOS systems using LibreSSL.
 
 ### v2.0.4 (2026-02-01)
 - **Legal Polish**: Comprehensive scrubbing of brand identifiers and service-oriented terminology across the ecosystem.
