@@ -6,13 +6,15 @@ Enhanced with Context7-researched MPV IPC & Resize Handling
 """
 import warnings
 # Suppress urllib3 NotOpenSSLWarning (LibreSSL compatibility)
-# Must be done before importing requests
+# This must be defined before ANY imports that might trigger urllib3
+warnings.filterwarnings("ignore", message=".*urllib3 v2 only supports OpenSSL 1.1.1+.*")
+
 try:
     import urllib3
+    # Optional: also ignore by category if already imported
     from urllib3.exceptions import NotOpenSSLWarning
     warnings.filterwarnings("ignore", category=NotOpenSSLWarning)
-except ImportError:
-    pass
+except: pass
 
 import curses
 import curses.textpad
