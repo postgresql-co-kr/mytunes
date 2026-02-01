@@ -775,10 +775,12 @@ class MyTunesApp:
                 self.status_msg = self.t("ime_warning")
                 self.status_blink = True
                 self.status_set_time = time.time()
+                self.draw() # Internal redraw for instant feedback
             elif isinstance(key, str) and key.isprintable():
                 self.status_msg = self.t("invalid_key", key)
-                self.status_blink = False # General invalid key doesn't blink, but is transient
+                self.status_blink = False
                 self.status_set_time = time.time()
+                self.draw() # Internal redraw for instant feedback
 
     def handle_deletion(self, current_list):
         """Sub-logic for DELETE command to keep dispatcher clean."""
