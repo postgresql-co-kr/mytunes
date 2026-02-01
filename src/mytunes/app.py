@@ -22,6 +22,13 @@ import tempfile
 import shutil
 import requests
 
+# Suppress urllib3 NotOpenSSLWarning (LibreSSL compatibility)
+try:
+    from urllib3.exceptions import NotOpenSSLWarning
+    warnings.filterwarnings("ignore", category=NotOpenSSLWarning)
+except ImportError:
+    pass
+
 
 # Ensure Unicode support
 # locale.setlocale(locale.LC_ALL, '')
