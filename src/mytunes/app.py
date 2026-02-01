@@ -1320,7 +1320,9 @@ class MyTunesApp:
              
              if self.status_msg:
                  # Software Blink (toggle every 1.5s)
-                 blink_on = not self.status_blink or (int(time.time() / 1.5) % 2 == 0)
+                 # Use elapsed time since setting to ensure it starts as "on"
+                 elapsed = time.time() - self.status_set_time
+                 blink_on = not self.status_blink or (int(elapsed / 1.5) % 2 == 0)
                  
                  if blink_on:
                      avail_w = branding_x - 4
