@@ -44,7 +44,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "2.1.0"
+APP_VERSION = "2.1.1"
 
 # Initial Locale Setup for WSL/Windows Multibyte/Emoji Harmony
 try:
@@ -911,7 +911,10 @@ class MyTunesApp:
             self.stop_on_exit = False; self.running = False
 
         elif cmd == "CYCLE_EQ":
-            self.cycle_equalizer()
+            if IS_WSL:
+                self.show_feedback("⚠️ EQ is disabled on WSL for stability" if self.lang=="en" else "⚠️ WSL 안정성을 위해 EQ 기능이 비활성화되었습니다")
+            else:
+                self.cycle_equalizer()
 
         elif isinstance(cmd, tuple) and cmd[0] == "UNKNOWN":
             key = cmd[1]
@@ -1665,6 +1668,10 @@ class MyTunesApp:
 
         # Row 2: Actions
         r2 = self.t("header_r2")
+        if IS_WSL:
+             # Remove "[E]이퀄라이저" or "[E]EQ"
+             r2 = r2.replace("[E]이퀄라이저 ", "").replace("[E]이퀄라이저", "").replace("[E]EQ ", "").replace("[E]EQ", "")
+             
         gap2 = w - 4 - self.get_display_width(r2)
         if gap2 < 2: gap2 = 2
         line2 = f"{' '*gap2}{r2}"
@@ -1691,17 +1698,15 @@ class MyTunesApp:
              status_icon = "❚❚" if self.is_paused else "▶"
              
              # Prepare EQ Info for Title Line
-             current_eq = EQUALIZER_KEYS[self.current_eq_index]
+             eq_display = ""
+             if not IS_WSL:
+                 current_eq = EQUALIZER_KEYS[self.current_eq_index]
+                 if current_eq == "Auto":
+                     eq_display = f"🎚 Auto: {self.auto_preset_name}"
+                 else:
+                     eq_display = f"🎚 EQ: {current_eq}"
              
-             # Show effective EQ with Mode Indicator
-             # Auto Mode: "🎚 Auto: Jazz"
-             # Manual Mode: "🎚 EQ: Pop"
-             if current_eq == "Auto":
-                 eq_display = f"🎚 Auto: {self.auto_preset_name}"
-             else:
-                 eq_display = f"🎚 EQ: {current_eq}"
-             
-             eq_info = f"  [{eq_display}]" # Right side content
+             eq_info = f"  [{eq_display}]" if eq_display else "" # Right side content
              
              # Calculate space for Title
              # Total Width - margins(2) - Icon(2) - Space(1) - EQ Info - Branding(Maybe separate line, but here we just need fit)

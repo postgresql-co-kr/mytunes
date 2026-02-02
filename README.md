@@ -1,6 +1,6 @@
-# 🎵 MyTunes Pro - Professional TUI Edition v2.1.0
+# 🎵 MyTunes Pro - Professional TUI Edition v2.1.1
 
-## 🚀 Terminal-based Media Workflow Experiment v2.1.0
+## 🚀 Terminal-based Media Workflow Experiment v2.1.1
 
 > [!IMPORTANT]
 > **Legal Disclaimer:** This project is a personal, non-commercial research experiment for developer education.
@@ -369,6 +369,10 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 ---
 
 ## 🔄 Changelog
+
+### v2.1.1 (2026-02-02)
+- **WSL UI Polish**: Hides Equalizer (EQ) labels and status in the TUI when running on WSL to avoid confusion, as the feature is disabled in that environment for stability.
+- **Improved Feedback**: Provides a clear status message when the 'E' key is pressed on WSL.
 
 ### v2.1.0 (2026-02-02)
 - **Zero-Freeze IPC Resilience**: Implemented a "Fast-Fail" mechanism that detects mpv process death within 0.1ms via `poll()`, preventing TUI freezes.
