@@ -1,6 +1,6 @@
-# 🎵 MyTunes Pro - Professional TUI Edition v2.0.5
+# 🎵 MyTunes Pro - Professional TUI Edition v2.0.6
 
-## 🚀 Terminal-based Media Workflow Experiment v2.0.5
+## 🚀 Terminal-based Media Workflow Experiment v2.0.6
 
 > [!IMPORTANT]
 > **Legal Disclaimer:** This project is a personal, non-commercial research experiment for developer education.
@@ -196,7 +196,7 @@ Executes immediately without worrying about input language status.
 
 # 🎵 MyTunes Pro (Experimental Media Tool - KR)
 
-## 🚀 터미널 기반 미디어 워크플로우 실험 v2.0.5
+## 🚀 터미널 기반 미디어 워크플로우 실험 v2.0.6
 
 > [!IMPORTANT]
 > **법적 면책 고지:** 본 프로젝트는 개발자 교육 및 연구를 목적으로 하는 개인적, 비상업적 실험입니다. 
