@@ -44,7 +44,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "2.1.1"
+APP_VERSION = "2.1.2"
 
 # Initial Locale Setup for WSL/Windows Multibyte/Emoji Harmony
 try:
@@ -459,7 +459,9 @@ class Player:
         # 3. Pre-check: Skip if socket file doesn't exist
         if not os.path.exists(MPV_SOCKET):
             self.socket_fail_count += 1
-            if self.socket_fail_count >= 2:
+            # Be more patient during loading (mpv takes time to create socket)
+            threshold = 15 if self.loading else 2
+            if self.socket_fail_count >= threshold:
                 self.socket_ok = False
                 self.socket_retry_ts = now + 1.5 # 1.5s cool-down
             return None
@@ -486,7 +488,8 @@ class Player:
             return json.loads(response.decode('utf-8'))
         except:
             self.socket_fail_count += 1
-            if self.socket_fail_count >= 2:
+            threshold = 15 if self.loading else 2
+            if self.socket_fail_count >= threshold:
                 self.socket_ok = False
                 self.socket_retry_ts = now + 1.5 # 1.5s cool-down
             return None
@@ -662,7 +665,15 @@ class MyTunesApp:
     def update_playback_state(self):
         # Poll MPV for state with throttling to reduce CPU/IPC overhead
         try:
-            # 0. Health Check: If socket is known-bad, exit immediately to keep TUI responsive
+            # A. Safety: If loading takes too long (> 8s), force reset to allow error handling/skip
+            # Must check this even if socket_ok is False!
+            now = time.time()
+            if self.player.loading and (now - self.player.loading_ts > 8):
+                self.player.loading = False
+                self.player.socket_ok = True # Reset health to try again
+                self.show_feedback("⚠️ Load timed out. Skipping...")
+
+            # B. Health Check: If socket is known-bad, exit immediately to keep TUI responsive
             if not self.player.socket_ok:
                 return
 

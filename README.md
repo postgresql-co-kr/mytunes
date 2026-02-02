@@ -1,6 +1,6 @@
-# 🎵 MyTunes Pro - Professional TUI Edition v2.1.1
+# 🎵 MyTunes Pro - Professional TUI Edition v2.1.2
 
-## 🚀 Terminal-based Media Workflow Experiment v2.1.1
+## 🚀 Terminal-based Media Workflow Experiment v2.1.2
 
 > [!IMPORTANT]
 > **Legal Disclaimer:** This project is a personal, non-commercial research experiment for developer education.
@@ -369,6 +369,10 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 ---
 
 ## 🔄 Changelog
+
+### v2.1.2 (2026-02-02)
+- **Fix "Loading" Stuck**: Improved IPC resilience to prevent the TUI from being stuck on "Loading" during song transitions or resume, by increasing the initial socket connection timeout patience.
+- **Fail-Safe Loading**: Implemented a hard reset for the loading state if mpv takes longer than 8 seconds to respond, ensuring the TUI remains interactive.
 
 ### v2.1.1 (2026-02-02)
 - **WSL UI Polish**: Hides Equalizer (EQ) labels and status in the TUI when running on WSL to avoid confusion, as the feature is disabled in that environment for stability.
