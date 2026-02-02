@@ -44,7 +44,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "2.0.7"
+APP_VERSION = "2.0.8"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -304,6 +304,8 @@ class Player:
         self.current_proc = None
         self.loading = False
         self.loading_ts = 0
+        self.socket_fail_count = 0  # Track consecutive IPC failures
+        self.socket_ok = True  # Socket health flag
         
         # Cleanup pre-existing instance if any
         # self.cleanup_orphaned_mpv() # Moved to play() per user request
@@ -339,6 +341,9 @@ class Player:
 
         # 2. Fallback: Clean up and start fresh (Aggressive)
         self.cleanup_orphaned_mpv()
+        # Reset socket health for fresh start
+        self.socket_fail_count = 0
+        self.socket_ok = True
         
         self.stop()
         self.loading = True
@@ -424,6 +429,12 @@ class Player:
 
     def send_cmd(self, command):
         """Send raw command list to MPV via JSON IPC."""
+        # Pre-check: Skip if socket file doesn't exist (Windows/WSL resilience)
+        if not os.path.exists(MPV_SOCKET):
+            self.socket_fail_count += 1
+            self.socket_ok = False
+            return None
+            
         try:
             client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             client.settimeout(0.5) # Fast timeout (Optimization for Sleep/Wake resilience)
@@ -440,8 +451,14 @@ class Player:
                 if b"\n" in chunk: break
             
             client.close()
+            # Success: Reset failure counter
+            self.socket_fail_count = 0
+            self.socket_ok = True
             return json.loads(response.decode('utf-8'))
         except:
+            self.socket_fail_count += 1
+            if self.socket_fail_count >= 3:
+                self.socket_ok = False
             return None
 
     def get_property(self, prop):

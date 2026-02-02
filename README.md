@@ -1,6 +1,6 @@
-# 🎵 MyTunes Pro - Professional TUI Edition v2.0.7
+# 🎵 MyTunes Pro - Professional TUI Edition v2.0.8
 
-## 🚀 Terminal-based Media Workflow Experiment v2.0.7
+## 🚀 Terminal-based Media Workflow Experiment v2.0.8
 
 > [!IMPORTANT]
 > **Legal Disclaimer:** This project is a personal, non-commercial research experiment for developer education.
@@ -196,7 +196,7 @@ Executes immediately without worrying about input language status.
 
 # 🎵 MyTunes Pro (Experimental Media Tool - KR)
 
-## 🚀 터미널 기반 미디어 워크플로우 실험 v2.0.7
+## 🚀 터미널 기반 미디어 워크플로우 실험 v2.0.8
 
 > [!IMPORTANT]
 > **법적 면책 고지:** 본 프로젝트는 개발자 교육 및 연구를 목적으로 하는 개인적, 비상업적 실험입니다. 
@@ -369,6 +369,11 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 ---
 
 ## 🔄 Changelog
+
+### v2.0.8 (2026-02-02)
+- **Windows/WSL Socket Recovery**: Fixed UI freezing when mpv socket disconnects during window switching.
+- **IPC Resilience**: Added socket pre-check and failure counter to prevent blocking on broken connections.
+- **Automatic Recovery**: New playback automatically restarts mpv if socket is unhealthy.
 
 ### v2.0.7 (2026-02-02)
 - **Performance Optimization**: Improved keyboard responsiveness on Windows/WSL by implementing EQ detection caching.
