@@ -44,7 +44,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "2.1.2"
+APP_VERSION = "2.1.3"
 
 # Initial Locale Setup for WSL/Windows Multibyte/Emoji Harmony
 try:
@@ -1206,7 +1206,7 @@ class MyTunesApp:
                 else:
                     start_pos = 0
         
-        self.player.play(item['url'], start_pos)
+        self.player.play(item['url'], start_pos, initial_eq_preset=target_eq_preset)
         
         # Re-apply EQ logic (double check: mpv restart wipes af property?)
         # Yes, play() might restart mpv if socket fails.
@@ -1226,10 +1226,6 @@ class MyTunesApp:
         self.playback_time = start_pos
         self.playback_duration = 0
         self.is_paused = False
-        self.stdscr.nodelay(False) # Blocking input for dialog
-        h, w = self.stdscr.getmaxyx()
-        box_h, box_w = 8, 60
-        box_y, box_x = (h - box_h) // 2, (w - box_w) // 2
         
     def ask_resume(self, saved_time, track_title):
         self.stdscr.nodelay(False) # Blocking input for dialog
