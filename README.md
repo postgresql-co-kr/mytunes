@@ -370,6 +370,12 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 
 ## 🔄 Changelog
 
+### v2.0.6 (2026-02-02)
+- **10-Band Equalizer**: Added professional-grade 10-band EQ with presets (Flat, Pop, Rock, Jazz, Classical, Full Bass, Dance, Club, Live, Soft).
+- **Auto EQ Detection**: Intelligent genre detection from track title/channel info automatically applies optimal EQ preset.
+- **Keyboard Shortcut**: Press `E` to cycle through EQ presets in real-time without interrupting playback.
+- **Multilingual Genre Keywords**: Auto EQ supports genre detection in 12 languages including Korean, Japanese, Chinese, Spanish, and more.
+
 ### v2.0.5 (2026-02-01)
 - **Input Feedback Refinement**: Transitioned from blinking warnings to a static Bold Yellow status message for better accessibility and premium feel.
 - **Auto-clear Optimization**: Implemented a 5-second auto-clear timer for all transient status messages.
