@@ -44,7 +44,22 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "2.0.8"
+APP_VERSION = "2.1.0"
+
+# Initial Locale Setup for WSL/Windows Multibyte/Emoji Harmony
+try:
+    import locale
+    locale.setlocale(locale.LC_ALL, '')
+except:
+    pass
+
+# WSL Detection: EQ/IPC robustness logic
+IS_WSL = False
+if hasattr(os, 'uname'):
+    try:
+        IS_WSL = "microsoft" in os.uname().release.lower()
+    except: pass
+
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -302,7 +317,10 @@ class Player:
         self.loading = False
         self.loading_ts = 0
         self.socket_fail_count = 0  # Track consecutive IPC failures
-        self.socket_ok = True  # Socket health flag
+        self.socket_ok = True       # Socket health flag
+        self.last_socket_warn = 0   # Rate limit for socket error warnings
+        self.socket_retry_ts = 0    # Cool-down for reconnection attempts
+
         
         # Cleanup pre-existing instance if any
         # self.cleanup_orphaned_mpv() # Moved to play() per user request
@@ -357,10 +375,11 @@ class Player:
             "--idle=yes"
         ]
         
-        # Inject Initial EQ (0ms Latency)
-        eq_af = self._get_eq_af_string(initial_eq_preset)
-        if eq_af:
-            cmd.append(f"--af={eq_af}")
+        # Inject Initial EQ (0ms Latency) - Skip on WSL (causes freezing)
+        if not IS_WSL:
+            eq_af = self._get_eq_af_string(initial_eq_preset)
+            if eq_af:
+                cmd.append(f"--af={eq_af}")
             
         cmd.append(url)
         
@@ -425,16 +444,29 @@ class Player:
         self.send_cmd(["add", "volume", delta])
 
     def send_cmd(self, command):
-        """Send raw command list to MPV via JSON IPC."""
-        # Pre-check: Skip if socket file doesn't exist (Windows/WSL resilience)
+        """Send raw command list to MPV via JSON IPC with resilience."""
+        # 1. Fast-Detect Process Death
+        if self.current_proc and self.current_proc.poll() is not None:
+            self.socket_ok = False
+            self.current_proc = None
+            return None
+
+        # 2. Re-connection Cool-down (Throttle blocking connect() calls)
+        now = time.time()
+        if not self.socket_ok and now < self.socket_retry_ts:
+            return None
+
+        # 3. Pre-check: Skip if socket file doesn't exist
         if not os.path.exists(MPV_SOCKET):
             self.socket_fail_count += 1
-            self.socket_ok = False
+            if self.socket_fail_count >= 2:
+                self.socket_ok = False
+                self.socket_retry_ts = now + 1.5 # 1.5s cool-down
             return None
             
         try:
             client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            client.settimeout(0.5) # Fast timeout (Optimization for Sleep/Wake resilience)
+            client.settimeout(0.5) # Fast timeout (Optimization for Sleep/Wake/WSL resilience)
             client.connect(MPV_SOCKET)
             cmd_str = json.dumps({"command": command}) + "\n"
             client.send(cmd_str.encode('utf-8'))
@@ -448,23 +480,29 @@ class Player:
                 if b"\n" in chunk: break
             
             client.close()
-            # Success: Reset failure counter
+            # Success: Fully Restore health
             self.socket_fail_count = 0
             self.socket_ok = True
             return json.loads(response.decode('utf-8'))
         except:
             self.socket_fail_count += 1
-            if self.socket_fail_count >= 3:
+            if self.socket_fail_count >= 2:
                 self.socket_ok = False
+                self.socket_retry_ts = now + 1.5 # 1.5s cool-down
             return None
 
     def get_property(self, prop):
+        """Skip IPC if health is bad to prevent TUI freezing."""
+        if not self.socket_ok:
+            return None
         res = self.send_cmd(["get_property", prop])
         if res and "data" in res:
             return res["data"]
         return None
         
     def set_property(self, prop, value):
+        if not self.socket_ok:
+            return
         self.send_cmd(["set_property", prop, value])
 
     def toggle_pause(self):
@@ -490,6 +528,8 @@ class Player:
 
     def set_equalizer(self, preset_name):
         """Apply 10-band equalizer preset using lavfi."""
+        if IS_WSL:
+            return  # Skip EQ on WSL (causes freezing)
         af_str = self._get_eq_af_string(preset_name)
         self.set_property("af", af_str)
 
@@ -622,24 +662,29 @@ class MyTunesApp:
     def update_playback_state(self):
         # Poll MPV for state with throttling to reduce CPU/IPC overhead
         try:
+            # 0. Health Check: If socket is known-bad, exit immediately to keep TUI responsive
+            if not self.player.socket_ok:
+                return
+
             # 1. Mandatory every loop: Current time (for progress bar)
             t = self.player.get_property("time-pos")
-            if t is not None: 
-                self.playback_time = float(t)
-                if self.player.loading and self.playback_time >= 0:
-                    self.player.loading = False
-                
-                # Update Resume Data (Memory) - Throttle save logic
-                if self.current_track and self.playback_duration > 30:
-                    if self.playback_time / self.playback_duration > 0.99:
-                        self.dm.set_progress(self.current_track['url'], 0)
-                    elif self.playback_time > 10:
-                        self.dm.set_progress(self.current_track['url'], self.playback_time)
+            if t is None:
+                # If even time-pos fails, bail out immediately to prevent cascaded delay
+                return 
 
+            self.playback_time = float(t)
+            if self.player.loading and self.playback_time >= 0:
+                self.player.loading = False
+            
+            # Update Resume Data (Memory) - Throttle save logic
+            if self.current_track and self.playback_duration > 30:
+                if self.playback_time / self.playback_duration > 0.99:
+                    self.dm.set_progress(self.current_track['url'], 0)
+                elif self.playback_time > 10:
+                    self.dm.set_progress(self.current_track['url'], self.playback_time)
 
 
             # Safety: If loading takes too long (> 8s), force reset to allow error handling/skip
-            # Consolidated redundancy checks into a single clean block
             now = time.time()
             if self.player.loading and (now - self.player.loading_ts > 8):
                 self.player.loading = False
@@ -669,6 +714,7 @@ class MyTunesApp:
             if time.time() - getattr(self, 'last_save_time', 0) > 10:
                 self.dm.save_data()
                 self.last_save_time = time.time()
+
                  
         except: pass
 

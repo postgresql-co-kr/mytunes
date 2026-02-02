@@ -1,6 +1,6 @@
-# 🎵 MyTunes Pro - Professional TUI Edition v2.0.8
+# 🎵 MyTunes Pro - Professional TUI Edition v2.1.0
 
-## 🚀 Terminal-based Media Workflow Experiment v2.0.8
+## 🚀 Terminal-based Media Workflow Experiment v2.1.0
 
 > [!IMPORTANT]
 > **Legal Disclaimer:** This project is a personal, non-commercial research experiment for developer education.
@@ -196,7 +196,7 @@ Executes immediately without worrying about input language status.
 
 # 🎵 MyTunes Pro (Experimental Media Tool - KR)
 
-## 🚀 터미널 기반 미디어 워크플로우 실험 v2.0.8
+## 🚀 터미널 기반 미디어 워크플로우 실험 v2.1.0
 
 > [!IMPORTANT]
 > **법적 면책 고지:** 본 프로젝트는 개발자 교육 및 연구를 목적으로 하는 개인적, 비상업적 실험입니다. 
@@ -369,6 +369,13 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 ---
 
 ## 🔄 Changelog
+
+### v2.1.0 (2026-02-02)
+- **Zero-Freeze IPC Resilience**: Implemented a "Fast-Fail" mechanism that detects mpv process death within 0.1ms via `poll()`, preventing TUI freezes.
+- **Fail-Early Polling**: Main loop now aborts all remaining IPC property checks immediately if any call fails, maintaining a smooth 5fps even on broken connections.
+- **Connection Throttling**: Added a 1.5-second "cool-down" period for reconnection attempts to minimize blocking time on Windows/WSL environments.
+- **Multibyte Harmony**: Explicitly configured `locale.setlocale` to ensure stable emoji and CJK character rendering across different terminal environments.
+- **Improved Autoplay Stability**: Autoplay logic now skips status checks when the socket is unhealthy to prevent feedback loops.
 
 ### v2.0.8 (2026-02-02)
 - **Windows/WSL Socket Recovery**: Fixed UI freezing when mpv socket disconnects during window switching.
