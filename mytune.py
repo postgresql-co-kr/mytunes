@@ -4,6 +4,18 @@ MyTunes Pro - Professional TUI Edition v1.0
 # Premium CLI Media Workflow Experiment with Curses Interface
 Enhanced with Context7-researched MPV IPC & Resize Handling
 """
+import warnings
+# Suppress urllib3 NotOpenSSLWarning (LibreSSL compatibility)
+# This must be defined before ANY imports that might trigger urllib3
+warnings.filterwarnings("ignore", message=".*urllib3 v2 only supports OpenSSL 1.1.1+.*")
+
+try:
+    import urllib3
+    # Optional: also ignore by category if already imported
+    from urllib3.exceptions import NotOpenSSLWarning
+    warnings.filterwarnings("ignore", category=NotOpenSSLWarning)
+except: pass
+
 import curses
 import curses.textpad
 import json
@@ -16,8 +28,11 @@ import unicodedata
 import socket
 import locale
 import signal
-import requests
+import warnings
 import webbrowser
+import tempfile
+import shutil
+import requests
 
 
 # Ensure Unicode support
@@ -29,7 +44,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "2.0.5"
+APP_VERSION = "2.0.6"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -49,7 +64,8 @@ STRINGS = {
         "fav_added": "★ 즐겨찾기에 추가됨",
         "fav_removed": "☆ 즐겨찾기 해제됨",
         "header_r1": "[S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [A/5]즐겨찾기추가 [Q/6]뒤로",
-        "header_r2": "[F7]유튜브 [SPC]Play/Stop [+/-]볼륨 [<>]빨리감기",
+        "header_r1": "[S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [A/5]즐겨찾기추가 [Q/6]뒤로",
+        "header_r2": "[F7]유튜브 [E]이퀄라이저 [SPC]Play/Stop [+/-]볼륨 [D/Del]삭제",
         "help_guide": "[j/k]이동 [En]선택 [h/q]뒤로 [S/1]검색 [F/2]즐겨찾기 [R/3]기록 [M/4]메인 [F7]유튜브",
         "menu_main": "☰ 메인 메뉴",
         "menu_search_results": "⌕ 미디어 콘텐츠 검색",
@@ -60,7 +76,9 @@ STRINGS = {
         "favorites_info": "즐겨찾기 저장 위치: {}",
         "hist_info": "최근 재생 기록 (최대 100곡)",
         "time_fmt": "{}/{}",
-        "vol_fmt": "볼륨: {}%"
+        "vol_fmt": "볼륨: {}%",
+        "ime_warning": "영문 모드로 전환 후 단축키를 눌러주세요.",
+        "invalid_key": "잘못된 키 입력: '{}'"
     },
     "en": {
         "title": "MyTunes Pro v{}",
@@ -78,7 +96,8 @@ STRINGS = {
         "fav_added": "★ Added to Favorites",
         "fav_removed": "☆ Removed from Favorites",
         "header_r1": "[S/1]Srch [F/2]Favs [R/3]Hist [M/4]Main [A/5]AddFav [Q/6]Back",
-        "header_r2": "[F7]YT [SPC]Play/Stop [+/-]Vol [<>]Seek",
+        "header_r1": "[S/1]Srch [F/2]Favs [R/3]Hist [M/4]Main [A/5]AddFav [Q/6]Back",
+        "header_r2": "[F7]YT [E]EQ [SPC]Play/Stop [+/-]Vol [<>]Seek [D/Del]Del",
         "help_guide": "[j/k]Move [En]Select [h/q]Back [S/1]Srch [F/2]Fav [R/3]Hist [M/4]Main [F7]YT",
         "menu_main": "☰ Main Menu",
         "menu_search_results": "⌕ Search Media Content",
@@ -89,15 +108,35 @@ STRINGS = {
         "favorites_info": "Favorites stored at: {}",
         "hist_info": "Recent Playback History (Max 100)",
         "time_fmt": "{}/{}",
-        "vol_fmt": "Vol: {}%"
+        "vol_fmt": "Vol: {}%",
+        "ime_warning": "Switch to English for shortcuts.",
+        "invalid_key": "Invalid key: '{}'"
     }
+
 }
 
-# === [Data Management] ===
+# === [Audio Presets] ===
+# === [Audio Presets] ===
+# Standard "Most Used" Presets (Amplified/Professional tuned)
+EQUALIZER_PRESETS = {
+    "Flat":      [0] * 10,
+    "Pop":       [-2, -1, 3, 5, 5, 4, 2, 0, -1, -2],   # Vocals punchy
+    "Rock":      [5, 4, 3, -2, -4, -3, 0, 3, 5, 5],    # V-Shape (Bass/Highs)
+    "Jazz":      [4, 4, 2, 6, 6, 6, 2, 4, 8, 8],       # Balanced warmth
+    "Classical": [0, 6, 6, 3, 0, 0, 3, 6, 8, 8],       # Clean & Airy
+    "Full Bass": [8, 8, 8, 5, 2, 0, 0, 0, 0, 0],       # Bass focus (Safe)
+    "Dance":     [6, 8, 4, 0, 0, 0, 4, 6, 6, 6],       # Beat driven
+    "Club":      [0, 0, 4, 6, 6, 6, 4, 0, 0, 0],       # Mid-bass punch
+    "Live":      [-4, 0, 2, 4, 5, 5, 4, 2, 3, 4],      # Stadium feel
+    "Soft":      [2, 2, 1, 0, 0, 0, -1, -2, -3, -4]    # Easy listening
+}
+EQUALIZER_KEYS = ["Auto"] + list(EQUALIZER_PRESETS.keys())
+
 class DataManager:
     def __init__(self):
         self.data = self.load_data()
         self.favorites_set = {f['url'] for f in self.data.get('favorites', []) if 'url' in f}
+        self.lock = threading.Lock()
         
         # Auto-fetch country if missing
         if 'country' not in self.data:
@@ -117,8 +156,11 @@ class DataManager:
             return {"history": [], "favorites": [], "language": "ko", "resume": {}, "search_results_history": []}
 
     def save_data(self):
-        with open(DATA_FILE, "w", encoding="utf-8") as f:
-            json.dump(self.data, f, indent=2, ensure_ascii=False)
+        with self.lock:
+            try:
+                with open(DATA_FILE, "w", encoding="utf-8") as f:
+                    json.dump(self.data, f, indent=2, ensure_ascii=False)
+            except Exception: pass
 
     def get_progress(self, url):
         return self.data.get("resume", {}).get(url, 0)
@@ -223,29 +265,50 @@ class DataManager:
         self.data['search_results_history'] = unique_history[:200]
         self.save_data()
 
+    def remove_favorite_by_index(self, index):
+        if 0 <= index < len(self.data['favorites']):
+            item = self.data['favorites'].pop(index)
+            if item.get('url') in self.favorites_set:
+                self.favorites_set.remove(item['url'])
+            self.save_data()
+            return True
+        return False
+
+    def remove_history_by_index(self, index):
+        if 0 <= index < len(self.data['history']):
+            self.data['history'].pop(index)
+            self.save_data()
+            return True
+        return False
+
+    def remove_search_history_by_index(self, index):
+        if 0 <= index < len(self.data['search_results_history']):
+            self.data['search_results_history'].pop(index)
+            self.save_data()
+            return True
+        return False
+
+
 # === [Player Logic with Advanced IPC] ===
 class Player:
     def __init__(self):
         self.current_proc = None
         self.loading = False
-        
-        self.current_proc = None
-        self.loading = False
-        
-        
         self.loading_ts = 0
         
         # Cleanup pre-existing instance if any
         # self.cleanup_orphaned_mpv() # Moved to play() per user request
         
     def cleanup_orphaned_mpv(self):
-        # User requested revert to aggressive pkill for reliability
-        # This ensures any previous background instances are killed
+        # Precise pkill to avoid matching the main TUI process
+        # Matches 'mpv ' (with space) or 'mpv' as exact process name
         try:
-            subprocess.run(["pkill", "-f", "mpv"], stderr=subprocess.DEVNULL)
+            subprocess.run(["pkill", "-x", "mpv"], stderr=subprocess.DEVNULL)
+            # Second pass for variants or sub-arguments if needed
+            subprocess.run(["pkill", "-f", "mpv --video=no"], stderr=subprocess.DEVNULL)
         except: pass
         
-    def play(self, url, start_pos=0):
+    def play(self, url, start_pos=0, initial_eq_preset="Flat"):
         # 1. Try to reuse existing instance via IPC (Graceful)
         if os.path.exists(MPV_SOCKET):
             try:
@@ -254,6 +317,11 @@ class Player:
                 if resp and not resp.get("error"):
                     if start_pos > 0:
                         self.send_cmd(["seek", str(start_pos), "absolute"])
+                    
+                    # Apply EQ immediately for reused instance
+                    if initial_eq_preset and initial_eq_preset != "Flat":
+                        self.set_equalizer(initial_eq_preset)
+                        
                     self.loading = True
                     self.loading_ts = time.time()
                     return # Success! No need to restart
@@ -275,9 +343,15 @@ class Player:
             "mpv", "--video=no", "--vo=null", "--force-window=no",
             "--audio-display=no", "--no-config",
             f"--input-ipc-server={MPV_SOCKET}", 
-            "--idle=yes", 
-            url
+            "--idle=yes"
         ]
+        
+        # Inject Initial EQ (0ms Latency)
+        eq_af = self._get_eq_af_string(initial_eq_preset)
+        if eq_af:
+            cmd.append(f"--af={eq_af}")
+            
+        cmd.append(url)
         
         # B. macOS Specific UI Optimizations
         if sys.platform == "darwin":
@@ -325,7 +399,6 @@ class Player:
             try:
                 self.current_proc.terminate()
                 self.current_proc.wait(timeout=1)
-                self.current_proc.wait(timeout=1)
             except:
                 # If terminate fails, try socket quit
                 try: self.send_cmd(["quit"])
@@ -344,7 +417,7 @@ class Player:
         """Send raw command list to MPV via JSON IPC."""
         try:
             client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            client.settimeout(0.1) # Fast timeout
+            client.settimeout(0.5) # Fast timeout (Optimization for Sleep/Wake resilience)
             client.connect(MPV_SOCKET)
             cmd_str = json.dumps({"command": command}) + "\n"
             client.send(cmd_str.encode('utf-8'))
@@ -378,6 +451,25 @@ class Player:
         """Seek relative to current position."""
         self.send_cmd(["seek", seconds, "relative"])
 
+    def _get_eq_af_string(self, preset_name):
+        """Generate lavfi string for EQ preset."""
+        gains = EQUALIZER_PRESETS.get(preset_name, EQUALIZER_PRESETS["Flat"])
+        if preset_name == "Flat": return ""
+
+        freqs = [31.25, 62.5, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
+        filters = []
+        for f, g in zip(freqs, gains):
+            if g != 0:
+                filters.append(f"equalizer=f={f}:width_type=o:width=1:g={g}")
+        
+        if not filters: return ""
+        return "lavfi=[" + ",".join(filters) + "]"
+
+    def set_equalizer(self, preset_name):
+        """Apply 10-band equalizer preset using lavfi."""
+        af_str = self._get_eq_af_string(preset_name)
+        self.set_property("af", af_str)
+
 # === [TUI Application] ===
 class MyTunesApp:
     def __init__(self, stdscr):
@@ -400,17 +492,23 @@ class MyTunesApp:
         self.queue = []
         self.queue_idx = -1
         
+        # Audio EQ
+        self.current_eq_index = 0  # Default to 0 -> Flat
+        self.eq_overlay_time = 0   # For showing EQ change status temporarily
+        
         # Search State
         self.current_search_query = None
-        self.search_page = 1
-        self.is_loading_more = False
+        # self.search_page = 1 # Deprecated: Pagination Removed v2.0.2
+        # self.is_loading_more = False # Deprecated
         
         # Playback State
+
         self.playback_time = 0
         self.playback_duration = 0
         self.is_paused = False
         self.last_save_time = time.time()
-        self.status_blink = False
+        self.status_set_time = 0
+        self.auto_preset_name = "Pop" # Default Auto detected genre
         
         # Throttling Counters
         self.loop_count = 0
@@ -428,6 +526,8 @@ class MyTunesApp:
         curses.curs_set(0)
         self.stdscr.nodelay(True)
         self.stdscr.timeout(200) # Update loop every 200ms
+        self.last_input_time = time.time() # For Idle Detection
+
         
         # Register Signal for Terminal Disconnect (Window Close)
         try:
@@ -512,6 +612,15 @@ class MyTunesApp:
                     elif self.playback_time > 10:
                         self.dm.set_progress(self.current_track['url'], self.playback_time)
 
+
+
+            # Safety: If loading takes too long (> 8s), force reset to allow error handling/skip
+            # Consolidated redundancy checks into a single clean block
+            now = time.time()
+            if self.player.loading and (now - self.player.loading_ts > 8):
+                self.player.loading = False
+                self.status_msg = "⚠️ Load timed out. Skipping..."
+
             # 2. Frequent: Pause state (Every 2 loops ~400ms)
             if self.loop_count % 2 == 0:
                 p = self.player.get_property("pause")
@@ -531,10 +640,6 @@ class MyTunesApp:
                 is_idle = self.player.get_property("idle-active")
                 if is_idle and self.player.loading: 
                     self.player.loading = False
-
-            # Timeout fallback for loading state (remains every loop logic)
-            if self.player.loading and (time.time() - getattr(self.player, 'loading_ts', 0) > 8):
-                 self.player.loading = False
             
             # Periodic Save (Throttle 10s)
             if time.time() - getattr(self, 'last_save_time', 0) > 10:
@@ -548,175 +653,8 @@ class MyTunesApp:
         m, s = divmod(int(seconds), 60)
         return f"{m:02d}:{s:02d}"
 
-    def handle_input(self):
-        try:
-            # Use get_wch for Unicode support (captures Korean shortcuts)
-            key = self.stdscr.get_wch()
-        except curses.error:
-            return
-        except:
-            return
-
-        if key == -1: return
-
-        # Handle formatting: invalid key might be int -1
-        
-        # Resize Info
-        if key == curses.KEY_RESIZE:
-            self.stdscr.clear()
-            self.stdscr.refresh()
-            return
-
-        # GLOBAL ESC: Background Play (Exit but keep music)
-        # get_wch returns int 27 or str '\x1b' depending on system/lib
-        if key == 27 or key == '\x1b':
-            self.stop_on_exit = False
-            self.running = False
-            return
-
-        # Handle Mouse Click
-        if key == curses.KEY_MOUSE:
-            try:
-                _, mx, my, _, bstate = curses.getmouse()
-                if bstate & curses.BUTTON1_CLICKED or bstate & curses.BUTTON1_RELEASED:
-                    h, w = self.stdscr.getmaxyx()
-                    branding = "mytunes-pro.com/postgresql.co.kr"
-                    branding_len = len(branding)
-                    branding_x = w - 2 - branding_len
-                    
-                    if my == h - 2 and branding_x <= mx < w - 2:
-                        # Check which part was clicked
-                        # mytunes-pro.com (first 15 chars)
-                        # / (1 char)
-                        # postgresql.co.kr (last 16 chars)
-                        rel_x = mx - branding_x
-                        if rel_x < 15:
-                            url = "https://mytunes-pro.com"
-                            self.status_msg = f"🌐 Opening {url}..."
-                            threading.Thread(target=webbrowser.open, args=(url,), daemon=True).start()
-                        elif rel_x > 15:
-                            url = "https://postgresql.co.kr"
-                            self.status_msg = f"🌐 Opening {url}..."
-                            threading.Thread(target=webbrowser.open, args=(url,), daemon=True).start()
-            except:
-                pass
-            return
-
-        # Helper to normalize input for checking
-        k_char = str(key).lower() if isinstance(key, str) else ""
-        
-        current_list = self.get_current_list()
-
-        # Navigation logic
-        # Back: Q, Left Arrow, Backspace, Korean 'ㅂ' (q), h, 6
-        if key == curses.KEY_LEFT or key == curses.KEY_BACKSPACE or key == 127 or \
-           k_char in ['q', 'ㅂ', '6', 'h', 'ㅗ']:
-            if len(self.view_stack) > 1:
-                # Pop current view and push to forward stack
-                current_view = self.view_stack.pop()
-                self.forward_stack.append(current_view)
-                
-                self.selection_idx = 0; self.scroll_offset = 0
-                self.status_msg = "" 
-            # Else: Do nothing (Prevent Quit on Q)
-            return
-
-        # Forward: L, Right Arrow (Browser Style)
-        # Re-visit the view we just popped from
-        if k_char in ['l', 'L', 'ㅣ'] or key == curses.KEY_RIGHT:
-            if self.forward_stack:
-                next_view = self.forward_stack.pop()
-                self.view_stack.append(next_view)
-                self.selection_idx = 0; self.scroll_offset = 0
-                self.status_msg = ""
-            return
-
-        if key == curses.KEY_UP or k_char in ['k', 'ㅏ']:
-            if self.selection_idx > 0:
-                self.selection_idx -= 1
-                if self.selection_idx < self.scroll_offset: self.scroll_offset = self.selection_idx
-        elif key == curses.KEY_DOWN or k_char in ['j', 'ㅓ']:
-            if self.selection_idx < len(current_list) - 1:
-                self.selection_idx += 1
-                h, _ = self.stdscr.getmaxyx()
-                # Use h - 10 to match inner_h in draw() (h - footer_h(5) - header_top(3) - borders(2))
-                list_area_height = h - 10
-                if self.selection_idx >= self.scroll_offset + list_area_height:
-                    self.scroll_offset = self.selection_idx - list_area_height + 1
-
-        # Enter / Select: Enter Only (L moved to Forward)
-        elif key == '\n' or key == 10 or key == 13:
-            self.activate_selection(current_list)
-        
-        # Shortcuts with Korean support AND Number keys (for instant reaction)
-        # Search: S, ㄴ, 1, /
-        elif k_char in ['s', 'S', 'ㄴ', '1', '/']: 
-            self.forward_stack = [] # Clear forward history on new navigation
-            self.prompt_search()
-        
-        # Favorites: F, ㄹ, 2
-        elif k_char in ['f', 'F', 'ㄹ', '2']:
-            if self.view_stack[-1] != "favorites":
-                self.forward_stack = [] 
-                self.view_stack.append("favorites")
-                self.selection_idx = 0
-            self.status_msg = self.t("favorites_info", DATA_FILE)
-            
-        # History: R, ㄱ, 3 (Changed from H to avoid Back conflict)
-        elif k_char in ['r', 'R', 'ㄱ', '3']:
-            if self.view_stack[-1] != "history":
-                self.forward_stack = []
-                self.cached_history = list(self.dm.data['history']) # Snapshot
-                self.view_stack.append("history")
-                self.selection_idx = 0
-            self.status_msg = self.t("hist_info")
-            
-        # Main Menu: M, ㅡ, 4
-        elif k_char in ['m', 'M', 'ㅡ', '4']:
-            self.forward_stack = [] # Clear forward history
-            self.view_stack = ["main"]; self.selection_idx = 0; self.scroll_offset = 0; self.status_msg = ""
-            
-        # Play/Pause: Space
-        elif k_char == ' ': 
-            self.player.toggle_pause()
-
-        # Volume: 9/0 or [/] or -/+
-        elif k_char in ['-','_']:
-            self.player.change_volume(-5)
-            self.status_msg = "Volume -5"
-        elif k_char in ['+','=']:
-            self.player.change_volume(5)
-            self.status_msg = "Volume +5"
-
-        # Seek: ,/. (10s), </> (30s)
-        elif k_char == ',':
-            self.player.seek(-10)
-        elif k_char == '.':
-            self.player.seek(10)
-        elif k_char == '<':
-            self.player.seek(-30)
-            self.status_msg = "Rewind 30s"
-        elif k_char == '>':
-            self.player.seek(30)
-            self.status_msg = "Forward 30s"
-            
-        elif key == 27:
-            self.stop_on_exit = False
-            self.running = False
-            
-
-            
-        # Add to Favorites: A, ㅁ, 5
-        elif k_char in ['a', 'A', 'ㅁ', '5']:
-            if current_list and 0 <= self.selection_idx < len(current_list):
-                target_item = current_list[self.selection_idx]
-                # Ensure it's a valid track item (has url)
-                if "url" in target_item:
-                    is_added = self.dm.toggle_favorite(target_item)
-                    self.status_msg = self.t("fav_added") if is_added else self.t("fav_removed")
-
     def get_next_event(self):
-        """Unified input collection and normalization."""
+        """Unified input collection and normalization (Unicode, special keys, macros)."""
         try:
             key = self.stdscr.get_wch()
         except curses.error: return None
@@ -725,21 +663,40 @@ class MyTunesApp:
         if key == -1: return None
         self.last_input_time = time.time()
 
+        # 1. Resize handling
         if key == curses.KEY_RESIZE:
-            self.stdscr.clear(); self.stdscr.refresh(); return "RESIZE"
+            self.stdscr.clear()
+            self.stdscr.refresh()
+            return "RESIZE"
 
+        # 2. ESC / Combined sequences (Option+Backspace macro)
         if key == 27 or key == '\x1b':
-            self.stdscr.timeout(50)
+            self.stdscr.timeout(50) # Tiny peek timeout
             try:
                 nk = self.stdscr.getch()
-                if nk == 127: return "DELETE"
+                if nk == 127: return "DELETE" # Option+Backspace as DELETE
                 if nk != -1: curses.ungetch(nk)
             except: pass
-            finally: self.stdscr.timeout(200)
-            return "EXIT_BKG"
+            finally: self.stdscr.timeout(200) # Reset to standard
+            return "EXIT_BKG" # Standard ESC
 
+        # 3. Mouse Click
+        if key == curses.KEY_MOUSE:
+            try:
+                _, mx, my, _, bstate = curses.getmouse()
+                if bstate & (curses.BUTTON1_CLICKED | curses.BUTTON1_RELEASED):
+                    h, w = self.stdscr.getmaxyx()
+                    branding = "mytunes-pro.com/postgresql.co.kr"
+                    branding_x = w - 2 - len(branding)
+                    if my == h - 2 and branding_x <= mx < w - 2:
+                        rel_x = mx - branding_x
+                        if rel_x < 15: return "OPEN_HOME"
+                        if rel_x > 15: return "OPEN_PARTNER"
+            except: pass
+            return "MOUSE_CLICK"
+
+        # 4. Standard Keys Mapping
         k_char = str(key).lower() if isinstance(key, str) else str(key)
-        
         mapping = {
             str(curses.KEY_LEFT): "NAV_BACK", str(curses.KEY_BACKSPACE): "NAV_BACK", "127": "NAV_BACK",
             "q": "NAV_BACK", "6": "NAV_BACK", "h": "NAV_BACK",
@@ -758,18 +715,26 @@ class MyTunesApp:
             "<": "SEEK_BACK_30", ">": "SEEK_FWD_30",
             "a": "TOGGLE_FAV", "5": "TOGGLE_FAV",
             str(curses.KEY_F7): "OPEN_BROWSER",
-            str(curses.KEY_F8): "OPEN_HOME_APP",
-            str(curses.KEY_F9): "SHARE",
-            str(curses.KEY_DC): "DELETE", "d": "DELETE"
+            str(curses.KEY_DC): "DELETE", "d": "DELETE",
+            "e": "CYCLE_EQ", "E": "CYCLE_EQ"
         }
-        return mapping.get(k_char)
+        cmd = mapping.get(k_char)
+        if cmd: return cmd
+        return ("UNKNOWN", key)
 
     def handle_input(self):
+        """Clean dispatcher: Get normalized command and execute it."""
         cmd = self.get_next_event()
         if not cmd: return
 
+        # Reset transient state for valid commands
+        is_transient = any(kw in self.status_msg for kw in ["Invalid key", "잘못된 키", "영문", "English"])
+        if is_transient:
+            self.status_msg = ""
+
         current_list = self.get_current_list()
 
+        # 1. Functional Commands (Require Logic)
         if cmd == "NAV_BACK":
             if len(self.view_stack) > 1:
                 self.forward_stack.append(self.view_stack.pop())
@@ -799,7 +764,9 @@ class MyTunesApp:
                 self.selection_idx = 0; self.scroll_offset = 0
 
         elif cmd == "ACTIVATE":
-            self.activate_selection(current_list)
+            if time.time() - getattr(self, 'last_enter_time', 0) > 0.3:
+                self.last_enter_time = time.time()
+                self.activate_selection(current_list)
 
         elif cmd == "SEARCH":
             self.forward_stack = []; self.prompt_search()
@@ -841,7 +808,7 @@ class MyTunesApp:
                 url = current_list[self.selection_idx].get('url')
                 if url: (self.show_copy_dialog("Media", url) if self.is_remote() else self.open_browser(url))
 
-        elif cmd in ["OPEN_HOME_APP", "OPEN_HOME"]:
+        elif cmd in ["OPEN_HOME"]:
             url = "https://mytunes-pro.com"
             if self.is_remote(): self.show_copy_dialog("MyTunes Home", url)
             else: self.open_browser(url, app_mode=False)
@@ -849,14 +816,32 @@ class MyTunesApp:
         elif cmd == "OPEN_PARTNER":
             self.open_browser("https://postgresql.co.kr")
 
-        elif cmd == "SHARE":
-            self.handle_share(current_list)
+
+        elif cmd == "RESIZE":
+            self.stdscr.clear()
+            self.stdscr.refresh()
 
         elif cmd == "EXIT_BKG":
             self.stop_on_exit = False; self.running = False
 
+        elif cmd == "CYCLE_EQ":
+            self.cycle_equalizer()
+
+        elif isinstance(cmd, tuple) and cmd[0] == "UNKNOWN":
+            key = cmd[1]
+            if isinstance(key, str) and ord(key[0]) > 127:
+                self.status_msg = self.t("ime_warning")
+                self.status_set_time = time.time()
+                self.draw() # Internal redraw for instant feedback
+            elif isinstance(key, str) and key.isprintable():
+                self.status_msg = self.t("invalid_key", key)
+                self.status_set_time = time.time()
+                self.draw() # Internal redraw for instant feedback
+
     def handle_deletion(self, current_list):
+        """Sub-logic for DELETE command to keep dispatcher clean."""
         if not current_list or not (0 <= self.selection_idx < len(current_list)): return
+        
         view = self.view_stack[-1]
         success = False
         if view == "favorites":
@@ -872,33 +857,152 @@ class MyTunesApp:
             else:
                 try: self.search_results.pop(self.selection_idx); success = True; self.status_msg = "Removed from list"
                 except: pass
-        if success:
-             self.selection_idx = max(0, min(self.selection_idx, len(self.get_current_list()) - 1))
 
-    def handle_share(self, current_list):
-        if not current_list or not (0 <= self.selection_idx < len(current_list)): return
-        target_item = current_list[self.selection_idx]
-        url = target_item.get('url')
-        title = target_item.get('title', 'Unknown Title')
+    def cycle_equalizer(self):
+        self.current_eq_index = (self.current_eq_index + 1) % len(EQUALIZER_KEYS)
+        new_preset = EQUALIZER_KEYS[self.current_eq_index]
         
-        if not url: return
-        if time.time() - self.sent_history.get(url, 0) < 5:
-            self.status_msg = "⚠️ Already Shared Recently!"; return
+        if new_preset == "Auto":
+            # Immediate trigger for current track
+            auto_preset = self.detect_auto_eq(self.current_track) if self.current_track else "Pop"
+            self.player.set_equalizer(auto_preset)
+            self.status_msg = f"🎚 Auto: {auto_preset}"
+        else:
+            self.player.set_equalizer(new_preset)
+            self.status_msg = f"🎚 EQ: {new_preset}"
+            
+        self.status_set_time = time.time()
 
-        def send_share_async(payload, headers, url_to_share, title_to_share):
+    def detect_auto_eq(self, item):
+        """
+        Smart genre detection using weighted scoring.
+        Analyzes Title and Author for keywords.
+        """
+        # Prepare texts
+        title_text = ""
+        extra_text = ""
+        
+        if isinstance(item, str): 
+             title_text = item.lower()
+        else:
+             title_text = item.get('title', '').lower()
+             extra_text = f"{item.get('author', '')} {item.get('channel', '')}".lower()
+        
+        scores = {k: 0 for k in EQUALIZER_PRESETS.keys() if k != "Flat"}
+        
+        # Keyword Maps (Genre -> [Keywords])
+        # Specific genres should have unique keywords.
+        rules = [
+            ("Rock",      ["rock", "band", "metal", "grunge", "punk", "락", "밴드", "메탈", "coldplay", "linkin", "day6", "oasis", "nirvana", "ac/dc"]),
+            ("Jazz",      ["jazz", "재즈", "blues", "piano", "cafe", "coffee", "morning", "카페", "피아노", "bgm", "study", "relaxing jazz", "smooth jazz", "dinner", "book"]),
+            ("Classical", ["classic", "symphony", "orchestra", "violin", "cello", "mozart", "bach", "beethoven", "chopin", "클래식", "오케스트라", "교향곡", "concerto", "sonata"]),
+            ("Club",      ["bass", "boost", "trap", "dubstep", "edm", "club", "remix", "dj", "electronic", "house", "techno", "mix"]),
+            ("Dance",     ["dance", "party", "disco", "kpop", "k-pop", "idol", "choreography", "댄스", "아이돌", "newjeans", "bts", "ive", "aespa", "le sserafim", "blackpink", "twice"]),
+            ("Full Bass", ["rap", "hip hop", "hiphop", "r&b", "soul", "mc", "beat", "힙합", "래퍼", "쇼미더머니", "eminem", "drake", "kanye"]),
+            ("Live",      ["live", "concert", "performance", "stage", "fancam", "busking", "라이브", "콘서트", "무대", "직캠", "버스킹", "tour", "festa"]),
+            ("Soft",      ["soft", "sleep", "relax", "healing", "lofi", "lo-fi", "ballad", "acoustic", "winter", "rain", "잔잔한", "발라드", "힐링", "수면", "감성", "새벽", "자장가", "어쿠스틱", "guitar", "piano", "roy kim", "로이킴", "paul kim", "폴킴"]),
+            ("Pop",       ["pop", "billboard", "top 100", "best", "hits", "favorites", "팝", "가요", "인기", "노래모음", "chart", "trending"]),
+            # Fallbacks / Overlaps
+            ("Jazz",      ["lounge", "mood", "night", "bar", "wine"]), 
+            ("Pop",       ["trot", "트로트", "임영웅", "나훈아", "송가인"]),
+        ]
+
+        # Scoring
+        for genre, keywords in rules:
+            if genre not in scores: continue
+            for k in keywords:
+                # Title Match (High Priority)
+                if k in title_text:
+                    score = 3
+                    # Boost specific keywords even more
+                    if genre == "Jazz" and k in ["jazz", "재즈", "cafe", "coffee", "lounge"]: score += 2
+                    scores[genre] += score
+                
+                # Extra Match (Low Priority)
+                elif k in extra_text:
+                    scores[genre] += 1
+                
+        # Find winner
+        best_genre = max(scores, key=scores.get)
+        
+        if scores[best_genre] > 0:
+            self.auto_preset_name = best_genre
+            return best_genre
+            
+        # Default Fallback
+        self.auto_preset_name = "Pop"
+        return "Pop" 
+
+    def play_music(self, item, interactive=True, preserve_queue=False):
+        if not item.get("url"): return # Guard against dummy items
+        
+        self.current_track = item
+        self.dm.add_history(item)
+        
+        # Apply Auto EQ if enabled
+        # Apply Auto EQ if enabled
+        target_eq_preset = "Flat"
+        current_eq_mode = EQUALIZER_KEYS[self.current_eq_index]
+        
+        if current_eq_mode == "Auto":
+            self.auto_preset_name = "..." 
+            self.detect_auto_eq(item) # Updates self.auto_preset_name
+            target_eq_preset = self.auto_preset_name
+            self.status_msg = "" # Clear previous msgs
+        else:
+            target_eq_preset = current_eq_mode
+
+        self.status_set_time = time.time()
+        
+        # Queue Management
+        if not preserve_queue:
+            # New Queue Context from current view
+            current_list = self.get_current_list()
+            # Copy list to queue (Filter only playable items)
+            self.queue = [i for i in current_list if i.get("url")]
+            # Find index in queue
             try:
-                resp = requests.post("https://postgresql.co.kr/api/mytunes/share", json=payload, headers=headers, timeout=3)
-                if resp.status_code == 200:
-                    self.sent_history[url_to_share] = time.time()
-                    self.status_msg = f"🚀 Shared: {self.truncate(title_to_share, 40)}..."
-                else: self.status_msg = f"❌ Share Error: {resp.status_code}"
-            except: self.status_msg = "❌ Network Error (API)"
-
-        payload = {"title": title, "url": url, "duration": target_item.get('duration', '--:--'),
-                   "country": self.dm.get_country(), "timestamp": time.time()}
-        headers = {"Content-Type": "application/json", "x-mytunes-secret": "mytunes-v1-secret-8822"}
-        threading.Thread(target=send_share_async, args=(payload, headers, url, title), daemon=True).start()
-
+                # Find by URL
+                self.queue_idx = next(i for i, x in enumerate(self.queue) if x['url'] == item['url'])
+            except StopIteration:
+                self.queue_idx = -1
+                self.queue = [] # Should not happen if item came from list
+        
+        start_pos = 0
+        if 'url' in item:
+            saved = self.dm.get_progress(item['url'])
+            if saved > 10: 
+                # Autoskip resume prompt in Autoplay (interactive=False)
+                if interactive:
+                    if self.ask_resume(saved, item.get('title', 'Unknown')): start_pos = saved
+                else:
+                    start_pos = 0
+        
+        self.player.play(item['url'], start_pos, initial_eq_preset=target_eq_preset)
+        
+        # Re-apply EQ logic (double check: mpv restart wipes af property?)
+        # Yes, play() might restart mpv if socket fails.
+        # But set_equalizer uses set_property which works via IPC *after* launch.
+        # However, play() sends "loadfile" if existing, or restarts.
+        # If restarted, we must re-apply EQ.
+        # Ideally Player.play should handle restoring EQ state or we rely on MyTunesApp to do it.
+        # But for now, let's just re-apply it here after a tiny delay or ensure Player persists it?
+        # Actually Player doesn't persist state. MyTunesApp drives it.
+        # So calling set_equalizer *after* play is correct.
+        
+        # Player.play() handles loading the file.
+        # Since we set "af" via IPC AFTER play() starts in some logic, 
+        # but here we set it before/during. set_property works anytime.
+        
+        # Reset state for new track
+        self.playback_time = start_pos
+        self.playback_duration = 0
+        self.is_paused = False
+        self.stdscr.nodelay(False) # Blocking input for dialog
+        h, w = self.stdscr.getmaxyx()
+        box_h, box_w = 8, 60
+        box_y, box_x = (h - box_h) // 2, (w - box_w) // 2
+        
     def ask_resume(self, saved_time, track_title):
         self.stdscr.nodelay(False) # Blocking input for dialog
         h, w = self.stdscr.getmaxyx()
@@ -1013,7 +1117,7 @@ class MyTunesApp:
                 else:
                     # Linux or others
                     subprocess.Popen(['xdg-open', url], **popen_kwargs)
-                    
+                
                 # Feedback logic: Success message then auto-clear
                 self.status_msg = "✅ Browser Launched! (Check Browser)"
                 time.sleep(2.5)
@@ -1026,6 +1130,15 @@ class MyTunesApp:
         # Still execute Popen in a thread to be extra safe, 
         # but Popen itself is now detached and redirected.
         threading.Thread(target=run_open, daemon=True).start()
+
+    def is_wsl(self):
+        try:
+            if sys.platform != 'linux': return False
+            if os.path.exists('/proc/version'):
+                with open('/proc/version', 'r') as f:
+                    return 'microsoft' in f.read().lower()
+            return False
+        except: return False
 
     def show_copy_dialog(self, title, url):
         """Show a dialog with the URL for manual copying in remote sessions."""
@@ -1100,12 +1213,8 @@ class MyTunesApp:
                 self.status_msg = "" # Clear stale messages on language switch
             elif item["id"] == "quit": self.running = False
         else:
-            # Check for Load More Button
-            if item.get("id") == "load_more_btn":
-                self.load_more_results()
-                return
-
             self.play_music(item, interactive=True)
+
 
     def play_music(self, item, interactive=True, preserve_queue=False):
         if not item.get("url"): return # Guard against dummy items
@@ -1261,7 +1370,8 @@ class MyTunesApp:
         if query:
             self.status_msg = self.t("searching")
             self.draw()
-            self.perform_search(query)
+            # v2.0.0 Refactor: Threaded Search
+            threading.Thread(target=self.perform_search, args=(query,), daemon=True).start()
         else:
             # Revert if no query and we were just previewing history
             # But requirement 2: "If Enter with no query, preserve previous search results"
@@ -1270,50 +1380,38 @@ class MyTunesApp:
             # If the user wants to CANCEL and go back to Main, they might need ESC.
             pass
 
-    def perform_search(self, query, page=1):
+    def perform_search(self, query):
         try:
-            self.is_loading_more = True
-            if page == 1:
-                self.current_search_query = query
-                self.search_page = 1
-                self.status_msg = self.t("searching")
-            else:
-                self.status_msg = "Loading next 50..."
-            self.draw() # Force redraw to show status
-
-            # Resolve yt-dlp path: checks dirname of current python (venv/bin) first
+            # v2.0.4 Fix: Don't set player.loading=True for Search. 
+            # It triggers playback timeout (skipping) logic if search is slow.
+            # self.player.loading = True 
+            
+            self.current_search_query = query
+            self.status_msg = self.t("searching")
+            
+            # Resolve yt-dlp path
             yt_dlp_cmd = "yt-dlp"
             venv_bin = os.path.dirname(sys.executable)
             venv_yt_dlp = os.path.join(venv_bin, "yt-dlp")
             if os.path.exists(venv_yt_dlp) and os.access(venv_yt_dlp, os.X_OK):
                 yt_dlp_cmd = venv_yt_dlp
 
-            # Optimize search for music/audio
-            limit = 50
-            # yt-dlp logic: ytsearchN asks for N results total.
-            # to get page 2 (51-100), we ask for 100, checking playlist-items indices?
-            # actually ytsearchN with --playlist-start START works.
-            # We ask for (page * limit) because 'ytsearch' usually returns 'up to N'.
-            # If we just ask for 50 with start 51, it might fail depending on yt-dlp version.
-            # Safest is: ytsearch(page*limit) with --playlist-start ((page-1)*limit + 1)
-            
-            total_fetch = page * limit
-            start_index = (page - 1) * limit + 1
-            
+            # v2.0.2 Optimization: 25 Items (Better space usage per user request)
+            limit = 25
             search_query = f"{query} music"
             cmd = [
                 yt_dlp_cmd, 
-                f"ytsearch{total_fetch}:{search_query}", 
-                "--dump-json", "--flat-playlist", "--no-playlist", "--skip-download",
-                "--playlist-start", str(start_index)
+                f"ytsearch{limit}:{search_query}", 
+                "--dump-json", "--flat-playlist", "--no-playlist", "--skip-download"
             ]
             
             try:
                 result = subprocess.check_output(cmd, stderr=subprocess.DEVNULL).decode('utf-8')
             except subprocess.CalledProcessError:
-                result = "" # Handle error or empty
+                result = "" 
                 
             new = []
+            seen_urls = set()
             for line in result.strip().split("\n"):
                 if line:
                     try:
@@ -1322,57 +1420,43 @@ class MyTunesApp:
                         if not url or "http" not in url: url = f"https://www.youtube.com/watch?v={d.get('id')}"
                         dur = d.get("duration", 0)
                         dur_str = f"{int(dur)//60}:{int(dur)%60:02d}" if dur else ""
-                        new.append({"title": d.get("title", "Unknown"), "url": url, "duration": dur_str})
+                        # Dedup Check
+                        if url not in seen_urls:
+                             seen_urls.add(url)
+                             # Extract Channel/Author
+                             channel = d.get("uploader") or d.get("channel") or d.get("uploader_id") or "Unknown"
+                             new.append({
+                                 "title": d.get("title", "Unknown"), 
+                                 "url": url, 
+                                 "duration": dur_str,
+                                 "author": channel,
+                                 "channel": channel
+                             })
                     except: pass
             
+            # Enforce hard limit
+            new = new[:limit]
+            
             if new:
-                # Remove previous 'Load More' button if exists
-                if self.search_results and self.search_results[-1].get("id") == "load_more_btn":
-                    self.search_results.pop()
-                    
-                # Append Load More Button if we got full batch (likely more exists)
-                # Or just always add it if we got results.
-                # Adding it at the end of new list
-                load_more_item = {
-                    "title": "[ Next 50 Results... ]" if self.lang == 'en' else "[ 다음 50개 더 보기... ]",
-                    "id": "load_more_btn",
-                    "url": "", # Dummy
-                    "duration": ""
-                }
-                new.append(load_more_item)
-
-                if page == 1:
-                    self.search_results = new
-                    if self.view_stack[-1] != "search":
-                        self.view_stack.append("search")
-                    self.selection_idx = 0; self.scroll_offset = 0
-                    
-                    # SAVE to History (Exclude load_more_btn)
-                    items_to_save = [x for x in new if x.get('id') != 'load_more_btn']
-                    self.dm.add_search_results(items_to_save)
-                    
-                else:
-                    self.search_results.extend(new)
-                    # Also save subsequent pages to history
-                    items_to_save = [x for x in new if x.get('id') != 'load_more_btn']
-                    self.dm.add_search_results(items_to_save)
+                self.search_results = new
+                if self.view_stack[-1] != "search":
+                    self.view_stack.append("search")
+                self.selection_idx = 0; self.scroll_offset = 0
                 
-                self.search_page = page
-                self.status_msg = f"Search Done. ({len(self.search_results)-1})" # -1 for button
+                # SAVE to History
+                self.dm.add_search_results(new)
+                
+                self.status_msg = f"Search Done. ({len(new)} results)"
             else:
-                if page == 1: self.status_msg = self.t("no_results")
-                else: 
-                     self.status_msg = "No more results."
-                     # Remove button if no more
-                     if self.search_results and self.search_results[-1].get("id") == "load_more_btn":
-                        self.search_results.pop()
+                self.status_msg = self.t("no_results")
+                
         except Exception as e: self.status_msg = f"Error: {e}"
         finally:
-            self.is_loading_more = False
+            self.player.loading = False
 
-    def load_more_results(self):
-        if self.current_search_query and not self.is_loading_more:
-            self.perform_search(self.current_search_query, self.search_page + 1)
+
+
+
 
     def draw(self):
         self.stdscr.erase()
@@ -1419,7 +1503,14 @@ class MyTunesApp:
         # Footer Line 2: Song Title
         if self.current_track:
              status_icon = "❚❚" if self.is_paused else "▶"
-             song_title = self.truncate(self.current_track['title'], w - 10)
+             
+             song_title = self.current_track['title']
+             # Append Channel to Footer if available
+             ch_name = self.current_track.get('channel') or self.current_track.get('author')
+             if ch_name:
+                 song_title += f"   [{ch_name}]"
+                 
+             song_title = self.truncate(song_title, w - 10)
              self.stdscr.addstr(h - 3, 2, f"{status_icon} {song_title}", curses.color_pair(2))
         else:
              self.stdscr.addstr(h - 3, 2, self.t("stopped"), curses.color_pair(1))
@@ -1432,15 +1523,40 @@ class MyTunesApp:
         self.stdscr.addstr(h - 2, branding_x, branding, curses.color_pair(1) | curses.A_BOLD)
         
         # Draw Status Msg
+        # Draw Status Msg
+        displayed_msg = ""
+        attr = curses.A_NORMAL
+        
         if self.player.loading:
-            self.stdscr.addstr(h - 2, 2, f"⏳ Loading...", curses.color_pair(6) | curses.A_BLINK)
+            displayed_msg = "⏳ Loading..."
+            # For Auto EQ, show what we are loading into
+            # if EQUALIZER_KEYS[self.current_eq_index] == "Auto":
+            #      displayed_msg += f" [Auto: {self.auto_preset_name}]"
+            attr = curses.color_pair(6) | curses.A_BLINK
         elif self.status_msg:
+             # Auto-clear only transients
+             is_transient = "Invalid key" in self.status_msg or "잘못된 키" in self.status_msg or "영문" in self.status_msg or "English" in self.status_msg
+             if time.time() - self.status_set_time > 5 and is_transient:
+                 self.status_msg = ""
+             else:
+                 displayed_msg = f"📢 {self.status_msg}"
+                 attr = curses.color_pair(3) | curses.A_BOLD
+
+        # Fallback: Persistent Auto EQ Status
+        if not displayed_msg:
+             eq_mode = EQUALIZER_KEYS[self.current_eq_index]
+             if eq_mode == "Auto":
+                  displayed_msg = f"🎚 Auto: {self.auto_preset_name}"
+                  # Use standard bold (color from terminal default/white) as requested "글자만 표시"
+                  attr = curses.A_BOLD 
+             elif eq_mode != "Flat":
+                  displayed_msg = f"🎚 EQ: {eq_mode}"
+                  attr = curses.A_BOLD
+
+        if displayed_msg:
              avail_w = branding_x - 4
              if avail_w > 5:
-                msg = self.truncate(self.status_msg, avail_w)
-                attr = curses.color_pair(6)
-                if self.status_blink: attr |= curses.A_BLINK | curses.A_BOLD
-                self.stdscr.addstr(h - 2, 2, f"📢 {msg}", attr)
+                self.stdscr.addstr(h - 2, 2, self.truncate(displayed_msg, avail_w), attr)
 
         # List Area (Remaining Middle)
         list_top = 4
@@ -1480,6 +1596,25 @@ class MyTunesApp:
                 
                 title_txt = self.truncate(item.get('title',''), avail_w)
                 
+                # Channel Name Logic (Smart Display)
+                channel_txt = ""
+                box_w = 0
+                if w > 80: # Only show if screen is wide enough
+                    raw_ch = item.get('channel') or item.get('author') or ""
+                    if raw_ch:
+                        # Max channel width: 20 or 25% of width
+                        max_ch_w = min(20, w // 4)
+                        if len(raw_ch) > max_ch_w:
+                            raw_ch = raw_ch[:max_ch_w-1] + "…"
+                        channel_txt = f"[{raw_ch}]"
+                        box_w = len(channel_txt) + 1 # +1 padding
+                
+                # Refine Title Width based on Channel presence
+                real_avail_w = avail_w - box_w
+                if real_avail_w < 5: real_avail_w = 5
+                
+                title_txt = self.truncate(item.get('title',''), real_avail_w)
+                
                 try:
                     curr_x = 2
                     # Base Style
@@ -1491,17 +1626,15 @@ class MyTunesApp:
                          base_style = curses.A_NORMAL
                     
                     # 1. Prefix
-                    # If selected, base_style is Blue/White. If playing(unselected), Green.
                     self.stdscr.addstr(y_pos, curr_x, prefix, base_style)
                     curr_x += len(prefix)
                     
-                    # 2. Play Icon (Green if not selected)
-                    # base_style already covers Green if playing and not selected.
+                    # 2. Play Icon
                     if chk_icon:
                          self.stdscr.addstr(y_pos, curr_x, chk_icon, base_style)
                          curr_x += len(chk_icon)
                          
-                    # 3. Fav Icon (Yellow if not selected)
+                    # 3. Fav Icon
                     f_style = base_style
                     if fav_icon and not is_sel: f_style = curses.color_pair(3) | curses.A_BOLD
                     if fav_icon:
@@ -1512,15 +1645,15 @@ class MyTunesApp:
                     self.stdscr.addstr(y_pos, curr_x, title_txt, base_style)
                     curr_x += self.get_display_width(title_txt)
                     
-                    # 5. Fill Padding
-                    remain = w - 2 - curr_x - len(dur_txt)
-                    if remain > 0:
-                        self.stdscr.addstr(y_pos, curr_x, " "*remain, base_style)
-                        curr_x += remain
-                        
-                    # 6. Duration
+                    # 5. Channel Info (Right aligned relative to title space or fixed?)
+                    if channel_txt:
+                        self.stdscr.addstr(y_pos, curr_x + 1, channel_txt, base_style | curses.A_DIM)
+                        # No update to curr_x needed for duration anchor, but good for safety
+                    
+                    # 6. Duration (Right Anchored)
                     if dur_txt:
-                        self.stdscr.addstr(y_pos, curr_x, dur_txt, base_style)
+                        dur_x = w - 2 - len(dur_txt)
+                        self.stdscr.addstr(y_pos, dur_x, dur_txt, base_style)
                         
                 except: pass
         
@@ -1528,18 +1661,15 @@ class MyTunesApp:
 
     def check_autoplay(self):
         # Auto-play next track from Global Queue
+        # Guard: Don't autoplay if we are currently loading a track
+        if self.player.loading: return
+
         try:
             is_idle = self.player.get_property("idle-active")
             if is_idle and self.current_track and self.queue:
                 if self.queue_idx + 1 < len(self.queue):
                      self.queue_idx += 1
                      next_item = self.queue[self.queue_idx]
-                     
-                     if next_item.get('id') == 'load_more_btn':
-                         # TODO: Auto-trigger load more? For now just stop.
-                         self.current_track = None 
-                         return
-                     
                      try: self.play_music(next_item, interactive=False, preserve_queue=True)
                      except: pass
                 else:
@@ -1548,12 +1678,33 @@ class MyTunesApp:
 
     def run(self):
         while self.running:
-            self.loop_count = (self.loop_count + 1) % 1000
-            self.update_playback_state()
-            self.check_autoplay()
-            self.draw()
-            self.handle_input()
+            try:
+                self.loop_count = (self.loop_count + 1) % 1000
+                self.update_playback_state()
+                self.check_autoplay()
+                self.draw()
+                self.handle_input()
+                
+                # Idle / Sleep Check
+                # If no input for 60s and Paused, slow down loop
+                if time.time() - getattr(self, 'last_input_time', 0) > 60 and self.is_paused:
+                     self.stdscr.timeout(1000)
+                else:
+                     self.stdscr.timeout(200)
+
+            except Exception as e:
+                # v1.8.4 - Global resilience: Catch and log loop errors instead of crashing
+                try: 
+                    with open("/tmp/mytunes_error.log", "a") as f:
+                        f.write(f"[{time.ctime()}] Loop Error: {str(e)}\n")
+                except: pass
+                # Small sleep to prevent infinite tight loop on persistent error
+                time.sleep(0.1)
         
+        # Cleanup Mouse (Prevent terminal artifacts)
+        try: curses.mousemask(0)
+        except: pass
+
         if self.stop_on_exit:
             self.player.stop()
             self.player.cleanup_orphaned_mpv()
