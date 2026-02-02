@@ -167,6 +167,7 @@ Executes immediately without worrying about input language status.
 | **`+`** | **Vol UP** | Volume +5% (Same as `=`) |
 | **`-`** | **Vol DOWN** | Volume -5% (Same as `_`) |
 | **`F7`** | **Open YouTube** | View current track in browser |
+| **`E`** | **Equalizer** | Cycle EQ presets (Auto/Flat/Pop/Rock/Jazz/etc.) |
 | **`6`** | **Back** | Go to previous screen (Same as `Q`, `h`) |
 | **`L`** | **Forward** | Go forward to previous screen (`Right Arrow`) |
 | **`ESC`** | **Background** | **Exit without stopping music** (Background Play) |
@@ -340,6 +341,7 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 | **`+`** | **볼륨 UP** | 볼륨 +5% (단축키 `=`와 동일) |
 | **`-`** | **볼륨 DOWN** | 볼륨 -5% (단축키 `_`와 동일) |
 | **`F7`** | **유튜브 열기** | 현재 곡을 브라우저에서 보기 |
+| **`E`** | **이퀄라이저** | EQ 프리셋 전환 (Auto/Flat/Pop/Rock/Jazz 등) |
 | **`6`** | **뒤로가기** | 이전 화면으로 이동 (단축키 `Q`, `h`와 동일) |
 | **`L`** | **앞으로** | 이전 화면에서 앞화면으로 다시 이동 (`Right Arrow`) |
 | **`ESC`** | **배경재생** | **음악 끄지 않고 나가기** (백그라운드 재생) |
