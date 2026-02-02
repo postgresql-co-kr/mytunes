@@ -1,4 +1,4 @@
-# 🎵 MyTunes Pro - Professional TUI Edition v2.1.3
+# 🎵 MyTunes Pro - Professional TUI Edition v2.1.4
 
 ## 🚀 Terminal-based Media Workflow Experiment v2.1.3
 
@@ -369,6 +369,11 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 ---
 
 ## 🔄 Changelog
+
+### v2.1.4 (2026-02-03)
+- **Mouse Support Removed**: Reverted to pure keyboard interface for cleaner experience.
+- **Bug Fixes**: Resolved IndentationError and key loop crashes.
+- **Stability**: Removed unused code paths.
 
 ### v2.1.3 (2026-02-02)
 - **Resolved TUI Freeze on Song Launch**: Fixed a critical regression from v2.0.6 where misplaced blocking input code caused the TUI to freeze on "Loading" during song transitions or resume until a key was pressed.

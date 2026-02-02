@@ -44,7 +44,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "2.1.3"
+APP_VERSION = "2.1.4"
 
 # Initial Locale Setup for WSL/Windows Multibyte/Emoji Harmony
 try:
@@ -606,9 +606,7 @@ class MyTunesApp:
             signal.signal(signal.SIGHUP, self.handle_disconnect)
         except: pass
 
-        # Enable Mouse Support
-        curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
-        print("\033[?1003h") # Enable mouse tracking
+
 
         self.sent_history = {}
 
@@ -772,19 +770,8 @@ class MyTunesApp:
             return "EXIT_BKG" # Standard ESC
 
         # 3. Mouse Click
-        if key == curses.KEY_MOUSE:
-            try:
-                _, mx, my, _, bstate = curses.getmouse()
-                if bstate & (curses.BUTTON1_CLICKED | curses.BUTTON1_RELEASED):
-                    h, w = self.stdscr.getmaxyx()
-                    branding = "mytunes-pro.com/postgresql.co.kr"
-                    branding_x = w - 2 - len(branding)
-                    if my == h - 2 and branding_x <= mx < w - 2:
-                        rel_x = mx - branding_x
-                        if rel_x < 15: return "OPEN_HOME"
-                        if rel_x > 15: return "OPEN_PARTNER"
-            except: pass
-            return "MOUSE_CLICK"
+        # 3. Mouse Click & Scroll
+        # 3. Mouse Click (Removed)
 
         # 4. Standard Keys Mapping
         k_char = str(key).lower() if isinstance(key, str) else str(key)
