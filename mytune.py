@@ -44,7 +44,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "2.0.6"
+APP_VERSION = "2.0.7"
 
 # === [Strings & Localization] ===
 STRINGS = {
@@ -168,6 +168,12 @@ class DataManager:
     def set_progress(self, url, time_pos):
         if "resume" not in self.data: self.data["resume"] = {}
         self.data["resume"][url] = time_pos
+        # Limit resume data to 500 entries (FIFO cleanup)
+        if len(self.data["resume"]) > 500:
+            # Remove oldest entries (first 100)
+            keys = list(self.data["resume"].keys())
+            for k in keys[:100]:
+                del self.data["resume"][k]
 
     def add_history(self, item):
         self.data['history'] = [h for h in self.data['history'] if h['url'] != item['url']]
@@ -509,6 +515,7 @@ class MyTunesApp:
         self.last_save_time = time.time()
         self.status_set_time = 0
         self.auto_preset_name = "Pop" # Default Auto detected genre
+        self._eq_cache = {}  # Cache: {url: detected_genre} to avoid re-computation
         
         # Throttling Counters
         self.loop_count = 0
@@ -878,6 +885,19 @@ class MyTunesApp:
         Smart genre detection using weighted scoring.
         Analyzes Title and Author for keywords.
         """
+        # Cache check: return cached result if available
+        if not isinstance(item, str):
+            url = item.get('url', '')
+            if url and url in self._eq_cache:
+                cached = self._eq_cache[url]
+                self.auto_preset_name = cached
+                return cached
+            # Limit cache size to 200 entries
+            if len(self._eq_cache) > 200:
+                keys = list(self._eq_cache.keys())
+                for k in keys[:50]:
+                    del self._eq_cache[k]
+        
         # Prepare texts
         title_text = ""
         extra_text = ""
@@ -927,10 +947,16 @@ class MyTunesApp:
         
         if scores[best_genre] > 0:
             self.auto_preset_name = best_genre
+            # Save to cache
+            if not isinstance(item, str) and item.get('url'):
+                self._eq_cache[item['url']] = best_genre
             return best_genre
             
         # Default Fallback
         self.auto_preset_name = "Pop"
+        # Cache fallback too
+        if not isinstance(item, str) and item.get('url'):
+            self._eq_cache[item['url']] = "Pop"
         return "Pop" 
 
     def play_music(self, item, interactive=True, preserve_queue=False):

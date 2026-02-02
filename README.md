@@ -1,6 +1,6 @@
-# 🎵 MyTunes Pro - Professional TUI Edition v2.0.6
+# 🎵 MyTunes Pro - Professional TUI Edition v2.0.7
 
-## 🚀 Terminal-based Media Workflow Experiment v2.0.6
+## 🚀 Terminal-based Media Workflow Experiment v2.0.7
 
 > [!IMPORTANT]
 > **Legal Disclaimer:** This project is a personal, non-commercial research experiment for developer education.
@@ -196,7 +196,7 @@ Executes immediately without worrying about input language status.
 
 # 🎵 MyTunes Pro (Experimental Media Tool - KR)
 
-## 🚀 터미널 기반 미디어 워크플로우 실험 v2.0.6
+## 🚀 터미널 기반 미디어 워크플로우 실험 v2.0.7
 
 > [!IMPORTANT]
 > **법적 면책 고지:** 본 프로젝트는 개발자 교육 및 연구를 목적으로 하는 개인적, 비상업적 실험입니다. 
@@ -369,6 +369,11 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 ---
 
 ## 🔄 Changelog
+
+### v2.0.7 (2026-02-02)
+- **Performance Optimization**: Improved keyboard responsiveness on Windows/WSL by implementing EQ detection caching.
+- **Data Management**: Limited resume data to 500 entries with automatic FIFO cleanup to prevent JSON bloat.
+- **Cache System**: Added 200-entry EQ genre cache to skip redundant keyword matching for repeated tracks.
 
 ### v2.0.6 (2026-02-02)
 - **10-Band Equalizer**: Added professional-grade 10-band EQ with presets (Flat, Pop, Rock, Jazz, Classical, Full Bass, Dance, Club, Live, Soft).
