@@ -44,7 +44,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "2.1.4"
+APP_VERSION = "2.1.5"
 
 # Initial Locale Setup for WSL/Windows Multibyte/Emoji Harmony
 try:

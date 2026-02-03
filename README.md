@@ -1,6 +1,6 @@
-# 🎵 MyTunes Pro - Professional TUI Edition v2.1.4
+# 🎵 MyTunes Pro - Professional TUI Edition v2.1.5
 
-## 🚀 Terminal-based Media Workflow Experiment v2.1.3
+## 🚀 Terminal-based Media Workflow Experiment v2.1.5
 
 > [!IMPORTANT]
 > **Legal Disclaimer:** This project is a personal, non-commercial research experiment for developer education.
@@ -196,7 +196,7 @@ Executes immediately without worrying about input language status.
 
 # 🎵 MyTunes Pro (Experimental Media Tool - KR)
 
-## 🚀 터미널 기반 미디어 워크플로우 실험 v2.1.0
+## 🚀 터미널 기반 미디어 워크플로우 실험 v2.1.5
 
 > [!IMPORTANT]
 > **법적 면책 고지:** 본 프로젝트는 개발자 교육 및 연구를 목적으로 하는 개인적, 비상업적 실험입니다. 
@@ -369,6 +369,11 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 ---
 
 ## 🔄 Changelog
+
+### v2.1.5 (2026-02-04)
+- **Absolute Volume Display**: Now displays volume as a precise percentage (0-100%) with a "(Boost)" indicator for levels above 100%.
+- **Volume Persistence**: Volume level is now permanently saved and restored across app restarts.
+- **Offline Control**: Adjust volume levels globally even when the player is stopped; changes apply immediately upon next playback.
 
 ### v2.1.4 (2026-02-03)
 - **Mouse Support Removed**: Reverted to pure keyboard interface for cleaner experience.

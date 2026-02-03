@@ -44,7 +44,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "2.1.4"
+APP_VERSION = "2.1.5"
 
 # Initial Locale Setup for WSL/Windows Multibyte/Emoji Harmony
 try:
@@ -336,7 +336,7 @@ class Player:
             subprocess.run(["pkill", "-f", "mpv --video=no"], stderr=subprocess.DEVNULL)
         except: pass
         
-    def play(self, url, start_pos=0, initial_eq_preset="Flat"):
+    def play(self, url, start_pos=0, initial_eq_preset="Flat", initial_volume=100):
         # 1. Try to reuse existing instance via IPC (Graceful)
         if os.path.exists(MPV_SOCKET):
             try:
@@ -349,6 +349,9 @@ class Player:
                     # Apply EQ immediately for reused instance
                     if initial_eq_preset and initial_eq_preset != "Flat":
                         self.set_equalizer(initial_eq_preset)
+                    
+                    # Apply Volume for reused instance
+                    self.send_cmd(["set_property", "volume", initial_volume])
                         
                     self.loading = True
                     self.loading_ts = time.time()
@@ -374,6 +377,7 @@ class Player:
             "mpv", "--video=no", "--vo=null", "--force-window=no",
             "--audio-display=no", "--no-config",
             f"--input-ipc-server={MPV_SOCKET}", 
+            f"--volume={initial_volume}",
             "--idle=yes"
         ]
         
@@ -444,6 +448,7 @@ class Player:
 
     def change_volume(self, delta):
         self.send_cmd(["add", "volume", delta])
+        return self.get_property("volume")
 
     def send_cmd(self, command):
         """Send raw command list to MPV via JSON IPC with resilience."""
@@ -609,6 +614,10 @@ class MyTunesApp:
 
 
         self.sent_history = {}
+        
+        # Volume Control (Persisted)
+        self.volume = self.dm.data.get("volume", 100)
+
 
 
     def show_feedback(self, msg, duration=2.5):
@@ -731,6 +740,12 @@ class MyTunesApp:
             
             # Periodic Save (Throttle 10s)
             if time.time() - getattr(self, 'last_save_time', 0) > 10:
+                # Sync volume if playing (in case changed externally/via scripts)
+                v = self.player.get_property("volume")
+                if v is not None:
+                    self.volume = int(float(v))
+                    self.dm.data["volume"] = self.volume
+                
                 self.dm.save_data()
                 self.last_save_time = time.time()
 
@@ -864,8 +879,35 @@ class MyTunesApp:
             self.forward_stack = []; self.view_stack = ["main"]; self.selection_idx = 0; self.scroll_offset = 0; self.set_view_status("")
 
         elif cmd == "TOGGLE_PAUSE": self.player.toggle_pause()
-        elif cmd == "VOL_DOWN": self.player.change_volume(-5); self.show_feedback("Volume -5")
-        elif cmd == "VOL_UP": self.player.change_volume(5); self.show_feedback("Volume +5")
+        elif cmd == "VOL_DOWN": 
+            if self.player.socket_ok and self.player.current_proc:
+                vol = self.player.change_volume(-5)
+                if vol is not None: self.volume = int(vol)
+            else:
+                self.volume = max(0, self.volume - 5)
+            
+            # Persist
+            self.dm.data["volume"] = self.volume
+            self.dm.save_data()
+            
+            msg = self.t("vol_fmt", self.volume)
+            if self.volume > 100: msg += " (Boost)"
+            self.show_feedback(msg)
+            
+        elif cmd == "VOL_UP": 
+            if self.player.socket_ok and self.player.current_proc:
+                vol = self.player.change_volume(5)
+                if vol is not None: self.volume = int(vol)
+            else:
+                self.volume = min(130, self.volume + 5)
+                
+            # Persist
+            self.dm.data["volume"] = self.volume
+            self.dm.save_data()
+            
+            msg = self.t("vol_fmt", self.volume)
+            if self.volume > 100: msg += " (Boost)"
+            self.show_feedback(msg)
         elif cmd == "SEEK_BACK_10": self.player.seek(-10)
         elif cmd == "SEEK_FWD_10": self.player.seek(10)
         elif cmd == "SEEK_BACK_30": self.player.seek(-30); self.show_feedback("Rewind 30s")
@@ -1193,7 +1235,7 @@ class MyTunesApp:
                 else:
                     start_pos = 0
         
-        self.player.play(item['url'], start_pos, initial_eq_preset=target_eq_preset)
+        self.player.play(item['url'], start_pos, initial_eq_preset=target_eq_preset, initial_volume=self.volume)
         
         # Re-apply EQ logic (double check: mpv restart wipes af property?)
         # Yes, play() might restart mpv if socket fails.
