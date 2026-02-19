@@ -33,6 +33,7 @@ import webbrowser
 import tempfile
 import shutil
 import requests
+import re
 
 
 # Ensure Unicode support
@@ -44,7 +45,7 @@ MPV_SOCKET = "/tmp/mpv_socket"
 LOG_FILE = "/tmp/mytunes_mpv.log"
 PID_FILE = "/tmp/mytunes_mpv.pid"
 APP_NAME = "MyTunes Pro"
-APP_VERSION = "2.1.5"
+APP_VERSION = "2.1.6"
 
 # Initial Locale Setup for WSL/Windows Multibyte/Emoji Harmony
 try:
@@ -64,11 +65,11 @@ if hasattr(os, 'uname'):
 STRINGS = {
     "ko": {
         "title": "MyTunes Pro v{}",
-        "search_label": "검색",
+        "search_label": "검색 (건수조절: 검색어 /숫자)",
         "fav_label": "즐겨찾기",
         "hist_label": "최근 재생",
         "quit_label": "⏻ 완전 종료 (음악 끔)",
-        "search_prompt": "검색어 입력: ",
+        "search_prompt": "검색어: ",
         "searching": "검색 중입니다... 잠시만 기다려주세요.",
         "no_results": "검색 결과가 없습니다.",
         "empty_list": "리스트가 비어있습니다.",
@@ -96,7 +97,7 @@ STRINGS = {
     },
     "en": {
         "title": "MyTunes Pro v{}",
-        "search_label": "Search",
+        "search_label": "Search (Limit: query /N)",
         "fav_label": "Favorites",
         "hist_label": "History",
         "quit_label": "⏻ Full Quit (Stop Music)",
@@ -1492,7 +1493,8 @@ class MyTunesApp:
         
         curses.noecho()
         curses.curs_set(1)
-        input_win = curses.newwin(1, box_w - 4 - len(prompt), box_y + 2, box_x + 2 + len(prompt))
+        prompt_width = self.get_display_width(prompt)
+        input_win = curses.newwin(1, box_w - 4 - prompt_width, box_y + 2, box_x + 2 + prompt_width)
         input_win.keypad(True)
         
         chars = []
@@ -1503,7 +1505,7 @@ class MyTunesApp:
             display_text = "".join(chars)
             display_text = unicodedata.normalize('NFC', display_text)
             
-            max_len = box_w - 6 - len(prompt)
+            max_len = box_w - 6 - prompt_width
             while self.get_display_width(display_text) > max_len:
                 display_text = display_text[1:]
                 display_text = "..." + display_text[3:] if len(display_text) > 3 else display_text
@@ -1616,11 +1618,33 @@ class MyTunesApp:
                 yt_dlp_cmd = venv_yt_dlp
 
             # v2.0.2 Optimization: 25 Items (Better space usage per user request)
+            # v2.1.0 Feature: Dynamic Limit via "/N" syntax (e.g. "song /10")
             limit = 25
-            search_query = f"{query} music"
+            search_query = query
+            
+            # Check for limit override pattern
+            match = re.search(r'\s+/(\d+)$', query)
+            if match:
+                try:
+                    limit_override = int(match.group(1))
+                    # Safety Clamp: 1 to 100
+                    limit = max(1, min(100, limit_override))
+                    # Remove the limit syntax from the actual search query
+                    search_query = query[:match.start()].strip()
+                except:
+                    pass
+
+            # Update view status with interpreted limit if different from default or detected
+            if limit != 25 or match:
+                 self.set_view_status(f"{self.t('searching')} (Limit: {limit})")
+            
+            # Construct ytsearch command with dynamic limit
+            # Note: yt-dlp syntax is "ytsearchN:query"
+            full_query = f"ytsearch{limit}:{search_query} music"
+            
             cmd = [
                 yt_dlp_cmd, 
-                f"ytsearch{limit}:{search_query}", 
+                full_query, 
                 "--dump-json", "--flat-playlist", "--no-playlist", "--skip-download"
             ]
             

@@ -1,6 +1,6 @@
-# 🎵 MyTunes Pro - Professional TUI Edition v2.1.5
+# 🎵 MyTunes Pro - Professional TUI Edition v2.1.6
 
-## 🚀 Terminal-based Media Workflow Experiment v2.1.5
+## 🚀 Terminal-based Media Workflow Experiment v2.1.6
 
 > [!IMPORTANT]
 > **Legal Disclaimer:** This project is a personal, non-commercial research experiment for developer education.
@@ -196,7 +196,7 @@ Executes immediately without worrying about input language status.
 
 # 🎵 MyTunes Pro (Experimental Media Tool - KR)
 
-## 🚀 터미널 기반 미디어 워크플로우 실험 v2.1.5
+## 🚀 터미널 기반 미디어 워크플로우 실험 v2.1.6
 
 > [!IMPORTANT]
 > **법적 면책 고지:** 본 프로젝트는 개발자 교육 및 연구를 목적으로 하는 개인적, 비상업적 실험입니다. 
@@ -369,6 +369,11 @@ Windows 환경에서 한글 검색이 안 되거나 설치가 어려운 분들�
 ---
 
 ## 🔄 Changelog
+
+### v2.1.6 (2026-02-19)
+- **TUI Polish**: Improved persistent view context and transient feedback mechanisms.
+- **Stability**: Added safety checks to skip autoplay if the IPC socket is unresponsive.
+- **Cleanup**: Ensured mouse mask is properly reset to prevent terminal artifacts.
 
 ### v2.1.5 (2026-02-04)
 - **Absolute Volume Display**: Now displays volume as a precise percentage (0-100%) with a "(Boost)" indicator for levels above 100%.
